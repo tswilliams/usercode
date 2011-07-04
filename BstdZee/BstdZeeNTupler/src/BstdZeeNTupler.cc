@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id$
+// $Id: BstdZeeNTupler.cc,v 1.1 2011/05/18 19:57:47 tsw Exp $
 //
 //
 
@@ -44,10 +44,15 @@ sjlkd
 #include <HLTrigger/HLTcore/interface/HLTConfigProvider.h>
 #include <DataFormats/Common/interface/TriggerResults.h>
 
+//...for accessing trigger objects
+#include "DataFormats/HLTReco/interface/TriggerObject.h"
+#include "DataFormats/HLTReco/interface/TriggerEvent.h"
+
 //...for histograms creation
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "TH1.h"
+#include "TGraphAsymmErrors.h"
 
 //...for NTuple generation
 #include "TTree.h"
@@ -111,7 +116,7 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		void ResetEventByEventVariables();
 
 		//For accessing the trigger info...
-		void accessTriggerInfo(const edm::Event&, const edm::EventSetup&);
+		void accessTriggerInfo(const edm::Event&, const edm::EventSetup&, bool beVerbose);
 		void printDatasetsAndTriggerNames();
 
 		//For reading the event information into the member variables...
@@ -137,8 +142,13 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		TTree* EventDataTree;
 
 		int numEvts;
+		unsigned int numEvtsStored_;
+		int dyJetsToLL_EventType_;
 		bool mcFlag_;
 		bool vBool_;
+		const bool readInNormReco_;
+		const bool readInBstdReco_;
+		const bool is2010SignalDataset_;
 
 		double histoEtMin;
 		double histoEtMax;
@@ -172,6 +182,24 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		Double_t mcZcandidate_dREles;
 		Double_t mcZcandidate_openingAngle;
 
+		Int_t mc_numZs_status2_;
+		Int_t mc_numZs_status3_;
+		Int_t mc_numZs_statusNot2Or3_;
+
+		Int_t mcZboson_pdgId_; // Int_t
+		Int_t mcZboson_status_; // Int_t
+		ROOT::Math::XYZTVector* mcZboson_p4_ptr_; // ROOT::Math::XYZTLorentzVector*
+		ROOT::Math::XYZTVector mcZboson_p4_;
+		Int_t mcZboson_numDaughters_;
+		Double_t mcZboson_daughters_dR_;
+		Double_t mcZboson_daughters_dEta_;
+		Double_t mcZboson_daughters_dPhi_;
+		Double_t mcZboson_daughters_openingAngle_;
+		ROOT::Math::XYZTVector  mcZboson_daughterA_p4_;
+		ROOT::Math::XYZTVector* mcZboson_daughterA_p4_ptr_;
+		ROOT::Math::XYZTVector  mcZboson_daughterB_p4_;
+		ROOT::Math::XYZTVector* mcZboson_daughterB_p4_ptr_;
+
 		//std::vector<Bool_t>      trg_TrigPathDecisions_;
 		//std::vector<std::string> trg_TrigPathNames_;
 		Bool_t      trg_PathA_decision_;
@@ -182,6 +210,13 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		edm::InputTag hltEventTag_;
 		std::string hltPathA_;
 		bool hltPathADecision_;
+		std::string hltPathA_nameOfLastFilter_;
+		float hltPathA_highestTrigObjEt_;
+		TH1D* highestEtTrigObjPathA_EtHist_;
+		TH1D* highestEtTrigObjPathA_cumEtHist_;
+		TH1D* highestEtTrigObjPathA_EtThrDenomHist_;
+		TH1D* highestEtTrigObjPathA_EtThrEffiHist_;
+		TGraphAsymmErrors* highestEtTrigObjPathA_EtThrAsymmEffi_;
 		//Trigger member variables - HLT config helper
 		HLTConfigProvider hltConfig_;
   		unsigned hltPathIndex_;
@@ -392,15 +427,22 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 //
 BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 	numEvts(0),
+	numEvtsStored_(0),
+	dyJetsToLL_EventType_(iConfig.getUntrackedParameter<int>("dyJetsToLL_EventType",0)), //==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
 	mcFlag_(iConfig.getUntrackedParameter<bool>("isMC",0)),
 	vBool_(iConfig.getUntrackedParameter<bool>("printOutInfo",0)),
+	readInNormReco_(iConfig.getUntrackedParameter<bool>("readInNormReco",0)),
+	readInBstdReco_(iConfig.getUntrackedParameter<bool>("readInBstdReco",0)),
+	is2010SignalDataset_(iConfig.getUntrackedParameter<bool>("is2010SignalDataset",0)),
 	histoEtMin(0.0),
 	histoEtMax(80.0),
 	histoEtNBins(40),
 	hltResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltResultsTag",edm::InputTag("TriggerResults","","5e32HLT"))),
 	hltEventTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltEventTag",edm::InputTag("hltTriggerSummaryAOD","","5e32HLT"))),
-  	hltPathA_(iConfig.getUntrackedParameter<std::string>("hltPath",std::string("HLT_Ele45_CaloIdVT_TrkIdT_v3"))),
-	hltPathADecision_(false)
+  	hltPathA_(iConfig.getUntrackedParameter<std::string>("hltPathA",std::string("HLT_Ele45_CaloIdVT_TrkIdT_v3"))),
+	hltPathADecision_(false),
+  	hltPathA_nameOfLastFilter_(iConfig.getUntrackedParameter<std::string>("hltPathA_nameOfLastFilter",std::string("hltEle45CaloIdVTTrkIdTDphiFilter"))),
+  	hltPathA_highestTrigObjEt_(-999.9)
 
 {
    //now do what ever initialization is needed
@@ -409,7 +451,11 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 	eleHighestEt_EtHist    = fHistos->make<TH1D>("eleHighestEt_EtHist",   "p_{T} distribution of highest p_{T} electron; Electron p_{T} /GeVc^{-1}; Number per 2GeVc^{-1}",    histoEtNBins, histoEtMin, histoEtMax);
 	ele2ndHighestEt_EtHist = fHistos->make<TH1D>("ele2ndHighestEt_EtHist","p_{T} distribution of 2nd highest p_{T} electron; Electron p_{T} /GeVc^{-1}; Number per 2GeVc^{-1}",histoEtNBins, histoEtMin, histoEtMax);
 	fracAboveSingleEleEtThreshold_Hist = fHistos->make<TH1D>("fracAboveSingleEleEtThreshold_Hist", "Fraction of events passing a single electron Et threshold; Threshold E_{T} /GeV; Fraction", histoEtNBins, histoEtMin-histoEtBinWidth/2.0, histoEtMax-histoEtBinWidth/2.0);
-	
+	Int_t trigEtHist_nBins=80; Double_t trigEtHist_min = 0.0; Double_t trigEtHist_max = 200.0; Double_t trigEtHist_binWidth = (trigEtHist_max-trigEtHist_min)/trigEtHist_nBins;
+	highestEtTrigObjPathA_EtHist_ = fHistos->make<TH1D>("highestEtTrigObjPathA_EtHist", "E_{T} distribution for the highest E_{T} HLT electron passing the last filter in hltPathA; HLT electron E_{T} /GeV; Number of electrons per GeV", trigEtHist_nBins, trigEtHist_min, trigEtHist_max);
+	highestEtTrigObjPathA_cumEtHist_ = fHistos->make<TH1D>("highestEtTrigObjPathA_cumEtHist", "Cumulative E_{T} distribution for the highest E_{T} HLT electron passing the last filter in hltPathA; HLT electron E_{T} threshold, E_{T}^{thr} /GeV; Number of electrons with E_{T} > E_{T}^{thr}", trigEtHist_nBins, trigEtHist_min - trigEtHist_binWidth/2.0, trigEtHist_max - trigEtHist_binWidth/2.0);
+	highestEtTrigObjPathA_EtThrDenomHist_ = fHistos->make<TH1D>("highestEtTrigObjPathA_EtThrDenomHist", "Denominator histogram for E_{T} threshold trigger efficiency curve; HLT electron E_{T} threshold, E_{T}^{thr} /GeV; Total number of events run over",                                      trigEtHist_nBins, trigEtHist_min - trigEtHist_binWidth/2.0, trigEtHist_max - trigEtHist_binWidth/2.0);
+	highestEtTrigObjPathA_EtThrEffiHist_  = fHistos->make<TH1D>("highestEtTrigObjPathA_EtThrEffiHist", "Trigger efficiency for signal events vs. signal trigger E_{T} threshold; HLT electron E_{T} threshold, E_{T}^{thr} /GeV; Efficiency for signal events",                                trigEtHist_nBins, trigEtHist_min - trigEtHist_binWidth/2.0, trigEtHist_max - trigEtHist_binWidth/2.0);
 	//For TTree and TBranch creation...
 	EventDataTree = fHistos->make<TTree>("EventDataTree", "Electron event data");
 	//EventDataTree = new TTree("EventDataTree", "GSFelectroneventdata");
@@ -459,7 +505,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	int particlePDGid = -999;
 	int particleStatus = -999;
 	reco::Candidate::LorentzVector particle4mom(0.0, 0.0, 0.0, 0.0);
-	//unsigned int numDaughters = -999;
+	unsigned int numDaughters = -999;
 	//const reco::GenParticle mcParticle;
 	int idx_eleHighestEt = -999;
 	double eleHighestEt = -999.9; //Must be set to less than 0.0
@@ -480,15 +526,17 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		iEvent.getByLabel("genParticles", genParticles);
 	
 	//Getting the handle for the standard and special reco'n GSF electron data...
-	iEvent.getByLabel(edm::InputTag("gsfElectrons::RECO"),        normGsfElesH);
+	if(readInNormReco_)
+		iEvent.getByLabel(edm::InputTag("gsfElectrons::stdRECO"),        normGsfElesH);
 	//iEvent.getByLabel(edm::InputTag("gsfElectrons::BOOSTEDRECO"), bstdGsfElesH);
-	iEvent.getByLabel(edm::InputTag("ecalDrivenGsfElectrons"), bstdGsfElesH);
+	if(readInBstdReco_)
+		iEvent.getByLabel(edm::InputTag("ecalDrivenGsfElectrons"), bstdGsfElesH);
 
 	//Reading in the event information...
-	ReadInEvtInfo(false, iEvent);
+	ReadInEvtInfo(vBool_, iEvent);
 	
 	//Getting the trigger information for the event...	
-	accessTriggerInfo(iEvent,iSetup); //This sets the variable hltPathADecision_ as the event pass/fail decision for the HLT path hltPathA_ in the trigger product specified by HLTResultsTag_
+	accessTriggerInfo(iEvent,iSetup, vBool_); //This sets the variable hltPathADecision_ as the event pass/fail decision for the HLT path hltPathA_ in the trigger product specified by HLTResultsTag_
 	//Storing branches of trigger information...
 	trg_PathA_decision_ = hltPathADecision_;
 	trg_PathA_name_ = hltPathA_;
@@ -505,12 +553,15 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	numEvts++;
 
 	//Reading in the kin variables for the standard and special reco'n GSF electrons... 
-	ReadInNormGsfEles(false, normGsfElesH);
-	ReadInBstdGsfEles(false, bstdGsfElesH);
+	if(readInNormReco_)
+		ReadInNormGsfEles(vBool_, normGsfElesH);
+	if(readInBstdReco_)
+		ReadInBstdGsfEles(vBool_, bstdGsfElesH);
 
 
+	Int_t zBosonDaughter_PDGid = 0;
 	if(mcFlag_){
-		std::cout << " ->There are " << genParticles->size() << " generator-particles in this event." << std::endl;
+		if(vBool_){std::cout << " ->There are " << genParticles->size() << " generator-particles in this event." << std::endl;}
 
 		//Running over all of the particles in the MC truth...
 		for(unsigned int idx=0; idx<genParticles->size(); idx++){
@@ -519,42 +570,90 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 			particlePDGid = mcParticle.pdgId();
 			particleStatus = mcParticle.status();
 			particle4mom = mcParticle.p4();
-			//numDaughters = mcParticle.numberOfDaughters();
-			/*//Finding the Z bosons, and adding to various counts...
-			if(particlePDGid==23){
-				std::cout << "   Generator-particle no. " << idx << " is a Z boson. (pdgId= " << particlePDGid << "; status=" << particleStatus << ")" << std::endl;
-				std::cout << "      px=" << particle4mom.Px() << "GeV?; py=" << particle4mom.Py() << "GeV?; pz=" << particle4mom.Pz() << "GeV?" << std::endl;
-				std::cout << "      pt=" << particle4mom.Pt() << "GeV?; eta=" << particle4mom.Eta() << "; phi=" << particle4mom.Phi() << std::endl;
-				std::cout << "      It has " << numDaughters << " daughters." << std::endl;
+			numDaughters = mcParticle.numberOfDaughters();
+			if(particlePDGid==23 && particleStatus==3){ // i.e. if it is a 'decaying' Z boson
+				//Get the first Z boson daughter ...
+				const reco::Candidate * mcDaughter =mcParticle.daughter(0);
+				zBosonDaughter_PDGid = mcDaughter->pdgId();
+			}
+			//Finding the Z bosons, and counting up numbers with various statuses...
+			if(abs(particlePDGid)==23){
+				if(vBool_){
+					std::cout << "   Generator-particle no. " << idx << " is a Z boson. (pdgId= " << particlePDGid << "; status=" << particleStatus << ")" << std::endl;
+					std::cout << "      px=" << particle4mom.Px() << "GeV?; py=" << particle4mom.Py() << "GeV?; pz=" << particle4mom.Pz() << "GeV?" << std::endl;
+					std::cout << "      pt=" << particle4mom.Pt() << "GeV?; eta=" << particle4mom.Eta() << "; phi=" << particle4mom.Phi() << std::endl;
+					std::cout << "      It has " << numDaughters << " daughters." << std::endl;
+				}
+				for(size_t j=0; j<numDaughters; j++){
+					const reco::Candidate * mcDaughter = mcParticle.daughter(j);
+					if(vBool_){ std::cout << "         Daughter " << j << ": pdgId=" << mcDaughter->pdgId() << "; (pT, eta, phi) = (" << mcDaughter->p4().Pt() << "," << mcDaughter->p4().Eta() << "," << mcDaughter->p4().Phi() << ")" << std::endl; }
+				}
+
 				//For Z bosons with status=2 (i.e. that are decaying)
 				if(particleStatus==2){
-					numZs_status2++;
-					status2Zs_PtHist->Fill(particle4mom.Pt());
-					status2Zs_LogPtHist->Fill(particle4mom.Pt());
-					for(size_t j=0; j<numDaughters; j++){
-						const reco::Candidate * mcDaughter =mcParticle.daughter(j);
-						std::cout << "         Daughter " << j << ": pdgId=" << mcDaughter->pdgId() << "; pT=" << mcDaughter->p4().Pt() << std::endl;
-					}
+					mc_numZs_status2_++;
 				}
 				//For Z bosons with status=3 (i.e. that are in the 'hard part' of the interaction - i.e. used in the matrix element caLculation)
 				else if(particleStatus==3){
-					numZs_status3++;
-					for(size_t j=0; j<numDaughters; j++){
-						const reco::Candidate * mcDaughter =mcParticle.daughter(j);
-						std::cout << "         Daughter " << j << ": pdgId=" << mcDaughter->pdgId() << "; pT=" << mcDaughter->p4().Pt() << std::endl;
+					mc_numZs_status3_++;
+					mcZboson_pdgId_  = particlePDGid; // Int_t
+					mcZboson_status_ = particleStatus; // Int_t
+					mcZboson_p4_     = particle4mom;
+
+					if(vBool_){
+						std::cout << "      Status=3=> written out to branches: pdgId=" << mcZboson_pdgId_ << "; status=" << mcZboson_status_ << "; ";
+						std::cout << "(pT, eta, phi)=(" << mcZboson_p4_.Pt() << ", " << mcZboson_p4_.Eta() << ", " << mcZboson_p4_.Phi() << ")" << std::endl;
 					}
+					mcZboson_numDaughters_ = numDaughters;
+					if(mcZboson_numDaughters_>=2){
+						Int_t idx_daughterA=-999; Int_t idx_daughterB=-999;
+						// If statements to account for the fact that the 'status=3' Z boson always seems to have 3 daughters - the two particles that it decays into, and a 'status=2' Z boson ...
+						if(mcParticle.daughter(0)->pdgId()==23){
+							idx_daughterA = 1;
+							idx_daughterB = 2;
+						}
+						else if (mcParticle.daughter(1)->pdgId()==23){
+							idx_daughterA = 0;
+							idx_daughterB = 2;
+						}
+						else{
+							idx_daughterA = 0;
+							idx_daughterB = 1;
+						}
+
+						const reco::Candidate* daughterA = mcParticle.daughter(idx_daughterA);
+						const reco::Candidate* daughterB = mcParticle.daughter(idx_daughterB);
+
+						TLorentzVector daughterA_p4 = ConvertToTLorentzVector( &(daughterA->p4()) );
+						TLorentzVector daughterB_p4 = ConvertToTLorentzVector( &(daughterB->p4()) );
+
+						mcZboson_daughters_dR_   = daughterA_p4.DeltaR(daughterB_p4);
+						mcZboson_daughters_dEta_ = daughterB_p4.Eta() - daughterA_p4.Eta();
+						mcZboson_daughters_dPhi_ = daughterB_p4.Phi() - daughterA_p4.Phi();
+						while( mcZboson_daughters_dPhi_<=-1.0*TMath::Pi() ){ mcZboson_daughters_dPhi_ = mcZboson_daughters_dPhi_+2.0*TMath::Pi(); }
+						while( mcZboson_daughters_dPhi_>=TMath::Pi()      ){ mcZboson_daughters_dPhi_ = mcZboson_daughters_dPhi_-2.0*TMath::Pi(); }
+						mcZboson_daughters_openingAngle_ = daughterA_p4.Angle(daughterB_p4.Vect());
+						mcZboson_daughterA_p4_ = daughterA->p4();
+						mcZboson_daughterB_p4_ = daughterB->p4();
+					}
+					if(vBool_){std::cout << "           " << "Daughters' quantities: dR=" << mcZboson_daughters_dR_ << "; dEta=" << mcZboson_daughters_dEta_ << "; dPhi=" << mcZboson_daughters_dPhi_ << "; ang sep'n=" << mcZboson_daughters_openingAngle_ << std::endl;}
 				}
 				//For Z bosons with other status numbers
 				else
-					numZs_statusOther++;
-			}*/
+					mc_numZs_statusNot2Or3_++;
+			}
+
 			//Finding the electrons and positrons...
 			if(abs(particlePDGid)==11){
-				if(particlePDGid==11)
+				if(particlePDGid==11 && vBool_)
 					std::cout << "   Generator-particle no. " << idx << " is an electron. (pdgId= " << particlePDGid << "; status=" << particleStatus << "; Pt=" << particle4mom.Pt() << ")" << std::endl;
-				else
+				else if(vBool_)
 					std::cout << "   Generator-particle no. " << idx << " is a positron.  (pdgId= " << particlePDGid << "; status=" << particleStatus << "; Pt=" << particle4mom.Pt() << ")" << std::endl;
-
+				if(vBool_){
+					std::cout << "      Has " << mcParticle.numberOfMothers() << " mothers;" << std::endl;
+					for(unsigned int idxMother=0; idxMother<mcParticle.numberOfMothers(); idxMother++)
+						std::cout << "         Mother(" << idxMother << ") has PDG ID " << mcParticle.mother(idxMother)->pdgId() << " and status=" << mcParticle.mother(idxMother)->status() << std::endl;
+				}
 				if(particleStatus==1){ //If the electron is a final state ele...
 				numFinalStateEles++;
 					if(particle4mom.Pt()>eleHighestEt){ //If electron has greater Pt than any electron before it...
@@ -562,17 +661,65 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 						ele2ndHighestEt = eleHighestEt;
 						idx_eleHighestEt = idx; 						// .. and set this ele as the highest Pt ele.
 						eleHighestEt = particle4mom.Pt();
-						std::cout << "      (Now set as highest Pt electron...)" << std::endl;
-						std::cout << "      (... and #" << idx_ele2ndHighestEt << " set as 2nd highest Pt ele...)" << std::endl;
+						if(vBool_){std::cout << "      (Now set as highest Pt electron...)" << std::endl;
+							std::cout << "      (... and #" << idx_ele2ndHighestEt << " set as 2nd highest Pt ele...)" << std::endl;}
 					}
 					else if(particle4mom.Pt()>ele2ndHighestEt){ 	// Otherwise, if ele Pt is still larger than previous 2nd highest ele Pt...
 						idx_ele2ndHighestEt = idx;						// ...set this ele as the 2nd highest PT ele.
 						ele2ndHighestEt = particle4mom.Pt();
-						std::cout << "      (Now set as 2nd highest Pt electron...)" << std::endl;
+						if(vBool_){std::cout << "      (Now set as 2nd highest Pt electron...)" << std::endl;}
 					}
 				}
 			}
+
+			//Finding the daughters of the Z boson, and then reconstructing the Z boson, for the signal 2010 datasets in which the intermediate Feynaman diagram particles - i.e.
+			// the u* and the Z boson - are not stored in the signal datasets that were generated at the start of 2011
+			if(is2010SignalDataset_){
+				// If statement to select those mc particles with two mothers - one of which is a gluon (pdgId=21), and the other is a up quark (PDG id 2)
+				if(mcParticle.numberOfMothers()==2){
+					if( (abs(mcParticle.mother(0)->pdgId())==2 && abs(mcParticle.mother(1)->pdgId())==21) || (abs(mcParticle.mother(0)->pdgId())==21 && abs(mcParticle.mother(1)->pdgId())==2)  ){
+						// If this particle is an electron (pdgId==11), then assign it to be daughter A ...
+						if(mcParticle.pdgId()==11)
+							mcZboson_daughterA_p4_ = mcParticle.p4();
+						// Otherwise, if this particle is an positron (pdgId==-11), then assign it to be daughter B ...
+						else if(mcParticle.pdgId()==-11)
+							mcZboson_daughterB_p4_ = mcParticle.p4();
+					}
+				}
+
+			}
+
+		}// End of for loop over MC particles
+
+		// Sorting out the values of the mcZboson variables in the case that am running over the signal datasets that were generated at the start 2011
+		if(is2010SignalDataset_){
+			mcZboson_pdgId_  = 0; // Int_t
+			mcZboson_status_ = -100; // Int_t
+			mcZboson_p4_     = mcZboson_daughterA_p4_ + mcZboson_daughterB_p4_;
+			mcZboson_numDaughters_ = 2;
+
+			TLorentzVector daughterA_p4 = ConvertToTLorentzVector( &mcZboson_daughterA_p4_ );
+			TLorentzVector daughterB_p4 = ConvertToTLorentzVector( &mcZboson_daughterB_p4_ );
+
+			mcZboson_daughters_dR_   = daughterA_p4.DeltaR(daughterB_p4);
+			mcZboson_daughters_dEta_ = daughterB_p4.Eta() - daughterA_p4.Eta();
+			mcZboson_daughters_dPhi_ = daughterB_p4.Phi() - daughterA_p4.Phi();
+			while( mcZboson_daughters_dPhi_<=-1.0*TMath::Pi() ){ mcZboson_daughters_dPhi_ = mcZboson_daughters_dPhi_+2.0*TMath::Pi(); }
+			while( mcZboson_daughters_dPhi_>=TMath::Pi()      ){ mcZboson_daughters_dPhi_ = mcZboson_daughters_dPhi_-2.0*TMath::Pi(); }
+			mcZboson_daughters_openingAngle_ = daughterA_p4.Angle(daughterB_p4.Vect());
+
+			//Printing to screen for debugging ...
+			if(vBool_){
+				std::cout << "   The MC Z boson variables have been determined from the electron and positron which each have two mothers - a u* and a u/ubar ... " << std::endl;
+				std::cout << "      => pdgId=" << mcZboson_pdgId_ << "; status=" << mcZboson_status_ << "; (pT,eta,phi) = (" << mcZboson_p4_.Pt() << ", " << mcZboson_p4_.Eta() << ", " << mcZboson_p4_.Phi() << ")" << std::endl;
+				std::cout << "      It has " << mcZboson_numDaughters_ << " daughters" << std::endl;
+				std::cout << "           Daughter A: (pT,eta,phi) = (" << mcZboson_daughterA_p4_.Pt() << "," << mcZboson_daughterA_p4_.Eta() << "," << mcZboson_daughterA_p4_.Phi() << ")" << std::endl;
+				std::cout << "           Daughter B: (pT,eta,phi) = (" << mcZboson_daughterB_p4_.Pt() << "," << mcZboson_daughterB_p4_.Eta() << "," << mcZboson_daughterB_p4_.Phi() << ")" << std::endl;
+				std::cout << "      Relative to each other:" << std::endl;
+				std::cout << "           dR=" << mcZboson_daughters_dR_ << "; dEta=" << mcZboson_daughters_dEta_ << "; dPhi=" << mcZboson_daughters_dPhi_ << "; opening angle=" << mcZboson_daughters_openingAngle_ << std::endl;
+			}
 		}
+
 		/*std::cout << " ->There are " << numZs_status2 << " Z bosons with status=2 in this event." << std::endl;
 		numZs_status2Hist->Fill(numZs_status2);
 		std::cout << "   There are " << numZs_status3 << " Z bosons with status=3 in this event." << std::endl;
@@ -581,41 +728,65 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		numZs_statusOtherHist->Fill(numZs_statusOther);*/
 
 		//Storing branches of information about highest Et ele...
-		std::cout << " ->The highest Et final-state electron in the event was genParticle#" << idx_eleHighestEt << ", with Et=" << eleHighestEt << std::endl;
-		eleHighestEt_EtHist->Fill(eleHighestEt);
-		const reco::GenParticle& mcEle_HighestEt = (*genParticles)[idx_eleHighestEt];
-		mcEles_HighestEt_charge = mcEle_HighestEt.charge(); //Int_t
-		mcEles_HighestEt_PDGid  = mcEle_HighestEt.pdgId(); //Int_t
-		mcEles_HighestEt_status = mcEle_HighestEt.status(); //Int_t
-		mcEles_HighestEt_pt     = mcEle_HighestEt.p4().Pt(); //Double_t
-		mcEles_HighestEt_p4.SetPxPyPzE(mcEle_HighestEt.p4().Px(),mcEle_HighestEt.p4().Py(),mcEle_HighestEt.p4().Pz(),mcEle_HighestEt.p4().E());
+		if(numFinalStateEles>0){
+			if(vBool_){std::cout << " ->The highest Et final-state electron in the event was genParticle#" << idx_eleHighestEt << ", with Et=" << eleHighestEt << std::endl;}
+			eleHighestEt_EtHist->Fill(eleHighestEt);
+			const reco::GenParticle& mcEle_HighestEt = (*genParticles)[idx_eleHighestEt];
+			mcEles_HighestEt_charge = mcEle_HighestEt.charge(); //Int_t
+			mcEles_HighestEt_PDGid  = mcEle_HighestEt.pdgId(); //Int_t
+			mcEles_HighestEt_status = mcEle_HighestEt.status(); //Int_t
+			mcEles_HighestEt_pt     = mcEle_HighestEt.p4().Pt(); //Double_t
+			mcEles_HighestEt_p4.SetPxPyPzE(mcEle_HighestEt.p4().Px(),mcEle_HighestEt.p4().Py(),mcEle_HighestEt.p4().Pz(),mcEle_HighestEt.p4().E());
 
-		std::cout << "       charge=" << mcEles_HighestEt_charge << "; pdgId=" << mcEles_HighestEt_PDGid << "; status=" << mcEles_HighestEt_status << std::endl;
-		std::cout << "       P=" << mcEles_HighestEt_p4.P() << "; Pt=" << mcEles_HighestEt_pt << std::endl;
-		std::cout << "       eta=" << mcEles_HighestEt_p4.Eta() << "; phi=" << mcEles_HighestEt_p4.Phi() << std::endl;
+			if(vBool_){std::cout << "       charge=" << mcEles_HighestEt_charge << "; pdgId=" << mcEles_HighestEt_PDGid << "; status=" << mcEles_HighestEt_status << std::endl;
+				std::cout << "       P=" << mcEles_HighestEt_p4.P() << "; Pt=" << mcEles_HighestEt_pt << std::endl;
+				std::cout << "       eta=" << mcEles_HighestEt_p4.Eta() << "; phi=" << mcEles_HighestEt_p4.Phi() << std::endl;}
+		}
+		else{
+			mcEles_HighestEt_charge = -999;
+			mcEles_HighestEt_PDGid  = -999;
+			mcEles_HighestEt_status = -999;
+			mcEles_HighestEt_pt = -999.9;
+			mcEles_HighestEt_p4.SetPxPyPzE(0.0,0.0,0.0,-999.9);
+		}
 
 		//Storing branches of information about 2nd highest Et ele...
-		std::cout << "   The 2nd highest Et final-state electron in the event was genParticle#" << idx_ele2ndHighestEt << ", with Et=" << ele2ndHighestEt << std::endl;
-		ele2ndHighestEt_EtHist->Fill(ele2ndHighestEt);
-		const reco::GenParticle& mcEle_2ndHighestEt = (*genParticles)[idx_ele2ndHighestEt];
-		mcEles_2ndHighestEt_charge = mcEle_2ndHighestEt.charge(); //Int_t
-		mcEles_2ndHighestEt_PDGid  = mcEle_2ndHighestEt.pdgId(); //Int_t
-		mcEles_2ndHighestEt_status = mcEle_2ndHighestEt.status(); //Int_t
-		mcEles_2ndHighestEt_pt     = mcEle_2ndHighestEt.p4().Pt(); //Double_t
-		mcEles_2ndHighestEt_p4.SetPxPyPzE(mcEle_2ndHighestEt.p4().Px(),mcEle_2ndHighestEt.p4().Py(),mcEle_2ndHighestEt.p4().Pz(),mcEle_2ndHighestEt.p4().E());
+		if(numFinalStateEles>1){
+			if(vBool_){std::cout << "   The 2nd highest Et final-state electron in the event was genParticle#" << idx_ele2ndHighestEt << ", with Et=" << ele2ndHighestEt << std::endl;}
+			ele2ndHighestEt_EtHist->Fill(ele2ndHighestEt);
+			const reco::GenParticle& mcEle_2ndHighestEt = (*genParticles)[idx_ele2ndHighestEt];
+			mcEles_2ndHighestEt_charge = mcEle_2ndHighestEt.charge(); //Int_t
+			mcEles_2ndHighestEt_PDGid  = mcEle_2ndHighestEt.pdgId(); //Int_t
+			mcEles_2ndHighestEt_status = mcEle_2ndHighestEt.status(); //Int_t
+			mcEles_2ndHighestEt_pt     = mcEle_2ndHighestEt.p4().Pt(); //Double_t
+			mcEles_2ndHighestEt_p4.SetPxPyPzE(mcEle_2ndHighestEt.p4().Px(),mcEle_2ndHighestEt.p4().Py(),mcEle_2ndHighestEt.p4().Pz(),mcEle_2ndHighestEt.p4().E());
 
-		std::cout << "       charge=" << mcEles_2ndHighestEt_charge << "; pdgId=" << mcEles_2ndHighestEt_PDGid << "; status=" << mcEles_2ndHighestEt_status << std::endl;
-		std::cout << "       P=" << mcEles_2ndHighestEt_p4.P() << "; Pt=" << mcEles_2ndHighestEt_pt << std::endl;
-		std::cout << "       eta=" << mcEles_2ndHighestEt_p4.Eta() << "; phi=" << mcEles_2ndHighestEt_p4.Phi() << std::endl;
-
+			if(vBool_){std::cout << "       charge=" << mcEles_2ndHighestEt_charge << "; pdgId=" << mcEles_2ndHighestEt_PDGid << "; status=" << mcEles_2ndHighestEt_status << std::endl;
+				std::cout << "       P=" << mcEles_2ndHighestEt_p4.P() << "; Pt=" << mcEles_2ndHighestEt_pt << std::endl;
+				std::cout << "       eta=" << mcEles_2ndHighestEt_p4.Eta() << "; phi=" << mcEles_2ndHighestEt_p4.Phi() << std::endl;}
+		}
+		else{
+			mcEles_2ndHighestEt_charge = -999;
+			mcEles_2ndHighestEt_PDGid  = -999;
+			mcEles_2ndHighestEt_status = -999;
+			mcEles_2ndHighestEt_pt = -999.9;
+			mcEles_2ndHighestEt_p4.SetPxPyPzE(0.0, 0.0, 0.0, -999.9);
+		}
 		//Storing branches of information about the Z candidate ...
-		SetMCZcandidateVariables(true);
+		SetMCZcandidateVariables(vBool_);
 
-		std::cout << std::endl;
+		if(vBool_){std::cout << std::endl;}
 	}
 	
 	//Reset branch addresses here each time...
-	EventDataTree->Fill();
+	if(dyJetsToLL_EventType_==0){
+		numEvtsStored_++;
+		EventDataTree->Fill();
+	}
+	else if( (dyJetsToLL_EventType_!=0) && (abs(zBosonDaughter_PDGid)==dyJetsToLL_EventType_) ){
+		numEvtsStored_++;
+		EventDataTree->Fill();
+	}
 
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
    Handle<ExampleData> pIn;
@@ -682,9 +853,38 @@ BstdZeeNTupler::endJob(){
 	
 	//std::cout << std::endl <<  "**histoEtBinWidth=" << (histoEtMax-histoEtMin)/static_cast<double>(histoEtNBins) << std::endl;
 
+	// Filling the cumulative histogram: highestEtTrigObjPathA_EtHist_
+	Int_t trgEtHist_nBins = highestEtTrigObjPathA_EtHist_->GetNbinsX();
+	Double_t trgEtHist_tmpBinContent = 0.0;
+	Double_t trgEtHist_tmpEffi = 0.0;
+	for(Int_t binIdx=trgEtHist_nBins+1; binIdx>=0; binIdx--){
+		if(binIdx==trgEtHist_nBins+1)
+			trgEtHist_tmpBinContent = highestEtTrigObjPathA_EtHist_->GetBinContent(binIdx);
+		else
+			trgEtHist_tmpBinContent = highestEtTrigObjPathA_cumEtHist_->GetBinContent(binIdx+1) + highestEtTrigObjPathA_EtHist_->GetBinContent(binIdx);
+
+		highestEtTrigObjPathA_cumEtHist_->SetBinContent(binIdx, trgEtHist_tmpBinContent);
+		highestEtTrigObjPathA_cumEtHist_->SetBinError(binIdx, sqrt(trgEtHist_tmpBinContent));
+		highestEtTrigObjPathA_EtThrDenomHist_->SetBinContent(binIdx, static_cast<double>(numEvts));
+
+		trgEtHist_tmpEffi = highestEtTrigObjPathA_cumEtHist_->GetBinContent(binIdx)/highestEtTrigObjPathA_EtThrDenomHist_->GetBinContent(binIdx);
+		highestEtTrigObjPathA_EtThrEffiHist_->SetBinContent(binIdx, trgEtHist_tmpEffi);
+		highestEtTrigObjPathA_EtThrEffiHist_->SetBinError(binIdx, sqrt( trgEtHist_tmpEffi*(1.0-trgEtHist_tmpEffi)/highestEtTrigObjPathA_EtThrDenomHist_->GetBinContent(binIdx) ) );
+	}
 	
+	highestEtTrigObjPathA_EtThrAsymmEffi_ = fHistos->make<TGraphAsymmErrors>(highestEtTrigObjPathA_cumEtHist_, highestEtTrigObjPathA_EtThrDenomHist_);
+	highestEtTrigObjPathA_EtThrAsymmEffi_->SetName("highestEtTrigObjPathA_EtThrAsymmEffi");
+	highestEtTrigObjPathA_EtThrAsymmEffi_->SetTitle("Trigger efficiency for signal events vs. signal trigger E_{T} threshold");
+	highestEtTrigObjPathA_EtThrAsymmEffi_->GetXaxis()->SetTitle("HLT electron E_{T} threshold, E_{T}^{thr} /GeV");
+	highestEtTrigObjPathA_EtThrAsymmEffi_->GetYaxis()->SetTitle("Efficiency for signal events");
+
 	fHistos->cd();
 	EventDataTree->Write();
+
+	std::cout << std::endl;
+	std::cout << " ***************************************" << std::endl;
+	std::cout << " * " << numEvtsStored_ << " events have been stored in the NTuple" << std::endl;
+	std::cout << std::endl;
 }
 
 /*// ------------ method called when ending the processing of a run  ------------
@@ -740,6 +940,24 @@ void BstdZeeNTupler::SetupMCBranches(){
 	EventDataTree->Branch("mcZcandidate_dPhiEles",     &mcZcandidate_dPhiEles,    "mcZcandidate_dPhiEles/D");     //Double_t
 	EventDataTree->Branch("mcZcandidate_dREles",       &mcZcandidate_dREles,      "mcZcandidate_dREles/D");       //Double_t
 	EventDataTree->Branch("mcZcandidate_openingAngle", &mcZcandidate_openingAngle,"mcZcandidate_openingAngle/D"); //Double_t
+
+	EventDataTree->Branch("mc_numZs_status2",       &mc_numZs_status2_,       "mc_numZs_status2/I"); // Int_t
+	EventDataTree->Branch("mc_numZs_status3",       &mc_numZs_status3_,       "mc_numZs_status3/I"); // Int_t
+	EventDataTree->Branch("mc_numZs_statusNot2Or3", &mc_numZs_statusNot2Or3_, "mc_numZs_statusNot2Or3/I"); // Int_t
+
+	EventDataTree->Branch("mcZboson_pdgId",  &mcZboson_pdgId_,  "mcZboson_pdgId/I"); // Int_t
+	EventDataTree->Branch("mcZboson_status", &mcZboson_status_, "mcZboson_status/I"); // Int_t
+	EventDataTree->Branch("mcZboson_p4", "ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >", &mcZboson_p4_ptr_); // ROOT::Math::XYZTLorentzVector
+	mcZboson_p4_ptr_ = &mcZboson_p4_;
+	EventDataTree->Branch("mcZboson_numDaughters",           &mcZboson_numDaughters_,           "mcZboson_numDaughters/I");
+	EventDataTree->Branch("mcZboson_daughters_dR",           &mcZboson_daughters_dR_,           "mcZboson_daughters_dR/D");
+	EventDataTree->Branch("mcZboson_daughters_dEta",         &mcZboson_daughters_dEta_,         "mcZboson_daughters_dEta/D");
+	EventDataTree->Branch("mcZboson_daughters_dPhi",         &mcZboson_daughters_dPhi_,         "mcZboson_daughters_dPhi/D");
+	EventDataTree->Branch("mcZboson_daughters_openingAngle", &mcZboson_daughters_openingAngle_, "mcZboson_daughters_openingAngle/D");
+	EventDataTree->Branch("mcZboson_daughterA_p4", "ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >", &mcZboson_daughterA_p4_ptr_); // ROOT::Math::XYZTLorentzVector
+	mcZboson_daughterA_p4_ptr_ = &mcZboson_daughterA_p4_;
+	EventDataTree->Branch("mcZboson_daughterB_p4", "ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >", &mcZboson_daughterB_p4_ptr_); // ROOT::Math::XYZTLorentzVector
+	mcZboson_daughterB_p4_ptr_ = &mcZboson_daughterB_p4_;
 }
 
 void BstdZeeNTupler::SetupTriggerBranches(){
@@ -747,6 +965,8 @@ void BstdZeeNTupler::SetupTriggerBranches(){
 	//EventDataTree->Branch("trg_TrigPathNames", &trg_TrigPathNames);         // std::vector<std::string>
 	EventDataTree->Branch("trg_PathA_decision", &trg_PathA_decision_);       // Bool_t
 	EventDataTree->Branch("trg_PathA_name", &trg_PathA_name_);               // std::string hltPathA_
+	EventDataTree->Branch("trg_PathA_nameOfLastFilter", &hltPathA_nameOfLastFilter_); // std::string
+	EventDataTree->Branch("trg_PathA_highestTrigObjEt", &hltPathA_highestTrigObjEt_,"trg_PathA_highestTrigObjEt/F"); // float
 }
 
 void BstdZeeNTupler::SetupEvtInfoBranches(){
@@ -969,6 +1189,22 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 	evt_lumiSec_ = 0;
 	evt_evtNum_  = 0;
 	
+	// Resetting the values of the varaibles counting the number of Z bosons per event ...
+	mc_numZs_status2_ = 0;
+	mc_numZs_status3_ = 0;
+	mc_numZs_statusNot2Or3_ = 0;
+
+	mcZboson_pdgId_  = -999; // Int_t
+	mcZboson_status_ = -999; // Int_t
+	mcZboson_p4_.SetPxPyPzE(0.0,0.0,0.0,-999.9);
+	mcZboson_numDaughters_ = -999;
+	mcZboson_daughters_dR_   = -999.9;
+	mcZboson_daughters_dEta_ = -999.9;
+	mcZboson_daughters_dPhi_ = -999.9;
+	mcZboson_daughters_openingAngle_  = -999.9;
+	mcZboson_daughterA_p4_.SetPxPyPzE(0.0,0.0,0.0,-999.9);
+	mcZboson_daughterB_p4_.SetPxPyPzE(0.0,0.0,0.0,-999.9);
+
 	//Clearing contents of standard GSF electron vectors...
 	normGsfEles_number_ = 0;
 	normGsfEles_p4_.clear();
@@ -1153,7 +1389,7 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 
 //------------ method for accessing the trigger information for each event -------------
 void
-BstdZeeNTupler::accessTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup){
+BstdZeeNTupler::accessTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup, bool beVerbose){
 	bool hltBit(false);
 	// get HLT results
   	edm::Handle<edm::TriggerResults> HLTR;
@@ -1167,6 +1403,45 @@ BstdZeeNTupler::accessTriggerInfo(const edm::Event& iEvent, const edm::EventSetu
 	
 	hltPathADecision_ = hltBit;
 
+  	// Getting a handle to the TriggerEvent object ...
+  	edm::Handle<trigger::TriggerEvent> hltEventH;
+  	iEvent.getByLabel(hltEventTag_, hltEventH);
+
+	//Get the Et values for the objects passing the last filter of this path ...
+	hltPathA_highestTrigObjEt_ = -999.9;
+	//int nrJet300=0;
+
+	//it is important to specify the right HLT process for the filter, not doing this is a common bug
+	trigger::size_type filterIndex = hltEventH->filterIndex(edm::InputTag(hltPathA_nameOfLastFilter_,"",hltEventTag_.process()));
+	if(filterIndex<hltEventH->sizeFilters()){
+		if(beVerbose){std::cout << " ->Accessing the objects that passed the filter " <<  hltPathA_nameOfLastFilter_ << std::endl;}
+	   const trigger::Keys& trigKeys = hltEventH->filterKeys(filterIndex);
+	   const trigger::TriggerObjectCollection & trigObjColl(hltEventH->getObjects());
+	   //now loop of the trigger objects passing filter
+	   for(trigger::Keys::const_iterator keyIt=trigKeys.begin();keyIt!=trigKeys.end();++keyIt){
+	      const trigger::TriggerObject& obj = trigObjColl[*keyIt];
+	      if(beVerbose){std::cout << "    Object's Et = " << obj.et();}
+	      if(obj.et()>hltPathA_highestTrigObjEt_){
+	      	hltPathA_highestTrigObjEt_ = obj.et();
+	      }
+	      if(beVerbose){std::cout << "; highest obj Et = " << hltPathA_highestTrigObjEt_ << " now." << std::endl;}
+	   }
+	}//end filter size check
+	else{
+		if(beVerbose){std::cout << " ->FAILLED basic if statement => CANNOT access the objects that passed the filter " <<  hltPathA_nameOfLastFilter_ << std::endl;
+			std::cout << "     [This if fine iff the event failled hltPathA.]" << std::endl;}
+	}
+
+	//Now fill up the histogram of the highest Et trig obj Et values ...
+	if(hltPathA_highestTrigObjEt_>0.0){
+		if(beVerbose){std::cout << "       => Et of highest Et obj was: " << hltPathA_highestTrigObjEt_ << std::endl;
+			std::cout << "          Filling histogram with this value ..." << std::endl;}
+		highestEtTrigObjPathA_EtHist_->Fill(hltPathA_highestTrigObjEt_);
+	}
+	else{
+		if(beVerbose){std::cout << "   There were no trigger objects passing the filter => Et of highest Et object histogram was filled with -999.9." << std::endl;}
+		highestEtTrigObjPathA_EtHist_->Fill(-999.9);
+	}
 }
 
 //------------ method for printing out all of the trigger names... -------------
@@ -1175,6 +1450,7 @@ BstdZeeNTupler::printDatasetsAndTriggerNames(){
 
 	const std::vector<std::string> DatasetNames = hltConfig_.datasetNames();
 	const std::vector< std::vector<std::string> > TriggerNames = hltConfig_.datasetContents();
+	const std::vector<std::string> hltPathA_moduleNames = hltConfig_.moduleLabels(hltPathA_);
 	int numTriggerNames = 0;
 
 	std::cout << "****************" << std::endl;
@@ -1195,6 +1471,11 @@ BstdZeeNTupler::printDatasetsAndTriggerNames(){
 	std::cout << "...or from triggerNames() method " << ", the names of the " << hltConfig_.triggerNames().size() << "triggers are:" << std::endl;
 	for(unsigned int idx = 0; idx < hltConfig_.triggerNames().size(); idx++)
 		std::cout << "     " << hltConfig_.triggerNames().at(idx) << std::endl;
+
+	std::cout << std::endl;
+	std::cout << "The modules of the " << hltPathA_ << " trigger path are:" << std::endl;
+	for(unsigned int i = 0; i<hltPathA_moduleNames.size(); i++)
+		std::cout << "    " << hltPathA_moduleNames.at(i) << std::endl;
 
 	std::cout << "****************" << std::endl;
 
