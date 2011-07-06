@@ -3,6 +3,8 @@
 <use   name="boost"/>
 <use   name="root"/>
 <use   name="rootcore"/>
+<use   name="NTupler/BstdZeeNTupler"/>
+
 <lib   name="GenVector"/>
 <bin   name="BstdZeeFirstAnalyser" file="*.cpp">
 </bin>
