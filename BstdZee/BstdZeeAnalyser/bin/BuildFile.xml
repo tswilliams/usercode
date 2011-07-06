@@ -1,8 +1,0 @@
-<flags   ADD_SUBDIR="yes"/>
-<flags   CXXFLAGS="-O3"/>
-<use   name="boost"/>
-<use   name="root"/>
-<use   name="rootcore"/>
-<lib   name="GenVector"/>
-<bin   name="BstdZeeFirstAnalyser" file="*.cpp">
-</bin>
