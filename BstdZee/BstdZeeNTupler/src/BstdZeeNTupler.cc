@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.1 2011/05/18 19:57:47 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.2 2011/07/04 15:34:41 tsw Exp $
 //
 //
 
@@ -437,9 +437,9 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 	histoEtMin(0.0),
 	histoEtMax(80.0),
 	histoEtNBins(40),
-	hltResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltResultsTag",edm::InputTag("TriggerResults","","5e32HLT"))),
-	hltEventTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltEventTag",edm::InputTag("hltTriggerSummaryAOD","","5e32HLT"))),
-  	hltPathA_(iConfig.getUntrackedParameter<std::string>("hltPathA",std::string("HLT_Ele45_CaloIdVT_TrkIdT_v3"))),
+	hltResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltResultsTag",edm::InputTag("TriggerResults","","HLT"))),
+	hltEventTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltEventTag",edm::InputTag("hltTriggerSummaryAOD","","HLT"))),
+  	hltPathA_(iConfig.getUntrackedParameter<std::string>("hltPathA",std::string("HLT_DoublePhoton33_v2"))),
 	hltPathADecision_(false),
   	hltPathA_nameOfLastFilter_(iConfig.getUntrackedParameter<std::string>("hltPathA_nameOfLastFilter",std::string("hltEle45CaloIdVTTrkIdTDphiFilter"))),
   	hltPathA_highestTrigObjEt_(-999.9)
@@ -496,7 +496,6 @@ BstdZeeNTupler::~BstdZeeNTupler()
 void
 BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-   
 	//Variable declarations...
 	//int numZs_status2 = 0;
 	//int numZs_status3 = 0;
@@ -527,7 +526,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	
 	//Getting the handle for the standard and special reco'n GSF electron data...
 	if(readInNormReco_)
-		iEvent.getByLabel(edm::InputTag("gsfElectrons::stdRECO"),        normGsfElesH);
+		iEvent.getByLabel(edm::InputTag("gsfElectrons::RECO"),        normGsfElesH);
 	//iEvent.getByLabel(edm::InputTag("gsfElectrons::BOOSTEDRECO"), bstdGsfElesH);
 	if(readInBstdReco_)
 		iEvent.getByLabel(edm::InputTag("ecalDrivenGsfElectrons"), bstdGsfElesH);
@@ -883,7 +882,7 @@ BstdZeeNTupler::endJob(){
 
 	std::cout << std::endl;
 	std::cout << " ***************************************" << std::endl;
-	std::cout << " * " << numEvtsStored_ << " events have been stored in the NTuple" << std::endl;
+	std::cout << " * " << numEvtsStored_ << " events have been stored in the NTuple";
 	std::cout << std::endl;
 }
 
@@ -1447,10 +1446,8 @@ BstdZeeNTupler::accessTriggerInfo(const edm::Event& iEvent, const edm::EventSetu
 //------------ method for printing out all of the trigger names... -------------
 void
 BstdZeeNTupler::printDatasetsAndTriggerNames(){
-
 	const std::vector<std::string> DatasetNames = hltConfig_.datasetNames();
 	const std::vector< std::vector<std::string> > TriggerNames = hltConfig_.datasetContents();
-	const std::vector<std::string> hltPathA_moduleNames = hltConfig_.moduleLabels(hltPathA_);
 	int numTriggerNames = 0;
 
 	std::cout << "****************" << std::endl;
@@ -1468,10 +1465,12 @@ BstdZeeNTupler::printDatasetsAndTriggerNames(){
 		for(unsigned int idxB = 0; idxB < TriggerNames.at(idxA).size(); idxB++)
 			std::cout << "     " << TriggerNames.at(idxA).at(idxB) << std::endl;
 	}
-	std::cout << "...or from triggerNames() method " << ", the names of the " << hltConfig_.triggerNames().size() << "triggers are:" << std::endl;
+	std::cout << std::endl << "...or from triggerNames() method " << ", the names of the " << hltConfig_.triggerNames().size() << " triggers are:" << std::endl;
 	for(unsigned int idx = 0; idx < hltConfig_.triggerNames().size(); idx++)
 		std::cout << "     " << hltConfig_.triggerNames().at(idx) << std::endl;
 
+	// Now, printing out the names of the modules for the trigger ...
+	const std::vector<std::string> hltPathA_moduleNames = hltConfig_.moduleLabels(hltPathA_);
 	std::cout << std::endl;
 	std::cout << "The modules of the " << hltPathA_ << " trigger path are:" << std::endl;
 	for(unsigned int i = 0; i<hltPathA_moduleNames.size(); i++)
