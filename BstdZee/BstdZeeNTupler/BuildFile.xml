@@ -1,22 +1,8 @@
-<use name="FWCore/Framework"/>
-<use name="FWCore/PluginManager"/>
-<use name="FWCore/ParameterSet"/>
-<use name="FWCore/ServiceRegistry"/>
-<use name="DataFormats/EgammaCandidates"/>
-<use name="DataFormats/HepMCCandidate"/>
-<use name="HLTrigger/HLTcore"/>
-<use name="CommonTools/UtilAlgos"/>
-<use name="PhysicsTools/UtilAlgos"/>
-<use name="SHarper/HEEPAnalyzer"/>
-<use name="boost"/>
 <use name="root"/>
-<use name="rootcore"/>
-<lib name="GenVector"/>
-<lib name="MathMore"/>
-<lib name="Core"/>
-<flags EDM_PLUGIN="1"/>
+<use name="boost"/>
+
 <export>
    <use name="root"/>
-   <use name="rootcore"/>
-   <lib name="1"/>
+   <use name="boost"/>
+   <lib name="NTuplerBstdZeeNTupler"/>
 </export>
