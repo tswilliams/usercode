@@ -22,6 +22,8 @@
 #include "TROOT.h" 
 //    gROOT->ProcessLine("#include <vector>");
 
+#include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
+
 #include "NTupler/BstdZeeNTupler/interface/tswHEEPEle.h"
 #include "BstdZeeFirst/Analyser/interface/tswReconValidationHistos.h"
 #include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
@@ -99,6 +101,7 @@ class BstdZeeFirstAnalyser{
 
 		//------------//
 		//Variables for storing contents of event information branches...
+		tsw::Event* event_;
 		unsigned int evt_runNum_;
 		unsigned int evt_lumiSec_;
 		unsigned int evt_evtNum_;
@@ -686,6 +689,7 @@ void BstdZeeFirstAnalyser::SetupEleClassVectors(){
 
 void BstdZeeFirstAnalyser::PrintOutBranchVariables(){
 	//Printing the event information to screen ...
+	std::cout << "  ->Evt info (from event branch):"; event_->PrintBasicEventInformation();
 	std::cout << "  ->Evt info: run no. " << evt_runNum_ << ", lumi sec. " << evt_lumiSec_<< ", event num. " << evt_evtNum_ << std::endl;
 	//Printing the trigger decision to screen ...
 	if(trg_PathA_decision_)
@@ -1404,6 +1408,7 @@ void BstdZeeFirstAnalyser::InitialiseReconValidationHistos(){
 
 //================================================================//
 void BstdZeeFirstAnalyser::SetupBranchLinks(const TFile* inFile_ptr){
+	inputFile_tree_->SetBranchAddress("event", &event_);
 	//Setting up the pointer links for the event information branches ...
 	inputFile_tree_->SetBranchAddress("evt_runNum",&evt_runNum_);   // unsigned int
 	inputFile_tree_->SetBranchAddress("evt_lumiSec",&evt_lumiSec_); // unsigned int
@@ -1679,15 +1684,14 @@ int main()
 		//TString myInputFileName  = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_4_1_4_patch2/src/NTupler/BstdZeeNTupler/testNTuple_2-00TeVu.root";
 		TString myOutputFileName = "histos_DYJetsToEE_" + outFileTag + ".root";
 		//TString myInputFileName  = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_4_1_4_patch2/src/NTupler/BstdZeeNTupler/dataNTuple_170kEvts_2011-05-13.root";
-		TString myInputFileName  = "/opt/ppd/scratch/williams/Datafiles/NTuples/CMSSW_41X/bkgdMC_41X-Ntuple_DYJetsToLL_eeOnly_66795Evts_2011-06-22.root";
-		//TString myInputFileName  = "/opt/ppd/scratch/williams/Datafiles/NTuples/CMSSW_41X/testBkgdNTuple.root";
+		//TString myInputFileName  = "/opt/ppd/scratch/williams/Datafiles/NTuples/CMSSW_41X/bkgdMC_41X-Ntuple_DYJetsToLL_eeOnly_66795Evts_2011-06-22.root";
 		//TString myOutputFileName = "histos_DYJetsToLL_" + outFileTag + ".root";
 
 		std::cout << std::endl << std::endl;
 		std::cout << "  ***-------------------------------***" << std::endl;
 		std::cout << "  *** Data analysis ...." << std::endl;
 		//BstdZeeFirstAnalyser myAnalyser(0, 2530516, false, myInputFileName, myOutputFileName, -1, 180, 120, 1200.0);
-		BstdZeeFirstAnalyser* myAnalyser = new BstdZeeFirstAnalyser(0, 66795, true, myInputFileName, myOutputFileName, -1, 180, 120, 1200.0);
+		BstdZeeFirstAnalyser* myAnalyser = new BstdZeeFirstAnalyser(0, 20, true, "/home/ppd/nnd85574/Work/BstdZee/CMSSW_4_2_4_patch1/src/NTupler/BstdZeeNTupler/bkgdNTuple-42X_v0-Summer11.root", "testOutputHistos.root", 6, 180, 120, 1200.0);
 		std::cout << " Running the DoAnalysis method ..." << std::endl;
 		myAnalyser->DoAnalysis( 1.0 ); //myAnalyser.DoAnalysis( 1.0*(2321000.0/2530516.0) );
 		delete myAnalyser;
@@ -1702,9 +1706,9 @@ int main()
 		std::cout << std::endl << std::endl;
 		std::cout << "  ***-------------------------------***" << std::endl;
 		std::cout << "  *** Signal analysis A ..." << std::endl;
-		BstdZeeFirstAnalyser sigAnalyserA(0, 20000, true, sigInputFilename, sigOutputFilename, -1, 180, 30, 900.0);
+		//BstdZeeFirstAnalyser sigAnalyserA(0, 20000, true, sigInputFilename, sigOutputFilename, -1, 180, 30, 900.0);
 		std::cout << " Running the DoAnalysis method ..." << std::endl;
-		sigAnalyserA.DoAnalysis( 1.0 );  //sigAnalyserA.DoAnalysis( 1.0*(925.0/20000.0) );
+		//sigAnalyserA.DoAnalysis( 1.0 );  //sigAnalyserA.DoAnalysis( 1.0*(925.0/20000.0) );
 
 		//sigInputFilename = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_4_1_4_patch2/src/NTupler/BstdZeeNTupler/signalmcNTuple_1-00TeVu_20kEvts_2011-05-13.root" ;
 		sigInputFilename =  "/opt/ppd/scratch/williams/Datafiles/NTuples/CMSSW_41X/sigMC_41X-Ntuple_1-00TeVu_20kEvts_2011-06-23.root";
@@ -1712,9 +1716,9 @@ int main()
 		std::cout << std::endl << std::endl;
 		std::cout << "  ***-------------------------------***" << std::endl;
 		std::cout << "  *** Signal analysis B ..." << std::endl;
-		BstdZeeFirstAnalyser sigAnalyserB(0, 20000, true, sigInputFilename, sigOutputFilename, -1, 180, 30, 900.0);
+		//BstdZeeFirstAnalyser sigAnalyserB(0, 20000, true, sigInputFilename, sigOutputFilename, -1, 180, 30, 900.0);
 		std::cout << " Running the DoAnalysis method ..." << std::endl;
-		sigAnalyserB.DoAnalysis( 1.0 ); //sigAnalyserB.DoAnalysis( 1.0*(110.0/20000.0) );
+		//sigAnalyserB.DoAnalysis( 1.0 ); //sigAnalyserB.DoAnalysis( 1.0*(110.0/20000.0) );
 
 		//sigInputFilename = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_4_1_4_patch2/src/NTupler/BstdZeeNTupler/signalmcNTuple_2-00TeVu_20kEvts_2011-05-13.root" ;
 		sigInputFilename =  "/opt/ppd/scratch/williams/Datafiles/NTuples/CMSSW_41X/sigMC_41X-Ntuple_2-00TeVu_20kEvts_2011-06-23.root";
@@ -1722,9 +1726,9 @@ int main()
 		std::cout << std::endl << std::endl;
 		std::cout << "  ***-------------------------------***" << std::endl;
 		std::cout << "  *** Signal analysis C ..." << std::endl;
-		BstdZeeFirstAnalyser sigAnalyserC(0, 20000, true, sigInputFilename, sigOutputFilename, -1, 180, 30, 1800.0);
+		//BstdZeeFirstAnalyser sigAnalyserC(0, 20000, true, sigInputFilename, sigOutputFilename, -1, 180, 30, 1800.0);
 		std::cout << " Running the DoAnalysis method ..." << std::endl;
-		sigAnalyserC.DoAnalysis( 1.0 ); //sigAnalyserC.DoAnalysis( 1.0*(1.2/20000.0) );
+		//sigAnalyserC.DoAnalysis( 1.0 ); //sigAnalyserC.DoAnalysis( 1.0*(1.2/20000.0) );
 
 		/*for(unsigned int i=0; i<sigInputFilenames.size()-1; i++){
 			std::cout << std::endl << std::endl;
