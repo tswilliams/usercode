@@ -14,7 +14,7 @@ def DataFileLocationAdaptor(fileLocation):
 process = cms.Process("Demo")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+process.MessageLogger.cerr.FwkReport.reportEvery = 5
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(20) )
 
@@ -43,7 +43,7 @@ process.source = cms.Source("PoolSource",
 )
 
 #Defining the output file to store the histograms/NTuples in...
-process.TFileService = cms.Service("TFileService", fileName=cms.string('test.root'))
+process.TFileService = cms.Service("TFileService", fileName=cms.string('bkgdNTuple-42X_v0-Summer11.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('/opt/ppd/scratch/williams/Datafiles/NTuples/CMSSW_41X/bkgdMC_41X-Ntuple_DYJetsToLL_2530516Evts_2011-06-13.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('testNTuple_2-00TeVu.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('localWflowTest_Ntuple_Sig-100evts_2011-05-06.root'))
