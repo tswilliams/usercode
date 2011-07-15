@@ -49,12 +49,12 @@ namespace tsw{
 		TString str_NoOfDiEles = "Number of electron pairs";
 		TString str_NoOfEles = "Number of electrons";
 
-		if(hNamePrefix.EndsWith("5e32_"))
+		/*if(hNamePrefix.EndsWith("5e32_"))
 			hNamePrefix.Resize(hNamePrefix.Last('5'));
 		else if(hNamePrefix.EndsWith("e33_"))
 			hNamePrefix.Resize(hNamePrefix.Last('e')-1);
 		else if(hNamePrefix.EndsWith("TrgEt80_") || hNamePrefix.EndsWith("TrgEt100_") || hNamePrefix.EndsWith("TrgEt120_"))
-			hNamePrefix.Resize(hNamePrefix.Last('T'));
+			hNamePrefix.Resize(hNamePrefix.Last('T'));*/
 
 		//Initialise the di-ele histograms ...
 		diEleHist_invMass_     = new TH1D(hNamePrefix + "invMass",   "Di-electron invariant mass distribution  (" + str_eleType_GSFeles_cutsPhrase + "); M_{ee} /GeVc^{-2};" + str_NoOfDiEles + " per 2.5GeV", hNBins_mass, 45.0, 135.0);
