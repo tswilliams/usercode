@@ -10,7 +10,7 @@ namespace tsw{
 				particles_pdgId = -999;
 				particles_hepMCstatus = -999;
 				particles_charge = -999;
-				particles_p4.SetPxPyPzE(0.0, 0.0, 0.0, -999.9);
+				particles_p4.SetPxPyPzE(99999.9, 0.0, 0.0, 99999.9);
 			}
 			~MCParticle(){}
 			// Methods for access to member variables ...
