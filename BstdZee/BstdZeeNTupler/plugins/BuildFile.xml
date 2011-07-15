@@ -3,6 +3,7 @@
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/ServiceRegistry"/>
 <use name="DataFormats/EgammaCandidates"/>
+<use name="DataFormats/MuonReco"/>
 <use name="DataFormats/HepMCCandidate"/>
 <use name="HLTrigger/HLTcore"/>
 <use name="CommonTools/UtilAlgos"/>
