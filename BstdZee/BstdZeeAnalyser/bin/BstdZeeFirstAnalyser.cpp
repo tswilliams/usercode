@@ -22,7 +22,8 @@
 #include "TROOT.h" 
 //    gROOT->ProcessLine("#include <vector>");
 
-#include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
+//#include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
+#include "BstdZeeFirst/Analyser/interface/tswEventHelper.h"
 
 #include "NTupler/BstdZeeNTupler/interface/tswHEEPEle.h"
 #include "BstdZeeFirst/Analyser/interface/tswReconValidationHistos.h"
@@ -31,6 +32,9 @@
 #include "BstdZeeFirst/Analyser/interface/tswDiEleDistns.h"
 #include "BstdZeeFirst/Analyser/interface/tswMCParticle.h"
 #include "BstdZeeFirst/Analyser/interface/tswMCParticleDistns.h"
+#include "BstdZeeFirst/Analyser/interface/tswMuonDistns.h"
+
+#include "BstdZeeFirst/Analyser/interface/tswEleMuObject.h"
 
 //#include "linkdef.h"
 //#pragma link C++ class vector<float> + ;
@@ -60,6 +64,7 @@ class BstdZeeFirstAnalyser{
 	private:
 		void AnalyseEvent(const Double_t );
 		void SetupEleClassVectors();
+		void SetupMuonCollection();
 		void PrintOutBranchVariables();
 		void FinishOffAnalysis(); //Method to be called after all events analysed - i.e. for normalisation of histograms, calculating errors on each bins, etc
 
@@ -75,6 +80,7 @@ class BstdZeeFirstAnalyser{
 		void FillReconValidationHistos(const Double_t );
 		void FillDiEleHistos(const Double_t );
 		void FillHistograms(const Double_t );
+		void DoEMuAnalysis(const Double_t );
 
 		//Methods for storing histograms in output file...
 		void SaveReconValidationHistos(TFile* histosFile);
@@ -83,6 +89,7 @@ class BstdZeeFirstAnalyser{
 		void SetMemberVariablesToDefaultValues();
 		void InitialiseReconValidationHistos();
 		void SetupBranchLinks(const TFile*);
+		void SetupEMuMethodTrees();
 
 		//Methods called by the destructor (i.e. deletion of heap-based objects)...
 		void DeleteReconValidationHistos();
@@ -102,6 +109,7 @@ class BstdZeeFirstAnalyser{
 		//------------//
 		//Variables for storing contents of event information branches...
 		tsw::Event* event_;
+		tsw::EventHelper eventHelper_;
 		unsigned int evt_runNum_;
 		unsigned int evt_lumiSec_;
 		unsigned int evt_evtNum_;
@@ -341,6 +349,31 @@ class BstdZeeFirstAnalyser{
 		std::vector<float>* bstdHEEPEles_isolEmHadDepth1_;
 
 		std::vector<tsw::HEEPEle> bstdEles_;
+
+		//----------------------------------------------//
+		// Muon collections ...
+		tsw::MuonCollection normMuons_;
+		tsw::MuonCollection normMuons_tight_;
+
+		// Muon histograms ...
+		tsw::MuonDistns normMuons_1stpT_Histos_;
+		tsw::MuonDistns normMuons_tight_1stpT_Histos_;
+
+		// emu method: emu object & output tree stuff
+		tsw::HEEPEle normEles_HEEPNoIso_1stpT_;
+		bool normEles_HEEPNoIso_1stpT_exists_;
+		tsw::HEEPDiEle normDiEle_HEEPNoIso_;
+		bool normDiEle_HEEPNoIso_exists_;
+		tsw::EleMuObject eleMu_HEEPNoIso_tight_;
+
+		TTree* eleMuTree_;
+		Double_t eleMuTreeVar_mass_;
+		Double_t eleMuTreeVar_weight_;
+
+		TTree* diEleTree_;
+		Double_t diEleTreeVar_mass_;
+		Double_t diEleTreeVar_weight_;
+
 		//----------------------------------------------//
 		//Histograms...
 		//Special reco'n validation histos:
@@ -392,6 +425,8 @@ class BstdZeeFirstAnalyser{
 //--------------------- Public methods ------------------------------//
 
 BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, unsigned int numEvts, bool isMC, const TString& inFileName, const TString& outFileName, int vFlg, Int_t nbins_mass, Int_t nbins_pt, Double_t ptmax):
+	normMuons_1stpT_Histos_(            "h_normMuons_1stpT_",       "normal", "",           1, 1, 50, 1000.0, 50, 1000.0),
+	normMuons_tight_1stpT_Histos_(      "h_normMuons_tight_1stpT_", "normal", "tight cuts", 2, 1, 50, 1000.0, 50, 1000.0),
 	normEles_reconValidationHistos_(    "h_normEles_",      "standard",  "",              1,  false),
 	normEles_simpleCuts_reconValHistos_("h_normEles_sCuts_", "standard", ", simple cuts", 1,  false), //was 2
 	normEles_HEEPCuts_reconValHistos_(  "h_normEles_HEEP_",  "standard", ", HEEP cuts",   1,  true),  //was 8
@@ -443,6 +478,9 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, unsigned int numEvts, bo
 
 	//Initialise the histograms that will be filled in analysis...
 	InitialiseReconValidationHistos();
+
+	//Setting up the emu method trees ...
+	SetupEMuMethodTrees();
 }
 
 BstdZeeFirstAnalyser::~BstdZeeFirstAnalyser(){
@@ -453,20 +491,20 @@ BstdZeeFirstAnalyser::~BstdZeeFirstAnalyser(){
 void BstdZeeFirstAnalyser::DoAnalysis(const Double_t evtWeight){
 
 	//Opening the datafile(s)
-	std::cout << "Opening the ntuple datafile..." << std::endl;
-	TFile* inputFile_ptr = TFile::Open(inputFile_name_,"READ");
-	if(!inputFile_ptr)
+	std::cout << " Opening the ntuple datafile..." << std::endl;
+	TFile* inputFile = TFile::Open(inputFile_name_,"READ");
+	/*if(!inputFile_ptr)
 		std::cout << "ERROR in opening file." << std::endl;
 	else
-		std::cout << "   file opened successfully." << std::endl;
+		std::cout << "   file opened successfully." << std::endl;*/
 
 	//Changing into the correct directory within the input file ..
-	inputFile_ptr->cd("demo");
+	inputFile->cd("demo");
 	//Getting a pointer to the ntuple tree in the file
 	inputFile_tree_ = (TTree*)gDirectory->Get("EventDataTree");
 
 	//Setup the branch links...
-	SetupBranchLinks(inputFile_ptr);
+	SetupBranchLinks(inputFile);
 
 	//TODO - put in code so that a negative value for numEvts_ results in all events being run over.
 
@@ -477,7 +515,7 @@ void BstdZeeFirstAnalyser::DoAnalysis(const Double_t evtWeight){
 		Long64_t dataTreeEntry = inputFile_tree_->LoadTree(evtIdx);
 		inputFile_tree_->GetEntry(dataTreeEntry);
 
-		if( (vFlg_>-2) && (evtIdx%5000==0) ){std::cout << " *** Event no. " << evtIdx << " reached." << std::endl;}
+		if( (vFlg_>-2) && (evtIdx%10000==0) ){std::cout << " *** Event no. " << evtIdx << " reached." << std::endl;}
 		//TODO - Put setting up of TLorentzVector 4 momenta here ...
 
 		//Analyse this data...
@@ -485,6 +523,7 @@ void BstdZeeFirstAnalyser::DoAnalysis(const Double_t evtWeight){
 	}
 
 	//Close the input file ...
+	inputFile->Close();
 
 	FinishOffAnalysis(); //Output file is opened in here ...
 }
@@ -518,16 +557,23 @@ void BstdZeeFirstAnalyser::AnalyseEvent(const Double_t eventWeight){
 	}
 
 	SetupEleClassVectors();
+
 	mcZboson_ = tsw::MCParticle(mcZ_pdgId_, mcZ_status_, -999, *mcZ_p4_ptr_);
+	//mcZboson_ = tsw::MCParticle();
+	//mcZ_daughterA_p4_.SetPxPyPzE(99999.9, 0.0, 0.0, 99999.9);
+	//mcZ_daughterB_p4_.SetPxPyPzE(99999.9, 0.0, 0.0, 99999.9);
 
 	if(vFlg_>0){PrintOutBranchVariables();}
 	normEles_ = OrderHEEPElesByEt(normEles_);
 	bstdEles_ = OrderHEEPElesByEt(bstdEles_);
 
+	SetupMuonCollection();
+
 	///////////////////////////////////////
 	// Now, can actually do some physics!
 
 	FillHistograms(eventWeight);
+	DoEMuAnalysis(eventWeight);
 }
 
 void BstdZeeFirstAnalyser::SetupEleClassVectors(){
@@ -687,6 +733,59 @@ void BstdZeeFirstAnalyser::SetupEleClassVectors(){
 
 }
 
+void BstdZeeFirstAnalyser::SetupMuonCollection(){
+	eventHelper_ = tsw::EventHelper(event_);
+
+	normMuons_ = eventHelper_.GetNormMuons();
+	if(vFlg_>0)
+		normMuons_.Print();
+
+	// Find two highest pT muons before ordering the collection by pT as a test of these methods ...
+	tsw::Muon highestPtMuon;
+	if(normMuons_.NumOfMuons()>0)
+		highestPtMuon = normMuons_.HighestPtMuon();
+	tsw::Muon secondHighestPtMuon;
+	if(normMuons_.NumOfMuons()>1)
+		secondHighestPtMuon = normMuons_.SecondHighestPtMuon();
+
+	if(vFlg_>0){
+		std::cout << "   ***-------------------------------------***" << std::endl;
+		std::cout << "   * (From BEFORE ordering muons by pT ... " << std::endl;
+		std::cout << "   * Highest pT muon: " << std::endl;
+		std::cout << "   *     (pT, eta, phi) = (" << highestPtMuon.pT() << ", " << highestPtMuon.eta() << ", " << highestPtMuon.phi() << std::endl;
+		std::cout << "   * 2nd highest pT muon" << std::endl;
+		std::cout << "   *     (pT, eta, phi) = (" << secondHighestPtMuon.pT() << ", " << secondHighestPtMuon.eta() << ", " << secondHighestPtMuon.phi() << std::endl;
+		std::cout << "   ***-------------------------------------***" << std::endl;
+	}
+	// Now, ordering the collection by pT, and then finding the two highest pT muons (to check that both methods => same result)...
+	normMuons_.OrderBypT();
+	if(normMuons_.NumOfMuons()>0)
+		highestPtMuon = normMuons_.HighestPtMuon();
+	if(normMuons_.NumOfMuons()>1)
+		secondHighestPtMuon = normMuons_.SecondHighestPtMuon();
+
+	if(vFlg_>0){
+		std::cout << "   ***-------------------------------------***" << std::endl;
+		std::cout << "   * (From AFTER ordering muons by pT ... " << std::endl;
+		std::cout << "   * Highest pT muon: " << std::endl;
+		std::cout << "   *     (pT, eta, phi) = (" << highestPtMuon.pT() << ", " << highestPtMuon.eta() << ", " << highestPtMuon.phi() << std::endl;
+		std::cout << "   * 2nd highest pT muon" << std::endl;
+		std::cout << "   *     (pT, eta, phi) = (" << secondHighestPtMuon.pT() << ", " << secondHighestPtMuon.eta() << ", " << secondHighestPtMuon.phi() << std::endl;
+		std::cout << "   ***-------------------------------------***" << std::endl;
+	}
+
+	//Now, applying the tight cuts to the muons, printing out the new collection, ordering it by (descending) pT, and then re-printing out the collection
+	if(vFlg_>0){
+		std::cout << "   ***---***---***---***---***---***---***---***" << std::endl;
+		std::cout << "   ***---***   (TIGHT CUTS APPLIED!)   ***---***" << std::endl;
+	}
+	normMuons_tight_ = normMuons_.GetTightMuons();
+
+	normMuons_tight_.OrderBypT();
+	if(vFlg_>0)
+		normMuons_tight_.Print();
+}
+
 void BstdZeeFirstAnalyser::PrintOutBranchVariables(){
 	//Printing the event information to screen ...
 	std::cout << "  ->Evt info (from event branch):"; event_->PrintBasicEventInformation();
@@ -822,7 +921,7 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 
 
 	//Open the output file ...
-	TFile f_histos(outputFile_name_,"RECREATE");
+	TFile f_histos(outputFile_name_+".root","RECREATE");
 	f_histos.Write();
 
 	//Save all of the histograms from analysis ...
@@ -830,6 +929,17 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 
 	//Close the output file ...
 	f_histos.Close();
+
+	// Open up eMu method files, save the appropriate tree, and then
+	TFile f_eleMuTree("eleMuTree/" + outputFile_name_ + "_sample.root","RECREATE");
+	eleMuTree_->Write();
+	f_eleMuTree.Close();
+	delete eleMuTree_;
+
+	TFile f_diEleTree("diEleTree/" + outputFile_name_ + "_sample.root","RECREATE");
+	diEleTree_->Write();
+	f_diEleTree.Close();
+	delete diEleTree_;
 }
 
 
@@ -894,6 +1004,10 @@ void BstdZeeFirstAnalyser::FillDiEleHistos(const Double_t weight){
 	//Currently a placeholder ...
 }
 void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight){
+
+	normDiEle_HEEPNoIso_exists_ = false;
+	normEles_HEEPNoIso_1stpT_exists_ = false;
+
 	//Currently a placeholder ...
 	//FillDiEleHistos(evtWeight);
 	unsigned int idx_highestEtEle = 0;
@@ -921,6 +1035,7 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight){
 				mcZboson_withinAcc_EEEE_Histos_.FillHistos(mcZboson_, mcZ_daughters_dR_, mcZ_daughters_dEta_, mcZ_daughters_dPhi_, mcZ_daughters_openingAngle_, evtWeight);
 		}
 	}
+
 	normEles_reconValidationHistos_.FillNumberElesHist(normGsfEles_number_ , evtWeight);
 	for(unsigned int iEle=0; iEle<normGsfEles_number_; iEle++){
 //		normEles_reconValidationHistos_.FillChargeHist(normGsfEles_charge_->at(iEle), weight);
@@ -984,6 +1099,13 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight){
 	//	bstdEles_reconValidationHistos_.FillHighestEtEleHistos( bstdEles_.at(idx_highestEtEle) );
 	bstdEles_HEEPCuts_reconValHistos_.FillHistos(bstdEles_, bstdEles_HEEPCutsFlags, evtWeight);
 
+
+	if(tsw::NumPassingCuts(normEles_HEEPCutsNoIsoFlags)>0){
+		std::vector<unsigned int> idxs_elesPassedCuts = IndicesOfElesPassingCuts(normEles_, normEles_HEEPCutsNoIsoFlags, 0);
+		normEles_HEEPNoIso_1stpT_ = normEles_.at( idxs_elesPassedCuts.at(0) );
+		normEles_HEEPNoIso_1stpT_exists_ = true;
+	}
+
 	/////////////////////////////////////////////////
 	// Form the di-electron pairs ...
 	tsw::HEEPDiEle normDiEle_AllHEEP;
@@ -999,7 +1121,11 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight){
 	}
 
 	if(tsw::NumPassingCuts(normEles_HEEPCutsNoIsoFlags)>1){
+		// Set some of the emu method diele tree branch variablles here ...
 		normDiEle_HEEPNoIso = tsw::HEEPDiEle::HEEPDiEle( normEles_, normEles_HEEPCutsNoIsoFlags );
+		normDiEle_HEEPNoIso_ = normDiEle_HEEPNoIso;
+		normDiEle_HEEPNoIso_exists_ =  true;
+
 		if(normDiEle_HEEPNoIso.isInZMassRange()){
 			normDiEle_HEEPNoIso_Histos_.FillHistos(normDiEle_HEEPNoIso, evtWeight);
 
@@ -1056,6 +1182,32 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight){
 
 			}
 		}
+	}
+}
+
+//--------------------------------------------------------//
+//---- Method for implementing emu analysis ...           //
+void BstdZeeFirstAnalyser::DoEMuAnalysis(const Double_t evtWeight){
+	//  Filling histograms with the properties of the highest pT muon (no cuts), and the highest pT tight Muon ...
+	if(normMuons_.NumOfMuons()>0)
+		normMuons_1stpT_Histos_.FillHistos( normMuons_.HighestPtMuon(), 1.0);
+	if(normMuons_tight_.NumOfMuons()>0)
+		normMuons_tight_1stpT_Histos_.FillHistos( normMuons_tight_.HighestPtMuon(), 1.0);
+
+	// Forming the emu object (IFF there is at least 1 HEEP non-isol electron, and at least one tight muon) ...
+	if(normMuons_tight_.NumOfMuons()>0 && normEles_HEEPNoIso_1stpT_exists_){
+		eleMu_HEEPNoIso_tight_ = tsw::EleMuObject(normEles_HEEPNoIso_1stpT_, normMuons_tight_.HighestPtMuon());
+		//Now, setting the bracnch variables, and adding a new event to the tree ...
+		eleMuTreeVar_mass_   = eleMu_HEEPNoIso_tight_.mass();
+		eleMuTreeVar_weight_ = evtWeight;
+		eleMuTree_->Fill();
+	}
+
+	//Settting the branch variables for the diEle tree - IFF a di-ele has been constructed ...
+	if(normDiEle_HEEPNoIso_exists_){
+		diEleTreeVar_mass_ = normDiEle_HEEPNoIso_.invMass();
+		diEleTreeVar_weight_ = evtWeight;
+		diEleTree_->Fill();
 	}
 }
 
@@ -1639,6 +1791,19 @@ void BstdZeeFirstAnalyser::SetupBranchLinks(const TFile* inFile_ptr){
 
 	std::cout << "   pointer links for branch read-out now set up." << std::endl;
 }
+
+//==============================================================
+void BstdZeeFirstAnalyser::SetupEMuMethodTrees(){
+	eleMuTree_ = new TTree("myTree","eleMu data");
+	eleMuTree_->Branch("mass",   &eleMuTreeVar_mass_,   "mass/D");
+	eleMuTree_->Branch("weight", &eleMuTreeVar_weight_, "weight/D");
+
+	diEleTree_ = new TTree("myTree","diEle data");
+	diEleTree_->Branch("mass",   &diEleTreeVar_mass_,   "mass/D");
+	diEleTree_->Branch("weight", &diEleTreeVar_weight_, "weight/D");
+}
+
+
 //-----------------------------------------------------------------------------------------//
 //----- Methods called by the destructor (i.e. deletion of heap-based objects)...     -----//
 //-----------------------------------------------------------------------------------------//
@@ -1677,7 +1842,7 @@ int main()
 		gROOT->ProcessLine("#include <vector>"); //Without this line, the std::vector<bool> branches are not linked correctly(???), giving 'dictionary for class...' errors
 				//upon running of ZEventAnalyser program, and accessing these branches results in nonsensical results (e.g. methods such as size()).
 
-		TString outFileTag = "2011-06-23";
+		/*TString outFileTag = "2011-06-23";
 		//TString myInputFileName  = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_4_1_4_patch2/src/NTupler/BstdZeeNTupler/sampleDataFile_NTuple-100evts_2011-Apr-24.root";
 		//TString myInputFileName  = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_4_1_4_patch2/src/NTupler/BstdZeeNTupler/sampleSignalmcFile_NTuple-100evts_2011-Apr-25.root";
 		//TString myInputFileName  = "/opt/ppd/scratch/williams/Data/samplemcFile_Fall10_NTuple_2011-Apr-25.root";
@@ -1691,7 +1856,7 @@ int main()
 		std::cout << "  ***-------------------------------***" << std::endl;
 		std::cout << "  *** Data analysis ...." << std::endl;
 		//BstdZeeFirstAnalyser myAnalyser(0, 2530516, false, myInputFileName, myOutputFileName, -1, 180, 120, 1200.0);
-		BstdZeeFirstAnalyser* myAnalyser = new BstdZeeFirstAnalyser(0, 20, true, "/home/ppd/nnd85574/Work/BstdZee/CMSSW_4_2_4_patch1/src/NTupler/BstdZeeNTupler/bkgdNTuple-42X_v0-Summer11.root", "testOutputHistos.root", 6, 180, 120, 1200.0);
+		BstdZeeFirstAnalyser* myAnalyser = new BstdZeeFirstAnalyser(0, 20, true, "/home/ppd/nnd85574/Work/BstdZee/CMSSW_4_2_4_patch1/src/NTupler/BstdZeeNTupler/testNTuple.root", "testOutputHistos.root", 6, 180, 120, 1200.0);
 		std::cout << " Running the DoAnalysis method ..." << std::endl;
 		myAnalyser->DoAnalysis( 1.0 ); //myAnalyser.DoAnalysis( 1.0*(2321000.0/2530516.0) );
 		delete myAnalyser;
@@ -1728,7 +1893,56 @@ int main()
 		std::cout << "  *** Signal analysis C ..." << std::endl;
 		//BstdZeeFirstAnalyser sigAnalyserC(0, 20000, true, sigInputFilename, sigOutputFilename, -1, 180, 30, 1800.0);
 		std::cout << " Running the DoAnalysis method ..." << std::endl;
-		//sigAnalyserC.DoAnalysis( 1.0 ); //sigAnalyserC.DoAnalysis( 1.0*(1.2/20000.0) );
+		//sigAnalyserC.DoAnalysis( 1.0 ); //sigAnalyserC.DoAnalysis( 1.0*(1.2/20000.0) );*/
+
+		TString inFilePrefix = "/home/ppd/nnd85574/Work/BstdZee/CMSSW_4_2_4_patch1/src/NTupler/BstdZeeNTupler/";
+		std::vector<BstdZeeFirstAnalyser> myAnalysers; myAnalysers.clear();
+		std::vector<TString> inFile; inFile.clear();
+		std::vector<TString> outFile; outFile.clear();
+		std::vector<unsigned int> nEvents; nEvents.clear();
+		std::vector<Double_t> intLumiPerEvent; intLumiPerEvent.clear();
+		Double_t desiredIntLumi = 0.001;
+
+		// ttbar
+		inFile.push_back("ttbarNTuple_2011-07-14.root");
+		outFile.push_back("ttbarOutput_2011-07-14");
+		nEvents.push_back( 5 );
+		intLumiPerEvent.push_back(11.6/1090000.0); // in inv fb
+
+		// DYToTauTau
+		inFile.push_back("DYToTauTauNTuple_2011-07-14.root");
+		outFile.push_back("DYToTauTauOutput_2011-07-14");
+		nEvents.push_back( 5 );
+		intLumiPerEvent.push_back( 1.6/2032536.0 ); // in inv fb
+
+		// data fake A - ttbar
+		inFile.push_back("dataFakeANTuple_2011-07-14.root");
+		outFile.push_back("dataFakeAOutput_2011-07-14");
+		nEvents.push_back(5);
+		intLumiPerEvent.push_back( 11.6/1090000.0 ); // in inv fb
+
+		// data fake B - DYToTauTau
+		inFile.push_back("dataFakeBNTuple_2011-07-14.root");
+		outFile.push_back("dataFakeBOutput_2011-07-14");
+		nEvents.push_back( 9000 );
+		intLumiPerEvent.push_back( 1.6/2032536.0 ); // in inv fb
+
+
+		// Doing the analysis ...
+		for(unsigned int idx=0; idx<inFile.size(); idx++){
+			//TStopwatch watch;
+			//watch.Start();
+			std::cout << std::endl << "***--- NEW FILE (no " << idx+1 << "/" << inFile.size() << ") ---***" << std::endl;
+			std::cout << " * Input:  " << inFile.at(idx) << std::endl;
+			std::cout << " * Output: " << outFile.at(idx) << std::endl;
+			BstdZeeFirstAnalyser myAnalysers = BstdZeeFirstAnalyser(0, nEvents.at(idx), true, inFilePrefix+inFile.at(idx), outFile.at(idx), -1, 180, 120, 1200.0);
+			std::cout << " Running the DoAnalysis method ..." << std::endl;
+			myAnalysers.DoAnalysis(  desiredIntLumi/( static_cast<double>(nEvents.at(idx))*intLumiPerEvent.at(idx))  ); //myAnalyser.DoAnalysis( 1.0*(2321000.0/2530516.0) );
+
+			//watch.Stop();
+			//std::cout << " * " << nEvents.at(idx) << " events analysed in " << watch.Print() << " seconds." << std::endl;
+			//delete myAnalysers.at(idx);
+		}
 
 		/*for(unsigned int i=0; i<sigInputFilenames.size()-1; i++){
 			std::cout << std::endl << std::endl;
