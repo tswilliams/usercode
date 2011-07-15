@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.3 2011/07/06 13:13:16 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.1 2011/07/06 17:02:58 tsw Exp $
 //
 //
 
@@ -39,6 +39,10 @@ sjlkd
 
 //...in order to use the heep::Ele class ...
 #include "SHarper/HEEPAnalyzer/interface/HEEPEle.h"
+
+//...for accessing the tevMuons and their cocktail tracks ...
+#include <DataFormats/MuonReco/interface/Muon.h>
+#include "DataFormats/MuonReco/interface/MuonCocktails.h"
 
 //...for accessing the HLT configuration & trigger decisions
 #include <HLTrigger/HLTcore/interface/HLTConfigProvider.h>
@@ -77,6 +81,7 @@ sjlkd
 
 #include "NTupler/BstdZeeNTupler/interface/tswHEEPEle.h"
 #include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
+#include "NTupler/BstdZeeNTupler/interface/tswMuStruct.h"
 #include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
 
 #pragma link C++ class std::vector< tsw::HEEPEle >+;
@@ -122,10 +127,13 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 
 		//For reading the event information into the member variables...
 		void ReadInEvtInfo(bool, const edm::Event&);
-		
+
 		//For reading the electron information into the member variables...
 		void ReadInNormGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&);
 		void ReadInBstdGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&);
+
+		//For reading in the muon information, and dumping it into tsw::Event class ...
+		void ReadInMuons(bool, const edm::Event&);
 
 		//For calculating kinematic parameters...
 		void SetMCZcandidateVariables(bool);
@@ -528,6 +536,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	//Handles, and grabbing various CMSSW-specific data types from event...
 	Handle<reco::GenParticleCollection> genParticles;
 	edm::Handle<reco::GsfElectronCollection> normGsfElesH, bstdGsfElesH;
+
 	if(mcFlag_)
 		iEvent.getByLabel("genParticles", genParticles);
 	
@@ -564,6 +573,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	if(readInBstdReco_)
 		ReadInBstdGsfEles(vBool_, bstdGsfElesH);
 
+	ReadInMuons(vBool_, iEvent);
 
 	Int_t zBosonDaughter_PDGid = 0;
 	if(mcFlag_){
@@ -1204,14 +1214,14 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 
 	mcZboson_pdgId_  = -999; // Int_t
 	mcZboson_status_ = -999; // Int_t
-	mcZboson_p4_.SetPxPyPzE(0.0,0.0,0.0,-999.9);
+	mcZboson_p4_.SetPxPyPzE(99999.9,0.0,0.0,99999.9);
 	mcZboson_numDaughters_ = -999;
 	mcZboson_daughters_dR_   = -999.9;
 	mcZboson_daughters_dEta_ = -999.9;
 	mcZboson_daughters_dPhi_ = -999.9;
 	mcZboson_daughters_openingAngle_  = -999.9;
-	mcZboson_daughterA_p4_.SetPxPyPzE(0.0,0.0,0.0,-999.9);
-	mcZboson_daughterB_p4_.SetPxPyPzE(0.0,0.0,0.0,-999.9);
+	mcZboson_daughterA_p4_.SetPxPyPzE(99999.9,0.0,0.0,99999.9);
+	mcZboson_daughterB_p4_.SetPxPyPzE(99999.9,0.0,0.0,99999.9);
 
 	//Clearing contents of standard GSF electron vectors...
 	normGsfEles_number_ = 0;
@@ -1925,6 +1935,138 @@ void BstdZeeNTupler::ReadInBstdGsfEles(bool beVerbose, const edm::Handle<reco::G
 		}
 	}
 	
+}
+
+//----------------------------------------------------------------------------------------------------
+//-------- Method for reading in the muon information, and dumping it into tsw::Event class ----------
+void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
+	// Declarations ...
+	edm::Handle <reco::TrackToTrackMap> tevMapH1, tevMapH2, tevMapH3;
+	edm::Handle<reco::MuonCollection> MuCollection;
+	//edm::Handle<reco::MuonCollection> refitMuonCollnH;
+	std::string MuonTags_ = "muons"; // It is suggested at the start of the "Available information" section of the "WorkBookMuonAnalysis" TWiki page
+												// that the vector<reco::Muon> with label "muons" should be used for the high-pT muons (along with other global muons, as well as the stand-alone and tracker muons).
+	reco::MuonCollection::const_iterator imuon;
+	//edm::View<reco::Muon>::const_iterator imuon;
+
+	//Getting the TrackToTrackMap's that link the refitted tracks to the corresponding global muon
+	/*edmEvent.getByLabel("tevMuons", "default", tevMapH1);
+	const reco::TrackToTrackMap tevMap1 = *(tevMapH1.product());
+	edmEvent.getByLabel("tevMuons", "firstHit", tevMapH2);
+	const reco::TrackToTrackMap tevMap2 = *(tevMapH2.product());
+	edmEvent.getByLabel("tevMuons", "picky", tevMapH3);
+	const reco::TrackToTrackMap tevMap3 = *(tevMapH3.product());*/
+	edmEvent.getByLabel(MuonTags_, MuCollection);
+	const reco::MuonCollection muonC = *(MuCollection.product());
+
+	//edmEvent.getByLabel("refitMuons", refitMuonCollnH);
+	//const reco::MuonCollection refitMuonColln = *(refitMuonCollnH.product());
+
+	/*// Running over the cocktail muons from the refitMuon module ...
+	std::cout << " ->There are " << refitMuonColln.size() << " refit muons in this event." << std::endl;
+	for(imuon = refitMuonColln.begin(); imuon != refitMuonColln.end(); ++imuon){
+		std::cout << "     Ctail refit muon ...: charge=" << imuon->charge() << "; isGlobalMuon()=" << imuon->isGlobalMuon() << "; isTrackerMuon=" << imuon->isTrackerMuon() << "isStandAloneMuon=" << imuon->isStandAloneMuon() << std::endl;
+		std::cout << "            global/ctail trk (pT, eta, phi) = (" << imuon->globalTrack()->pt() << ", " << imuon->globalTrack()->eta() << ", " << imuon->globalTrack()->phi() << ")" << std::endl;
+		std::cout << "            global/ctail trk charge = " << imuon->globalTrack()->charge() << std::endl;
+	}*/
+
+	// Running over the muons in the collection ...
+	if(beVerbose){std::cout << " ->There are " << muonC.size() << " muons in this event." << std::endl;}
+	for(imuon = muonC.begin(); imuon != muonC.end(); ++imuon){
+		tsw::MuStruct ithMuon;
+
+		//General muon information ...
+		ithMuon.p4                 = imuon->p4();
+		ithMuon.charge             = imuon->charge();
+		ithMuon.isGlobalMuon       = imuon->isGlobalMuon();
+		ithMuon.isTrackerMuon      = imuon->isTrackerMuon();
+		ithMuon.isStandAloneMuon   = imuon->isStandAloneMuon();
+		ithMuon.numMatchedMuonStns = imuon->numberOfMatchedStations();
+		ithMuon.isolR03_sumPt      = imuon->isolationR03().sumPt;
+		// N.B. The track method is not used below since it just returns the inner track - i.e. it just returns the output of the innerTrack() method
+
+		// Global track information ...
+		if(imuon->globalTrack().get()!=0){
+			ithMuon.globTrk_exists = true;
+			ithMuon.globTrk_pT            = imuon->globalTrack()->pt();
+			ithMuon.globTrk_eta           = imuon->globalTrack()->eta();
+			ithMuon.globTrk_phi           = imuon->globalTrack()->phi();
+			ithMuon.globTrk_charge        = imuon->globalTrack()->charge();
+			ithMuon.globTrk_numberOfValidMuonHits = imuon->globalTrack()->hitPattern().numberOfValidMuonHits();
+			ithMuon.globTrk_normalisedChi2 = imuon->globalTrack()->normalizedChi2();
+		}
+		else
+			ithMuon.globTrk_exists = false;
+
+		// Inner track information ...
+		if(imuon->innerTrack().get()!=0){
+			ithMuon.inTrk_exists = true;
+			ithMuon.inTrk_pT               = imuon->innerTrack()->pt();
+			ithMuon.inTrk_eta              = imuon->innerTrack()->eta();
+			ithMuon.inTrk_phi              = imuon->innerTrack()->phi();
+			ithMuon.inTrk_charge           = imuon->innerTrack()->charge();
+			ithMuon.inTrk_numValidPixHits  = imuon->innerTrack()->hitPattern().numberOfValidPixelHits();
+			ithMuon.inTrk_numValidTrkrHits = imuon->innerTrack()->hitPattern().numberOfValidTrackerHits();
+			ithMuon.inTrk_dxyVsOrigin      = imuon->innerTrack()->dxy(); // Really, this should be calculated as innerTrack()->dxy(vertex->position()), but no vertex information is read in at the moment, and MuonRecoPerformance2010 TWiki page => Can calculate this approximately just relative to (0,0,0)
+		}
+		else
+			ithMuon.inTrk_exists = false;
+
+		// Outer track information ...
+		if(imuon->outerTrack().get()!=0){
+			ithMuon.outTrk_exists = true;
+			ithMuon.outTrk_pT     = imuon->outerTrack()->pt();
+			ithMuon.outTrk_eta    = imuon->outerTrack()->eta();
+			ithMuon.outTrk_phi    = imuon->outerTrack()->phi();
+			ithMuon.outTrk_charge = imuon->outerTrack()->charge();
+		}
+		else
+			ithMuon.outTrk_exists = false;
+
+		//Printing this information to screen (if desired) ...
+		if(beVerbose){
+			//General muon information ...
+			std::cout << "     Muon ...: charge=" << ithMuon.charge << std::endl;
+			std::cout << "         p=" << ithMuon.p4.P() << "; (pT, eta, phi) = " << ithMuon.p4.pt() << ", " << ithMuon.p4.eta() << ", " << ithMuon.p4.phi() << ")" << std::endl;
+			std::cout << "         is{Global,Tracker,StandAlone}Muon = {" << ithMuon.isGlobalMuon << ", " << ithMuon.isTrackerMuon << ", " << ithMuon.isStandAloneMuon << "}" << std::endl;
+			std::cout << "         numberOfMatchedMuonStations = " << ithMuon.numMatchedMuonStns << std::endl;
+			std::cout << "         isolationR03().sumPt = " << ithMuon.isolR03_sumPt << std::endl;
+			// N.B. No use of the track method since it just returns the inner track - i.e. it just returns the output of the innerTrack() method
+
+			// Global track information ...
+			std::cout << "        *GlobTrk:  " << std::endl;
+			if(ithMuon.globTrk_exists){
+				std::cout << "            (pT, eta, phi) = (" << ithMuon.globTrk_pT << ", " << ithMuon.globTrk_eta << ", " << ithMuon.globTrk_phi << "); charge=" << ithMuon.globTrk_charge << std::endl;
+				std::cout << "            numberOfValidMuonHits=" << ithMuon.globTrk_numberOfValidMuonHits << "; normalizedChi2=" << ithMuon.globTrk_normalisedChi2 << std::endl;
+			}
+			else
+				std::cout << "            *** globalTrack() method => NULL pointer. ***" << std::endl;
+
+			// Inner track information ...
+			std::cout << "        *InnerTrk: " << std::endl;
+			if(ithMuon.inTrk_exists){
+				std::cout << "            (pT, eta, phi) = (" << ithMuon.inTrk_pT << ", " << ithMuon.inTrk_eta << ", " << ithMuon.inTrk_phi  << "); charge=" << ithMuon.inTrk_charge << std::endl;
+				std::cout << "            NumPixHits=" << ithMuon.inTrk_numValidPixHits << "; Num hits in trkr=" << ithMuon.inTrk_numValidTrkrHits << std::endl;
+				std::cout << "            d_xy rel to origin = " << ithMuon.inTrk_dxyVsOrigin << std::endl; // Really, this should be calculated as innerTrack()->dxy(vertex->position()), but no vertex information is read in at the moment, and MuonRecoPerformance2010 TWiki page => Can calculate this approximately just relative to (0,0,0)
+			}
+			else
+				std::cout << "            *** innerTrack() method => NULL pointer. ***" << std::endl;
+
+			// Outer track information ...
+			std::cout << "        *OuterTrk:" << std::endl;
+			if(ithMuon.outTrk_exists){
+				std::cout << "            (pT, eta, phi) = (" << ithMuon.outTrk_pT  << ", " << ithMuon.outTrk_eta << ", " << ithMuon.outTrk_phi << ")" << std::endl;
+				std::cout << "            charge=" << ithMuon.outTrk_charge << std::endl;
+			}
+			else
+				std::cout << "            *** outerTrack() method => NULL pointer. ***" << std::endl;
+		}
+
+		// And finally, adding this information to muon vectors in tsw::Event branch ...
+		event_->AddNormMuon( &ithMuon );
+
+	}
+
 }
 
 //----------------------------------------------------------------------------------------------------
