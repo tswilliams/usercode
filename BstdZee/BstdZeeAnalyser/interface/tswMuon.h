@@ -119,6 +119,8 @@ namespace tsw{
 	bool Muon::isTightMuon(){
 		bool passFailFlag = true;
 
+		passFailFlag = passFailFlag && ( fabs(eta())<1.442 );
+		passFailFlag = passFailFlag && ( pT()>35.0 );
 		passFailFlag = passFailFlag && isGlobalMuon();
 		passFailFlag = passFailFlag && ( glob_normalisedChi2()<10 );
 		passFailFlag = passFailFlag && ( glob_numValidMuonHits()>0 );
