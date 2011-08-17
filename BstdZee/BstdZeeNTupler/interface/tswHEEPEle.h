@@ -66,6 +66,15 @@ namespace tsw{
 //			float pCalo(){return eleStr_.pCalo_;}
 			float ptVtx(){return eleStr_.ptVtx_;}
 			float ptCalo(){return eleStr_.ptCalo_;}
+		  	float closestCtfTrk_pt(){return eleStr_.closestCtfTrk_pt_;}
+		  	float closestCtfTrk_eta(){return eleStr_.closestCtfTrk_eta_;}
+		  	float closestCtfTrk_phi(){return eleStr_.closestCtfTrk_phi_;}
+		  	float closestCtfTrk_innerPt(){return eleStr_.closestCtfTrk_innerPt_;}
+		  	float closestCtfTrk_innerEta(){return eleStr_.closestCtfTrk_innerEta_;}
+		  	float closestCtfTrk_innerPhi(){return eleStr_.closestCtfTrk_innerPhi_;}
+		  	float closestCtfTrk_outerPt(){return eleStr_.closestCtfTrk_outerPt_;}
+		  	float closestCtfTrk_outerEta(){return eleStr_.closestCtfTrk_outerEta_;}
+		  	float closestCtfTrk_outerPhi(){return eleStr_.closestCtfTrk_outerPhi_;}
 
 			// Various other variables ...
 			float hOverE(){return eleStr_.hOverE_;}
@@ -147,6 +156,9 @@ namespace tsw{
 //		std::cout << "; pCalo=" << pCalo();
 		std::cout << "       ptVtx=" << ptVtx();
 		std::cout << "; ptCalo=" << ptCalo() << std::endl;
+		std::cout << "       closestCtfTrk... (pt,eta,phi)=(" << closestCtfTrk_pt() << ", " << closestCtfTrk_eta() << ", " << closestCtfTrk_phi() << ")" << std::endl;
+		std::cout << "          ... inner:    (pt,eta,phi)=(" << closestCtfTrk_innerPt() << ", " << closestCtfTrk_innerEta() << ", " << closestCtfTrk_innerPhi() << ")" << std::endl;
+		std::cout << "          ... outer:    (pt,eta,phi)=(" << closestCtfTrk_outerPt() << ", " << closestCtfTrk_outerEta() << ", " << closestCtfTrk_outerPhi() << ")" << std::endl;
 
 		// Various other methods ...
 		std::cout << "         -=-=-" << std::endl;
