@@ -66,6 +66,12 @@ namespace tsw{
 //			float pCalo(){return eleStr_.pCalo_;}
 			float ptVtx(){return eleStr_.ptVtx_;}
 			float ptCalo(){return eleStr_.ptCalo_;}
+			bool  closestCtfTrk_exists(){
+				if( (closestCtfTrk_pt()<-0.1 && closestCtfTrk_innerPt()<-0.1) && closestCtfTrk_outerPt()<-0.1)
+					return false;
+				else
+					return true;
+			}
 		  	float closestCtfTrk_pt(){return eleStr_.closestCtfTrk_pt_;}
 		  	float closestCtfTrk_eta(){return eleStr_.closestCtfTrk_eta_;}
 		  	float closestCtfTrk_phi(){return eleStr_.closestCtfTrk_phi_;}
