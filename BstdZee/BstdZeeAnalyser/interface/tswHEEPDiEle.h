@@ -14,7 +14,7 @@ namespace tsw{
 
 			//Methods that return properties of the di-electron pair ...
 			TLorentzVector totalP4(){return (eleA_.p4() + eleB_.p4());}
-			float et(){return totalP4().Pt();}
+			float pT(){return totalP4().Pt();}
 			float invMass(){return totalP4().M();}
 			float openingAngle(){return eleA_.p4().Angle(eleB_.p4().Vect());};
 			float deltaEta(){return eleB_.eta() - eleA_.eta();};
@@ -23,12 +23,40 @@ namespace tsw{
 			float scDeltaPhi(){return eleB_.scPhi() - eleA_.scPhi();};
 			float deltaR(){return sqrt( pow(deltaEta(), 2.0) + pow(deltaPhi(),2.0) ); };
 
+			bool isEBEB(){
+				if( eleA_.isEB() && eleB_.isEB() )
+					return true;
+				else
+					return false;
+			}
+			bool isEBEE(){
+				if( eleA_.isEB() && eleB_.isEE() )
+					return true;
+				else if( eleA_.isEE() && eleB_.isEB() )
+					return true;
+				else
+					return false;
+			}
+			bool isEEEE(){
+				if( eleA_.isEE() && eleB_.isEE() )
+					return true;
+				else
+					return false;
+			}
+
 			bool isInZMassRange(){
 				if( invMass()<120 && invMass()>60)
 					return true;
 				else
 					return false;
 			}
+
+			//Methods that apply the modified track & EmHad1 isolation HEEP cuts ...
+			bool ApplyDiEleTrkIsolCut();
+//			bool ApplyDiEleEmHad1IsolCut();
+//			bool ApplyDiEleHEEPIsolCuts(){
+//				return ( ApplyDiEleTrkIsolCut() && ApplyDiEleEmHad1IsolCut() );
+//			}
 
 			//Methods that return the electrons ...
 			tsw::HEEPEle eleA(){return eleA_;}
@@ -72,17 +100,61 @@ namespace tsw{
 		//PrintOutInfo();
 	}
 
+	//-------------------------------------------------------------------***
+	//Methods that apply the modified track & EmHad1 isolation HEEP cuts ...
+	bool HEEPDiEle::ApplyDiEleTrkIsolCut(){
+//		std::cout << "      **Applying the di-electron modified HEEP tracker isolation cut ...:" << std::endl;
+		double eleA_isolPtTrks = eleA().isolPtTrks();
+		bool eleA_cutFlag = false;
+		double eleB_isolPtTrks = eleB().isolPtTrks();
+		bool eleB_cutFlag = false;
+
+//		std::cout << "      ** isolPtTrks..." << std::endl;
+//		std::cout << "      **     Initial values...  eleA: " << eleA_isolPtTrks << ", eleB: " << eleB_isolPtTrks << std::endl;
+		// If deltaR for the di-electron is < 0.3, then the two electrons lie in each other's isolation cone, ...
+		// and so remove the other electron's track pT from that electron ...
+		if(deltaR()<0.3){
+			eleA_isolPtTrks -= eleB().ptCalo(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
+			eleB_isolPtTrks -= eleA().ptCalo(); //eleB_isolPtTrks -= eleA().gsfP4().Pt();
+//			std::cout << "                       << isolPtTrks values have been modified!! >>" << std::endl;
+		}
+//		std::cout << "      **     Modified values... eleA: " << eleA_isolPtTrks << ", eleB: " << eleB_isolPtTrks << std::endl;
+
+		// Now, apply the HEEP track pT isolation cuts to the modified isolPtTrks values ...
+		if( eleA().isHEEPEB() && (eleA_isolPtTrks<7.5) )
+			eleA_cutFlag = true;
+		else if( eleA().isHEEPEE() && (eleA_isolPtTrks<15.0) )
+			eleA_cutFlag = true;
+		else
+			eleA_cutFlag = false;
+//		std::cout << "      ** Applying HEEP cut to electron A => " << eleA_cutFlag << std::endl;
+
+		if( eleB().isHEEPEB() && (eleB_isolPtTrks<7.5) )
+			eleB_cutFlag = true;
+		else if( eleB().isHEEPEE() && (eleB_isolPtTrks<15.0) )
+			eleB_cutFlag = true;
+		else
+			eleB_cutFlag = false;
+//		std::cout << "      ** Applying HEEP cut to electron B => " << eleB_cutFlag << std::endl;
+
+//		std::cout << "      ** Value returned = " << (eleA_cutFlag && eleB_cutFlag) << std::endl;
+		return (eleA_cutFlag && eleB_cutFlag);
+	}
+	//bool HEEPDiEle::ApplyDiEleEmHad1IsolCut();
+
 	void HEEPDiEle::PrintOutInfo(){
 		std::cout << "  *** Di-electron information: " << std::endl;
 		std::cout << "          p4,E=" << totalP4().E() << "; p4,p=(" << totalP4().Px() << ", " << totalP4().Py() << ", " <<totalP4().Pz() << ")" << std::endl;
-		std::cout << "          et=" << et() << "; mass=" << invMass() << "; opening angle = " << openingAngle() << std::endl;
+		std::cout << "          pT=" << pT() << "; mass=" << invMass() << "; opening angle = " << openingAngle() << std::endl;
 		std::cout << "          deltaEta=" << deltaEta() << "; deltaPhi=" << deltaPhi() << "; deltaR=" << deltaR() << std::endl;
 		std::cout << "        EleA:" << std::endl;
 		std::cout << "          p4,E=" << eleA_.p4().E() << "; p4,p=(" << eleA_.p4().Px() << ", " << eleA_.p4().Py() << ", " << eleA_.p4().Pz() << std::endl;
 		std::cout << "          et=" << eleA_.et() << "; energy=" << eleA_.energy() << "; eta=" << eleA_.eta() << "; phi=" << eleA_.phi() << std::endl;
+		std::cout << "          ptVtx=" << eleA_.ptVtx() << "; ptCalo=" << eleA_.ptCalo() << std::endl;
 		std::cout << "        EleB:" << std::endl;
 		std::cout << "          p4,E=" << eleB_.p4().E() << "; p4,p=(" << eleB_.p4().Px() << ", " << eleB_.p4().Py() << ", " << eleB_.p4().Pz() << std::endl;
 		std::cout << "          et=" << eleB_.et() << "; energy=" << eleB_.energy() << "; eta=" << eleB_.eta() << "; phi=" << eleB_.phi() << std::endl;
+		std::cout << "          ptVtx=" << eleB_.ptVtx() << "; ptCalo=" << eleB_.ptCalo() << std::endl;
 
 	}
 
