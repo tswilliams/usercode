@@ -1615,15 +1615,29 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		normHEEPEles_pCalo_.push_back(    ithHEEPEle.pCalo() );
 		normHEEPEles_ptVtx_.push_back(    ithHEEPEle.ptVtx() );
 		normHEEPEles_ptCalo_.push_back(   ithHEEPEle.ptCalo() );
-		normHEEPEles_closestCtfTrk_pt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->pt() );
-		normHEEPEles_closestCtfTrk_eta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->eta() );
-		normHEEPEles_closestCtfTrk_phi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->phi() );
-		normHEEPEles_closestCtfTrk_innerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Rho() );
-		normHEEPEles_closestCtfTrk_innerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Eta() );
-		normHEEPEles_closestCtfTrk_innerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Phi() );
-		normHEEPEles_closestCtfTrk_outerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPt() );
-		normHEEPEles_closestCtfTrk_outerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerEta() );
-		normHEEPEles_closestCtfTrk_outerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPhi() );
+		if(ithHEEPEle.gsfEle().closestCtfTrackRef().get()==0){
+			std::cout << std::endl << "    ***** closestCtfTrackRef is NULL *****" << std::endl << std::endl;
+			normHEEPEles_closestCtfTrk_pt_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_eta_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_phi_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_innerPt_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_innerEta_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_innerPhi_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_outerPt_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_outerEta_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_outerPhi_.push_back( -999.9 );
+		}
+		else{
+			normHEEPEles_closestCtfTrk_pt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->pt() );
+			normHEEPEles_closestCtfTrk_eta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->eta() );
+			normHEEPEles_closestCtfTrk_phi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->phi() );
+			normHEEPEles_closestCtfTrk_innerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Rho() );
+			normHEEPEles_closestCtfTrk_innerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Eta() );
+			normHEEPEles_closestCtfTrk_innerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Phi() );
+			normHEEPEles_closestCtfTrk_outerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPt() );
+			normHEEPEles_closestCtfTrk_outerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerEta() );
+			normHEEPEles_closestCtfTrk_outerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPhi() );
+		}
 
 		//Variables storing the heep::Ele method values ...
 		normHEEPEles_hOverE_.push_back(      ithHEEPEle.hOverE() );
