@@ -234,6 +234,15 @@ class BstdZeeFirstAnalyser{
 		std::vector<float>* normHEEPEles_pCalo_;
 		std::vector<float>* normHEEPEles_ptVtx_;
 		std::vector<float>* normHEEPEles_ptCalo_;
+		std::vector<float>* normHEEPEles_closestCtfTrk_pt_;
+		std::vector<float>* normHEEPEles_closestCtfTrk_eta_;
+		std::vector<float>* normHEEPEles_closestCtfTrk_phi_;
+		std::vector<float>* normHEEPEles_closestCtfTrk_innerPt_;
+		std::vector<float>* normHEEPEles_closestCtfTrk_innerEta_;
+		std::vector<float>* normHEEPEles_closestCtfTrk_innerPhi_;
+		std::vector<float>* normHEEPEles_closestCtfTrk_outerPt_;
+		std::vector<float>* normHEEPEles_closestCtfTrk_outerEta_;
+		std::vector<float>* normHEEPEles_closestCtfTrk_outerPhi_;
 
 		//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
 		std::vector<float>* normHEEPEles_hOverE_;
@@ -735,6 +744,15 @@ void BstdZeeFirstAnalyser::SetupEleClassVectors(){
 //		ithEleStruct.pCalo_ = normHEEPEles_pCalo_->at(iEle);
 		ithEleStruct.ptVtx_ = normHEEPEles_ptVtx_->at(iEle);
 		ithEleStruct.ptCalo_ = normHEEPEles_ptCalo_->at(iEle);
+		ithEleStruct.closestCtfTrk_pt_  = normHEEPEles_closestCtfTrk_pt_->at(iEle);
+		ithEleStruct.closestCtfTrk_eta_ = normHEEPEles_closestCtfTrk_eta_->at(iEle);
+		ithEleStruct.closestCtfTrk_phi_ = normHEEPEles_closestCtfTrk_phi_->at(iEle);
+		ithEleStruct.closestCtfTrk_innerPt_  = normHEEPEles_closestCtfTrk_innerPt_->at(iEle);
+		ithEleStruct.closestCtfTrk_innerEta_ = normHEEPEles_closestCtfTrk_innerEta_->at(iEle);
+		ithEleStruct.closestCtfTrk_innerPhi_ = normHEEPEles_closestCtfTrk_innerPhi_->at(iEle);
+		ithEleStruct.closestCtfTrk_outerPt_  = normHEEPEles_closestCtfTrk_outerPt_->at(iEle);
+		ithEleStruct.closestCtfTrk_outerEta_ = normHEEPEles_closestCtfTrk_outerEta_->at(iEle);
+		ithEleStruct.closestCtfTrk_outerPhi_ = normHEEPEles_closestCtfTrk_outerPhi_->at(iEle);
 
 		//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
 		ithEleStruct.hOverE_ = normHEEPEles_hOverE_->at(iEle);
@@ -939,7 +957,7 @@ void BstdZeeFirstAnalyser::PrintOutBranchVariables(){
 
 	std::cout << "  ->*** Reconstructed particle information ... ***" << std::endl;
 	//Printing the information from the 'normal' GSF electron branches to screen ...
-	std::cout << "  ->There are " << normGsfEles_number_ << "=" << normGsfEles_charge_->size() << "=" << normGsfEles_OLDp4_->size() << "=" << normGsfEles_HEEP_Et_->size() << "=" << normGsfEles_ecalDriven_->size() << "?? 'normal' GSF electrons in this event." << std::endl;
+//	std::cout << "  ->There are " << normGsfEles_number_ << "=" << normGsfEles_charge_->size() << "=" << normGsfEles_OLDp4_->size() << "=" << normGsfEles_HEEP_Et_->size() << "=" << normGsfEles_ecalDriven_->size() << "?? 'normal' GSF electrons in this event." << std::endl;
 	if(normGsfEles_number_!=normEles_.size()){
 		std::cout << "         ***--------------------------------------------------------***" << std::endl;
 		std::cout << "         ***  ERROR: normGsfEles_number_ does NOT equal normEles_.size()" << std::endl;
@@ -949,40 +967,40 @@ void BstdZeeFirstAnalyser::PrintOutBranchVariables(){
 		std::cout << "     normEles_.size()=" << normEles_.size() << std::endl;
 
 	for(unsigned int iEle = 0; iEle < normGsfEles_number_; iEle++){
-		std::cout << "    ->Normal GSF ele no. " << iEle << ":";
-		std::cout << " Charge = " << normGsfEles_charge_->at(iEle) << std::endl;
-
-		std::cout << "       p4: Px=" << normGsfEles_OLDp4_->at(iEle).Px() << "; Py=" << normGsfEles_OLDp4_->at(iEle).Py() << "; Pz=" << normGsfEles_OLDp4_->at(iEle).Pz() << std::endl;
-		std::cout << "           Px=" << normGsfEles_p4_.at(iEle).Px() << "; Py="  << normGsfEles_p4_.at(iEle).Py()  << "; Pz="  << normGsfEles_p4_.at(iEle).Pz() << std::endl;
-		std::cout << "           Pt=" << normGsfEles_p4_.at(iEle).Pt() << "; Eta=" << normGsfEles_p4_.at(iEle).Eta() << "; Phi=" << normGsfEles_p4_.at(iEle).Phi() << std::endl;
-
-		std::cout << "       Et=" << normGsfEles_Et_->at(iEle);
-		std::cout << "; HEEP_Et=" << normGsfEles_HEEP_Et_->at(iEle) << std::endl;
-		std::cout << "       Eta=" << normGsfEles_Eta_->at(iEle);
-		std::cout << "; scEta=" << normGsfEles_scEta_->at(iEle) << std::endl;
-		std::cout << "       ecalDriven=" << normGsfEles_ecalDriven_->at(iEle);
-		std::cout << "; ecalDrivenSeed=" << normGsfEles_ecalDrivenSeed_->at(iEle) << std::endl;
-
-		std::cout << "       HEEP_dEtaIn=" << normGsfEles_HEEP_dEtaIn_->at(iEle);
-		std::cout << "; HEEP_dPhiIn=" << normGsfEles_HEEP_dPhiIn_->at(iEle) << std::endl;
-		std::cout << "       HoverE=" << normGsfEles_HoverE_->at(iEle);
-		std::cout << "; sigmaIetaIeta=" << normGsfEles_sigmaIetaIeta_->at(iEle);
-		std::cout << "; scSigmaIetaIeta=" << normGsfEles_scSigmaIetaIeta_->at(iEle) << std::endl;
-
-		std::cout << "       dr03EmIsoEt=" << normGsfEles_dr03EmIsoEt_->at(iEle);
-		std::cout << "; dr03HadDepth1IsoEt=" << normGsfEles_dr03HadDepth1IsoEt_->at(iEle) << std::endl;
-		std::cout << "       dr03HadDepth2IsoEt=" << normGsfEles_dr03HadDepth2IsoEt_->at(iEle);
-		std::cout << "; dr03TkIsoPt=" << normGsfEles_dr03TkIsoPt_->at(iEle) << std::endl;
-
-		std::cout << "       e2x5Max=" << normGsfEles_e2x5Max_->at(iEle);
-		std::cout << "; e5x5=" << normGsfEles_e5x5_->at(iEle) << std::endl;
+		std::cout << "    ->Normal GSF ele no. " << iEle << ":" << std::endl;
+//		std::cout << " Charge = " << normGsfEles_charge_->at(iEle) << std::endl;
+//
+//		std::cout << "       p4: Px=" << normGsfEles_OLDp4_->at(iEle).Px() << "; Py=" << normGsfEles_OLDp4_->at(iEle).Py() << "; Pz=" << normGsfEles_OLDp4_->at(iEle).Pz() << std::endl;
+//		std::cout << "           Px=" << normGsfEles_p4_.at(iEle).Px() << "; Py="  << normGsfEles_p4_.at(iEle).Py()  << "; Pz="  << normGsfEles_p4_.at(iEle).Pz() << std::endl;
+//		std::cout << "           Pt=" << normGsfEles_p4_.at(iEle).Pt() << "; Eta=" << normGsfEles_p4_.at(iEle).Eta() << "; Phi=" << normGsfEles_p4_.at(iEle).Phi() << std::endl;
+//
+//		std::cout << "       Et=" << normGsfEles_Et_->at(iEle);
+//		std::cout << "; HEEP_Et=" << normGsfEles_HEEP_Et_->at(iEle) << std::endl;
+//		std::cout << "       Eta=" << normGsfEles_Eta_->at(iEle);
+//		std::cout << "; scEta=" << normGsfEles_scEta_->at(iEle) << std::endl;
+//		std::cout << "       ecalDriven=" << normGsfEles_ecalDriven_->at(iEle);
+//		std::cout << "; ecalDrivenSeed=" << normGsfEles_ecalDrivenSeed_->at(iEle) << std::endl;
+//
+//		std::cout << "       HEEP_dEtaIn=" << normGsfEles_HEEP_dEtaIn_->at(iEle);
+//		std::cout << "; HEEP_dPhiIn=" << normGsfEles_HEEP_dPhiIn_->at(iEle) << std::endl;
+//		std::cout << "       HoverE=" << normGsfEles_HoverE_->at(iEle);
+//		std::cout << "; sigmaIetaIeta=" << normGsfEles_sigmaIetaIeta_->at(iEle);
+//		std::cout << "; scSigmaIetaIeta=" << normGsfEles_scSigmaIetaIeta_->at(iEle) << std::endl;
+//
+//		std::cout << "       dr03EmIsoEt=" << normGsfEles_dr03EmIsoEt_->at(iEle);
+//		std::cout << "; dr03HadDepth1IsoEt=" << normGsfEles_dr03HadDepth1IsoEt_->at(iEle) << std::endl;
+//		std::cout << "       dr03HadDepth2IsoEt=" << normGsfEles_dr03HadDepth2IsoEt_->at(iEle);
+//		std::cout << "; dr03TkIsoPt=" << normGsfEles_dr03TkIsoPt_->at(iEle) << std::endl;
+//
+//		std::cout << "       e2x5Max=" << normGsfEles_e2x5Max_->at(iEle);
+//		std::cout << "; e5x5=" << normGsfEles_e5x5_->at(iEle) << std::endl;
 
 		std::cout << "     ->HEEP variables ..." << std::endl;
 		normEles_.at(iEle).PrintOutVariables();
 	}
 
 	//Printing the information from the special boosted Z(ee) reconstruction GSF electron branches to screen ...
-	std::cout << "  ->There are " << bstdGsfEles_number_ << "=" << bstdGsfEles_charge_->size() << "=" << bstdGsfEles_OLDp4_->size() << "=" << bstdGsfEles_HEEP_Et_->size() << "=" << bstdGsfEles_ecalDriven_->size() << " 'special reconstruction' boosted electrons in this event." << std::endl;
+//	std::cout << "  ->There are " << bstdGsfEles_number_ << "=" << bstdGsfEles_charge_->size() << "=" << bstdGsfEles_OLDp4_->size() << "=" << bstdGsfEles_HEEP_Et_->size() << "=" << bstdGsfEles_ecalDriven_->size() << " 'special reconstruction' boosted electrons in this event." << std::endl;
 
 	if(bstdGsfEles_number_!=bstdEles_.size()){
 		std::cout << "         ***--------------------------------------------------------***" << std::endl;
@@ -993,33 +1011,33 @@ void BstdZeeFirstAnalyser::PrintOutBranchVariables(){
 		std::cout << "     bstdEles_.size()=" << bstdEles_.size() << std::endl;
 
 	for(unsigned int iEle = 0; iEle < bstdGsfEles_number_; iEle++){
-		std::cout << "    ->Special reco'n GSF ele no. " << iEle << ":";
-		std::cout << " Charge = " << bstdGsfEles_charge_->at(iEle) << std::endl;
-
-		std::cout << "       p4: Px=" << bstdGsfEles_OLDp4_->at(iEle).Px() << "; Py=" << bstdGsfEles_OLDp4_->at(iEle).Py() << "; Pz=" << bstdGsfEles_OLDp4_->at(iEle).Pz() << std::endl;
-		std::cout << "           Px=" << bstdGsfEles_p4_.at(iEle).Px() << "; Py="  << bstdGsfEles_p4_.at(iEle).Py()  << "; Pz="  << bstdGsfEles_p4_.at(iEle).Pz() << std::endl;
-		std::cout << "           Pt=" << bstdGsfEles_p4_.at(iEle).Pt() << "; Eta=" << bstdGsfEles_p4_.at(iEle).Eta() << "; Phi=" << bstdGsfEles_p4_.at(iEle).Phi() << std::endl;
-
-		std::cout << "       Et=" << bstdGsfEles_Et_->at(iEle);
-		std::cout << "; HEEP_Et=" << bstdGsfEles_HEEP_Et_->at(iEle) << std::endl;
-		std::cout << "       Eta=" << bstdGsfEles_Eta_->at(iEle);
-		std::cout << "; scEta=" << bstdGsfEles_scEta_->at(iEle) << std::endl;
-		std::cout << "       ecalDriven=" << bstdGsfEles_ecalDriven_->at(iEle);
-		std::cout << "; ecalDrivenSeed=" << bstdGsfEles_ecalDrivenSeed_->at(iEle) << std::endl;
-
-		std::cout << "       HEEP_dEtaIn=" << bstdGsfEles_HEEP_dEtaIn_->at(iEle);
-		std::cout << "; HEEP_dPhiIn=" << bstdGsfEles_HEEP_dPhiIn_->at(iEle) << std::endl;
-		std::cout << "       HoverE=" << bstdGsfEles_HoverE_->at(iEle);
-		std::cout << "; sigmaIetaIeta=" << bstdGsfEles_sigmaIetaIeta_->at(iEle);
-		std::cout << "; scSigmaIetaIeta=" << bstdGsfEles_scSigmaIetaIeta_->at(iEle) << std::endl;
-
-		std::cout << "       dr03EmIsoEt=" << bstdGsfEles_dr03EmIsoEt_->at(iEle);
-		std::cout << "; dr03HadDepth1IsoEt=" << bstdGsfEles_dr03HadDepth1IsoEt_->at(iEle) << std::endl;
-		std::cout << "       dr03HadDepth2IsoEt=" << bstdGsfEles_dr03HadDepth2IsoEt_->at(iEle);
-		std::cout << "; dr03TkIsoPt=" << bstdGsfEles_dr03TkIsoPt_->at(iEle) << std::endl;
-
-		std::cout << "       e2x5Max=" << bstdGsfEles_e2x5Max_->at(iEle);
-		std::cout << "; e5x5=" << bstdGsfEles_e5x5_->at(iEle) << std::endl;
+		std::cout << "    ->Special reco'n GSF ele no. " << iEle << ":" << std::endl;
+//		std::cout << " Charge = " << bstdGsfEles_charge_->at(iEle) << std::endl;
+//
+//		std::cout << "       p4: Px=" << bstdGsfEles_OLDp4_->at(iEle).Px() << "; Py=" << bstdGsfEles_OLDp4_->at(iEle).Py() << "; Pz=" << bstdGsfEles_OLDp4_->at(iEle).Pz() << std::endl;
+//		std::cout << "           Px=" << bstdGsfEles_p4_.at(iEle).Px() << "; Py="  << bstdGsfEles_p4_.at(iEle).Py()  << "; Pz="  << bstdGsfEles_p4_.at(iEle).Pz() << std::endl;
+//		std::cout << "           Pt=" << bstdGsfEles_p4_.at(iEle).Pt() << "; Eta=" << bstdGsfEles_p4_.at(iEle).Eta() << "; Phi=" << bstdGsfEles_p4_.at(iEle).Phi() << std::endl;
+//
+//		std::cout << "       Et=" << bstdGsfEles_Et_->at(iEle);
+//		std::cout << "; HEEP_Et=" << bstdGsfEles_HEEP_Et_->at(iEle) << std::endl;
+//		std::cout << "       Eta=" << bstdGsfEles_Eta_->at(iEle);
+//		std::cout << "; scEta=" << bstdGsfEles_scEta_->at(iEle) << std::endl;
+//		std::cout << "       ecalDriven=" << bstdGsfEles_ecalDriven_->at(iEle);
+//		std::cout << "; ecalDrivenSeed=" << bstdGsfEles_ecalDrivenSeed_->at(iEle) << std::endl;
+//
+//		std::cout << "       HEEP_dEtaIn=" << bstdGsfEles_HEEP_dEtaIn_->at(iEle);
+//		std::cout << "; HEEP_dPhiIn=" << bstdGsfEles_HEEP_dPhiIn_->at(iEle) << std::endl;
+//		std::cout << "       HoverE=" << bstdGsfEles_HoverE_->at(iEle);
+//		std::cout << "; sigmaIetaIeta=" << bstdGsfEles_sigmaIetaIeta_->at(iEle);
+//		std::cout << "; scSigmaIetaIeta=" << bstdGsfEles_scSigmaIetaIeta_->at(iEle) << std::endl;
+//
+//		std::cout << "       dr03EmIsoEt=" << bstdGsfEles_dr03EmIsoEt_->at(iEle);
+//		std::cout << "; dr03HadDepth1IsoEt=" << bstdGsfEles_dr03HadDepth1IsoEt_->at(iEle) << std::endl;
+//		std::cout << "       dr03HadDepth2IsoEt=" << bstdGsfEles_dr03HadDepth2IsoEt_->at(iEle);
+//		std::cout << "; dr03TkIsoPt=" << bstdGsfEles_dr03TkIsoPt_->at(iEle) << std::endl;
+//
+//		std::cout << "       e2x5Max=" << bstdGsfEles_e2x5Max_->at(iEle);
+//		std::cout << "; e5x5=" << bstdGsfEles_e5x5_->at(iEle) << std::endl;
 
 		std::cout << "     ->HEEP variables ..." << std::endl;
 		bstdEles_.at(iEle).PrintOutVariables();
@@ -1672,6 +1690,15 @@ void BstdZeeFirstAnalyser::SetMemberVariablesToDefaultValues(){
 	normHEEPEles_pCalo_ = 0;
 	normHEEPEles_ptVtx_ = 0;
 	normHEEPEles_ptCalo_ = 0;
+	normHEEPEles_closestCtfTrk_pt_ = 0;
+	normHEEPEles_closestCtfTrk_eta_ = 0;
+	normHEEPEles_closestCtfTrk_phi_ = 0;
+	normHEEPEles_closestCtfTrk_innerPt_ = 0;
+	normHEEPEles_closestCtfTrk_innerEta_ = 0;
+	normHEEPEles_closestCtfTrk_innerPhi_ = 0;
+	normHEEPEles_closestCtfTrk_outerPt_ = 0;
+	normHEEPEles_closestCtfTrk_outerEta_ = 0;
+	normHEEPEles_closestCtfTrk_outerPhi_ = 0;
 
 	//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
 	normHEEPEles_hOverE_ = 0;
@@ -1950,6 +1977,15 @@ void BstdZeeFirstAnalyser::SetupBranchLinks(const TFile* inFile_ptr){
 	inputFile_tree_->SetBranchStatus("normHEEPEles_pCalo",0);										//	inputFile_tree_->SetBranchAddress("normHEEPEles_pCalo", &normHEEPEles_pCalo_);
 	inputFile_tree_->SetBranchAddress("normHEEPEles_ptVtx", &normHEEPEles_ptVtx_);
 	inputFile_tree_->SetBranchAddress("normHEEPEles_ptCalo", &normHEEPEles_ptCalo_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_pt",  &normHEEPEles_closestCtfTrk_pt_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_eta", &normHEEPEles_closestCtfTrk_eta_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_phi", &normHEEPEles_closestCtfTrk_phi_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPt",  &normHEEPEles_closestCtfTrk_innerPt_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerEta", &normHEEPEles_closestCtfTrk_innerEta_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPhi", &normHEEPEles_closestCtfTrk_innerPhi_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPt",  &normHEEPEles_closestCtfTrk_outerPt_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerEta", &normHEEPEles_closestCtfTrk_outerEta_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPhi", &normHEEPEles_closestCtfTrk_outerPhi_);
 
 	//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
 	inputFile_tree_->SetBranchAddress("normHEEPEles_hOverE", &normHEEPEles_hOverE_);
@@ -2291,23 +2327,27 @@ int main()
 //		nEvents.push_back( 1772545 );
 //		intLumiPerEvent.push_back( 1.0/(1666.0*1000.0) ); // in inv fb*/
 
-		// SigMC - 0.75TeVu*
-		inFile.push_back("../local/2011-08-01/mcNTuple-42X_v1b_0-75TeVu-10kEvts.root"); isMCflag.push_back(false);
-		outFile.push_back("histos_0-75TeVu_2011-08-16");
-		nEvents.push_back( 10000 );
-		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/925.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+//		// SigMC - 0.75TeVu*
+//		inFile.push_back("../local/2011-08-01/mcNTuple-42X_v1b_0-75TeVu-10kEvts.root"); isMCflag.push_back(false);
+//		outFile.push_back("histos_0-75TeVu_2011-08-16");
+//		nEvents.push_back( 10000 );
+//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/925.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+//
+//		// SigMC - 1.00TeVu*
+//		inFile.push_back("../local/2011-08-01/mcNTuple-42X_v1b_1-00TeVu-10kEvts.root"); isMCflag.push_back(false);
+//		outFile.push_back("histos_1-00TeVu_2011-08-16");
+//		nEvents.push_back( 10000 );
+//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/110.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+//
+//		// SigMC - 2.00TeVu*
+//		inFile.push_back("../local/2011-08-01/mcNTuple-42X_v1b_2-00TeVu-10kEvts.root"); isMCflag.push_back(false);
+//		outFile.push_back("histos_2-00TeVu_2011-08-16");
+//		nEvents.push_back( 10000 );
+//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/1.2 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
 
-		// SigMC - 1.00TeVu*
-		inFile.push_back("../local/2011-08-01/mcNTuple-42X_v1b_1-00TeVu-10kEvts.root"); isMCflag.push_back(false);
-		outFile.push_back("histos_1-00TeVu_2011-08-16");
-		nEvents.push_back( 10000 );
-		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/110.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
-
-		// SigMC - 2.00TeVu*
-		inFile.push_back("../local/2011-08-01/mcNTuple-42X_v1b_2-00TeVu-10kEvts.root"); isMCflag.push_back(false);
-		outFile.push_back("histos_2-00TeVu_2011-08-16");
-		nEvents.push_back( 10000 );
-		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/1.2 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+		// Test
+		BstdZeeFirstAnalyser myAnalyser = BstdZeeFirstAnalyser(0, 10, true, "../../NTupler/BstdZeeNTupler/testNTuple_2-00TeVu.root", "testOut.root", 6, 80, 55, 1100.0);
+		myAnalyser.DoAnalysis(  1.0  );
 
 		// Doing the analysis ...
 		for(unsigned int idx=0; idx<inFile.size(); idx++){
