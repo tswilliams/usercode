@@ -22,6 +22,7 @@ namespace tsw{
 
 		private:
 			TString hNamePrefix_;
+			TH1D* diEleHist_regions_;
 			TH1D* diEleHist_invMass_;
 			TH1D* diEleHist_sumEt_;
 			TH1D* diEleHist_sumEtLog_;
@@ -57,7 +58,12 @@ namespace tsw{
 			hNamePrefix.Resize(hNamePrefix.Last('T'));*/
 
 		//Initialise the di-ele histograms ...
-		diEleHist_invMass_     = new TH1D(hNamePrefix + "invMass",   "Di-electron invariant mass distribution  (" + str_eleType_GSFeles_cutsPhrase + "); M_{ee} /GeVc^{-2};" + str_NoOfDiEles + " per 2.5GeV", hNBins_mass, 45.0, 135.0);
+		diEleHist_regions_     = new TH1D(hNamePrefix + "regions",   "Di-electron type by region (" + str_eleType_GSFeles_cutsPhrase + "); Region;" + str_NoOfDiEles, 4, -0.5, 3.5);
+		diEleHist_regions_->GetXaxis()->SetBinLabel(1, "EB-EB");
+		diEleHist_regions_->GetXaxis()->SetBinLabel(2, "EB-EE");
+		diEleHist_regions_->GetXaxis()->SetBinLabel(3, "EE-EE");
+		diEleHist_regions_->GetXaxis()->SetBinLabel(4, "Other");
+		diEleHist_invMass_     = new TH1D(hNamePrefix + "invMass",   "Di-electron invariant mass distribution  (" + str_eleType_GSFeles_cutsPhrase + "); M_{ee} /GeVc^{-2};" + str_NoOfDiEles + " per GeV", hNBins_mass, 50.0, 130.0);
 		Double_t hMax_DiEleEt = 1200.0;
 		diEleHist_sumEt_       = new TH1D(hNamePrefix + "sumEt",     "Di-electron p_{T} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); p_{T, ee} /GeVc^{-1};" + str_NoOfDiEles, hNBins_pt, 0.0, hMax_pt);
 
@@ -69,14 +75,14 @@ namespace tsw{
 		diEleHist_openingAngle_= new TH1D(hNamePrefix + "openAngle", "Di-electron opening angle distribution  (" + str_eleType_GSFeles_cutsPhrase + "); Di-electron opening angle, #theta_{ee} /rad;" + str_NoOfDiEles, 30, 0.0, 3.1416);
 		diEleHist_deltaEta_    = new TH1D(hNamePrefix + "deltaEta",  "#Delta#eta_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta#eta_{ee};" + str_NoOfDiEles, 50, -5.0, 5.0);
 		diEleHist_deltaPhi_    = new TH1D(hNamePrefix + "deltaPhi",  "#Delta#phi_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta#phi_{ee};" + str_NoOfDiEles, 30, -3.15, 3.15);
-		diEleHist_deltaR_      = new TH1D(hNamePrefix + "deltaR",  "#Delta{}R_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta{}R_{ee};" + str_NoOfDiEles, 50, 0.0, 10.0);
+		diEleHist_deltaR_      = new TH1D(hNamePrefix + "deltaR",  "#Delta{}R_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta{}R_{ee};" + str_NoOfDiEles, 50, 0.0, 5.0);
 
 		//Initialise the single ele histos ...
-		Int_t hNBins_eleEt = 25; Double_t hMin_eleEt = 0.0; Double_t hMax_eleEt = 100.0;
+		Int_t hNBins_eleEt = hNBins_pt; Double_t hMin_eleEt = 0.0; Double_t hMax_eleEt = hMax_pt/2.0;
 		eleAHist_et_ = new TH1D(hNamePrefix + "eleA_et",  "eleA E_{T} distribution  (" + str_eleType_GSFeles_cutsPhrase + ");" + str_NoOfEles + "; ele A E_{T} /GeV", hNBins_eleEt, hMin_eleEt, hMax_eleEt);
 		eleBHist_et_ = new TH1D(hNamePrefix + "eleB_et",  "eleB E_{T} distribution  (" + str_eleType_GSFeles_cutsPhrase + ");" + str_NoOfEles + "; ele B E_{T} /GeV", hNBins_eleEt, hMin_eleEt, hMax_eleEt);
 
-		Int_t hNBins_eleEnergy = 25; Double_t hMin_eleEnergy = 0.0; Double_t hMax_eleEnergy = 100.0;
+		Int_t hNBins_eleEnergy = hNBins_pt; Double_t hMin_eleEnergy = 0.0; Double_t hMax_eleEnergy = hMax_pt/2.0 ;
 		eleAHist_energy_ = new TH1D(hNamePrefix + "eleA_energy",  "eleA energy distribution  (" + str_eleType_GSFeles_cutsPhrase + ");" + str_NoOfEles + "; ele A E /GeV", hNBins_eleEnergy, hMin_eleEnergy, hMax_eleEnergy);
 		eleBHist_energy_ = new TH1D(hNamePrefix + "eleB_energy",  "eleB energy distribution  (" + str_eleType_GSFeles_cutsPhrase + ");" + str_NoOfEles + "; ele B E /GeV", hNBins_eleEnergy, hMin_eleEnergy, hMax_eleEnergy);
 
@@ -95,6 +101,7 @@ namespace tsw{
 	// Destructor
 	DiEleDistns::~DiEleDistns(){
 		// Delete all of the histograms from the heap ...
+		delete diEleHist_regions_;
 		delete diEleHist_invMass_;
 		delete diEleHist_sumEt_;
 		delete diEleHist_sumEtLog_;
@@ -118,9 +125,17 @@ namespace tsw{
 	// Method to fill histograms ...
 	void DiEleDistns::FillHistos(tsw::HEEPDiEle theDiEle, const Double_t dieleWeight){
 		//Fill the di-ele histos ...
+		if( theDiEle.isEBEB() )
+			diEleHist_regions_->Fill(0.0, dieleWeight);
+		else if( theDiEle.isEBEE() )
+			diEleHist_regions_->Fill(1.0, dieleWeight);
+		else if( theDiEle.isEEEE() )
+			diEleHist_regions_->Fill(2.0, dieleWeight);
+		else
+			diEleHist_regions_->Fill(3.0, dieleWeight);
 		diEleHist_invMass_->Fill(      theDiEle.invMass()      , dieleWeight);
-		diEleHist_sumEt_->Fill(        theDiEle.et()           , dieleWeight);
-		diEleHist_sumEtLog_->Fill(     theDiEle.et()           , dieleWeight);
+		diEleHist_sumEt_->Fill(        theDiEle.pT()           , dieleWeight);
+		diEleHist_sumEtLog_->Fill(     theDiEle.pT()           , dieleWeight);
 		diEleHist_openingAngle_->Fill( theDiEle.openingAngle() , dieleWeight);
 		diEleHist_deltaEta_->Fill(     theDiEle.deltaEta()     , dieleWeight);
 		diEleHist_deltaPhi_->Fill(     theDiEle.deltaPhi()     , dieleWeight);
@@ -156,6 +171,7 @@ namespace tsw{
 		ptr_outFile->cd(hNamePrefix_);
 
 		//Write out the di-ele histos ...
+		diEleHist_regions_->Write();
 		diEleHist_invMass_->Write();
 		diEleHist_sumEt_->Write();
 		diEleHist_sumEtLog_->Write();
@@ -184,6 +200,7 @@ namespace tsw{
 		std::vector<TH1D*> tmpPtrsVector;
 		tmpPtrsVector.clear();
 
+		tmpPtrsVector.push_back(diEleHist_regions_);
 		tmpPtrsVector.push_back(diEleHist_invMass_);
 		tmpPtrsVector.push_back(diEleHist_sumEt_);
 		tmpPtrsVector.push_back(diEleHist_sumEtLog_);
