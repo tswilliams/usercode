@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.1 2011/07/06 17:02:58 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.2 2011/07/15 17:04:19 tsw Exp $
 //
 //
 
@@ -298,6 +298,15 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		std::vector<float> normHEEPEles_pCalo_;
 		std::vector<float> normHEEPEles_ptVtx_;
 		std::vector<float> normHEEPEles_ptCalo_;
+		std::vector<float> normHEEPEles_closestCtfTrk_pt_;
+		std::vector<float> normHEEPEles_closestCtfTrk_eta_;
+		std::vector<float> normHEEPEles_closestCtfTrk_phi_;
+		std::vector<float> normHEEPEles_closestCtfTrk_innerPt_;
+		std::vector<float> normHEEPEles_closestCtfTrk_innerEta_;
+		std::vector<float> normHEEPEles_closestCtfTrk_innerPhi_;
+		std::vector<float> normHEEPEles_closestCtfTrk_outerPt_;
+		std::vector<float> normHEEPEles_closestCtfTrk_outerEta_;
+		std::vector<float> normHEEPEles_closestCtfTrk_outerPhi_;
 
 		//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
 		std::vector<float> normHEEPEles_hOverE_;
@@ -542,7 +551,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	
 	//Getting the handle for the standard and special reco'n GSF electron data...
 	if(readInNormReco_)
-		iEvent.getByLabel(edm::InputTag("gsfElectrons::RECO"),        normGsfElesH);
+		iEvent.getByLabel(edm::InputTag("gsfElectrons::stdRECO"),        normGsfElesH);
 	//iEvent.getByLabel(edm::InputTag("gsfElectrons::BOOSTEDRECO"), bstdGsfElesH);
 	if(readInBstdReco_)
 		iEvent.getByLabel(edm::InputTag("ecalDrivenGsfElectrons"), bstdGsfElesH);
@@ -1059,6 +1068,15 @@ void BstdZeeNTupler::SetupStdEleBranches(){
 	EventDataTree->Branch("normHEEPEles_pCalo",     &normHEEPEles_pCalo_);
 	EventDataTree->Branch("normHEEPEles_ptVtx",     &normHEEPEles_ptVtx_);
 	EventDataTree->Branch("normHEEPEles_ptCalo",    &normHEEPEles_ptCalo_);
+	EventDataTree->Branch("normHEEPEles_closestCtfTrk_pt", &normHEEPEles_closestCtfTrk_pt_);
+	EventDataTree->Branch("normHEEPEles_closestCtfTrk_eta", &normHEEPEles_closestCtfTrk_eta_);
+	EventDataTree->Branch("normHEEPEles_closestCtfTrk_phi", &normHEEPEles_closestCtfTrk_phi_);
+	EventDataTree->Branch("normHEEPEles_closestCtfTrk_innerPt", &normHEEPEles_closestCtfTrk_innerPt_);
+	EventDataTree->Branch("normHEEPEles_closestCtfTrk_innerEta", &normHEEPEles_closestCtfTrk_innerEta_);
+	EventDataTree->Branch("normHEEPEles_closestCtfTrk_innerPhi", &normHEEPEles_closestCtfTrk_innerPhi_);
+	EventDataTree->Branch("normHEEPEles_closestCtfTrk_outerPt", &normHEEPEles_closestCtfTrk_outerPt_);
+	EventDataTree->Branch("normHEEPEles_closestCtfTrk_outerEta", &normHEEPEles_closestCtfTrk_outerEta_);
+	EventDataTree->Branch("normHEEPEles_closestCtfTrk_outerPhi", &normHEEPEles_closestCtfTrk_outerPhi_);
 
 	//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
 	EventDataTree->Branch("normHEEPEles_hOverE",       &normHEEPEles_hOverE_);
@@ -1283,6 +1301,15 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 	normHEEPEles_pCalo_.clear();
 	normHEEPEles_ptVtx_.clear();
 	normHEEPEles_ptCalo_.clear();
+	normHEEPEles_closestCtfTrk_pt_.clear();
+	normHEEPEles_closestCtfTrk_eta_.clear();
+	normHEEPEles_closestCtfTrk_phi_.clear();
+	normHEEPEles_closestCtfTrk_innerPt_.clear();
+	normHEEPEles_closestCtfTrk_innerEta_.clear();
+	normHEEPEles_closestCtfTrk_innerPhi_.clear();
+	normHEEPEles_closestCtfTrk_outerPt_.clear();
+	normHEEPEles_closestCtfTrk_outerEta_.clear();
+	normHEEPEles_closestCtfTrk_outerPhi_.clear();
 
 	//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
 	normHEEPEles_hOverE_.clear();
@@ -1588,6 +1615,15 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		normHEEPEles_pCalo_.push_back(    ithHEEPEle.pCalo() );
 		normHEEPEles_ptVtx_.push_back(    ithHEEPEle.ptVtx() );
 		normHEEPEles_ptCalo_.push_back(   ithHEEPEle.ptCalo() );
+		normHEEPEles_closestCtfTrk_pt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->pt() );
+		normHEEPEles_closestCtfTrk_eta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->eta() );
+		normHEEPEles_closestCtfTrk_phi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->phi() );
+		normHEEPEles_closestCtfTrk_innerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Rho() );
+		normHEEPEles_closestCtfTrk_innerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Eta() );
+		normHEEPEles_closestCtfTrk_innerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Phi() );
+		normHEEPEles_closestCtfTrk_outerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPt() );
+		normHEEPEles_closestCtfTrk_outerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerEta() );
+		normHEEPEles_closestCtfTrk_outerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPhi() );
 
 		//Variables storing the heep::Ele method values ...
 		normHEEPEles_hOverE_.push_back(      ithHEEPEle.hOverE() );
@@ -1688,6 +1724,9 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 			std::cout << "; pCalo=" << normHEEPEles_pCalo_.at(iEle);
 			std::cout << "; ptVtx=" << normHEEPEles_ptVtx_.at(iEle);
 			std::cout << "; ptCalo=" << normHEEPEles_ptCalo_.at(iEle) << std::endl;
+			std::cout << "       Closest CTF Track... (pT, eta, phi)=(" << normHEEPEles_closestCtfTrk_pt_.at(iEle) << ", " << normHEEPEles_closestCtfTrk_eta_.at(iEle) << ", " << normHEEPEles_closestCtfTrk_phi_.at(iEle) << ")" << std::endl;
+			std::cout << "         Start of track (inner): (pT, eta, phi)=(" << normHEEPEles_closestCtfTrk_innerPt_.at(iEle) << ", " << normHEEPEles_closestCtfTrk_innerEta_.at(iEle) << ", " << normHEEPEles_closestCtfTrk_innerPhi_.at(iEle) << ")" << std::endl;
+			std::cout << "         End of track (outer):   (pT, eta, phi)=(" << normHEEPEles_closestCtfTrk_outerPt_.at(iEle) << ", " << normHEEPEles_closestCtfTrk_outerEta_.at(iEle) << ", " << normHEEPEles_closestCtfTrk_outerPhi_.at(iEle) << ")" << std::endl;
 
 			//Variables storing the heep::Ele method values ...
 			std::cout << "         -=-=-" << std::endl;
