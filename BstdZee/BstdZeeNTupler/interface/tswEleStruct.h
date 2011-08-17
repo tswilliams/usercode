@@ -9,6 +9,7 @@ namespace tsw {
    	EleStruct() : et_(-999.9), gsfEt_(-999.9), scEt_(-999.9), energy_(-999.9), gsfEnergy_(-999.9), caloEnergy_(-999.9), eta_(-999.9), scEta_(-999.9), detEta_(-999.9), detEtaAbs_(-999.9), phi_(-999.9), scPhi_(-999.9), detPhi_(-999.9), zVtx_(-999.9), p4_(ROOT::Math::XYZTVector(0.0,0.0,0.0,0.0)), gsfP4_(ROOT::Math::XYZTVector(0.0,0.0,0.0,0.0)),
    			classification_(false), isEcalDriven_(false), isTrackerDriven_(false), isEB_(false), isEE_(false),
    	   	charge_(0), trkCharge_(0), pVtx_(-999.9), pCalo_(-999.9), ptVtx_(-999.9), ptCalo_(-999.9),
+   	   	closestCtfTrk_pt_(-999.9), closestCtfTrk_eta_(-999.9), closestCtfTrk_phi_(-999.9), closestCtfTrk_innerPt_(-999.9), closestCtfTrk_innerEta_(-999.9), closestCtfTrk_innerPhi_(-999.9), closestCtfTrk_outerPt_(-999.9), closestCtfTrk_outerEta_(-999.9), closestCtfTrk_outerPhi_(-999.9),
    	   	hOverE_(-999.9),  dEtaIn_(-999.9), dPhiIn_(-999.9), dPhiOut_(-999.9), epIn_(-999.9), epOut_(-999.9), fbrem_(-999.9), bremFrac_(-999.9), invEOverInvP_(-999.9),
    	   	sigmaEtaEta_(-999.9), sigmaEtaEtaUnCorr_(-999.9), sigmaIEtaIEta_(-999.9), e1x5_(-999.9), e2x5Max_(-999.9), e5x5_(-999.9), e1x5Over5x5_(-999.9), e2x5MaxOver5x5_(-999.9),
    	   	isolEm_(-999.9), isolHad_(-999.9), isolHadDepth1_(-999.9), isolHadDepth2_(-999.9), isolPtTrks_(-999.9), isolEmHadDepth1_(-999.9)
@@ -45,6 +46,15 @@ namespace tsw {
 	  	float pCalo_;
 	  	float ptVtx_;
 	  	float ptCalo_;
+	  	float closestCtfTrk_pt_;
+	  	float closestCtfTrk_eta_;
+	  	float closestCtfTrk_phi_;
+	  	float closestCtfTrk_innerPt_;
+	  	float closestCtfTrk_innerEta_;
+	  	float closestCtfTrk_innerPhi_;
+	  	float closestCtfTrk_outerPt_;
+	  	float closestCtfTrk_outerEta_;
+	  	float closestCtfTrk_outerPhi_;
 
 	  	// Various other variables ...
 	  	float hOverE_;
