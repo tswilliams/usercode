@@ -42,6 +42,15 @@ namespace tsw{
 			double mass(){
 				return p4().M();}
 
+			double deltaR(){
+				return ele_.p4().DeltaR(muon_.p4());}
+			double deltaEta(){
+				return ( ele_.p4().Eta()-muon_.p4().Eta() );}
+			double deltaPhi(){
+				return ele_.p4().DeltaPhi(muon_.p4());}
+			double openingAngle(){
+				return ele_.p4().Angle(muon_.p4().Vect());}
+
 			bool isInZMassRange(){
 				if( mass()<120 && mass()>60)
 					return true;
