@@ -24,7 +24,12 @@ namespace tsw{
 			void PrintOutVariables();
 
 			bool ApplySimpleCuts();
+			bool isHEEPEB();
+			bool isHEEPEE();
 			bool ApplyHEEPCutsNoIso();
+			bool ApplyHEEPIsoCut_Trk();
+			bool ApplyHEEPIsoCut_EmHad1();
+			bool ApplyHEEPIsoCut_Had2();
 			bool ApplyIsoVarHEEPCuts();
 			bool ApplyAllHEEPCuts();
 			/////////////////////////////////////////////////
@@ -34,31 +39,31 @@ namespace tsw{
 			float gsfEt(){return eleStr_.gsfEt_;}
 			float scEt(){return eleStr_.scEt_;}
 			float energy(){return eleStr_.energy_;}
-			float gsfEnergy(){return eleStr_.gsfEnergy_;}
+//			float gsfEnergy(){return eleStr_.gsfEnergy_;}
 			float caloEnergy(){return eleStr_.caloEnergy_;}
 			float eta(){return eleStr_.eta_;}
 			float scEta(){return eleStr_.scEta_;}
-			float detEta(){return eleStr_.detEta_;}
-			float detEtaAbs(){return eleStr_.detEtaAbs_;}
+//			float detEta(){return eleStr_.detEta_;}
+//			float detEtaAbs(){return eleStr_.detEtaAbs_;}
 			float phi(){return eleStr_.phi_;}
 			float scPhi(){return eleStr_.scPhi_;}
-			float detPhi(){return eleStr_.detPhi_;}
-			float zVtx(){return eleStr_.zVtx_;}
+//			float detPhi(){return eleStr_.detPhi_;}
+//			float zVtx(){return eleStr_.zVtx_;}
 			TLorentzVector p4(){return ConvertToTLorentzVector( &(eleStr_.p4_) );}
 			TLorentzVector gsfP4(){return ConvertToTLorentzVector( &(eleStr_.gsfP4_) );}
 
 			// 'Classification'
-			int classification(){return eleStr_.classification_;}
+//			int classification(){return eleStr_.classification_;}
 			bool isEcalDriven(){return eleStr_.isEcalDriven_;}
-			bool isTrackerDriven(){return eleStr_.isTrackerDriven_;}
+//			bool isTrackerDriven(){return eleStr_.isTrackerDriven_;}
 			bool isEB(){return eleStr_.isEB_;}
 			bool isEE(){return eleStr_.isEE_;}
 
 			// Track variables ...
 			int charge(){return eleStr_.charge_;}
-			int trkCharge(){return eleStr_.trkCharge_;}
-			float pVtx(){return eleStr_.pVtx_;}
-			float pCalo(){return eleStr_.pCalo_;}
+//			int trkCharge(){return eleStr_.trkCharge_;}
+//			float pVtx(){return eleStr_.pVtx_;}
+//			float pCalo(){return eleStr_.pCalo_;}
 			float ptVtx(){return eleStr_.ptVtx_;}
 			float ptCalo(){return eleStr_.ptCalo_;}
 
@@ -66,26 +71,26 @@ namespace tsw{
 			float hOverE(){return eleStr_.hOverE_;}
 			float dEtaIn(){return eleStr_.dEtaIn_;}
 			float dPhiIn(){return eleStr_.dPhiIn_;}
-			float dPhiOut(){return eleStr_.dPhiOut_;}
+//			float dPhiOut(){return eleStr_.dPhiOut_;}
 			float epIn(){return eleStr_.epIn_;}
 			float epOut(){return eleStr_.epOut_;}
-			float fbrem(){return eleStr_.fbrem_;}
-			float bremFrac(){return eleStr_.bremFrac_;}
+//			float fbrem(){return eleStr_.fbrem_;}
+//			float bremFrac(){return eleStr_.bremFrac_;}
 			float invEOverInvP(){return eleStr_.invEOverInvP_;}
 
 			// Shower shape variables
-			float sigmaEtaEta(){return eleStr_.sigmaEtaEta_;}
-			float sigmaEtaEtaUnCorr(){return eleStr_.sigmaEtaEtaUnCorr_;}
+//			float sigmaEtaEta(){return eleStr_.sigmaEtaEta_;}
+//			float sigmaEtaEtaUnCorr(){return eleStr_.sigmaEtaEtaUnCorr_;}
 			float sigmaIEtaIEta(){return eleStr_.sigmaIEtaIEta_;}
-			float e1x5(){return eleStr_.e1x5_;}
-			float e2x5Max(){return eleStr_.e2x5Max_;}
-			float e5x5(){return eleStr_.e5x5_;}
+//			float e1x5(){return eleStr_.e1x5_;}
+//			float e2x5Max(){return eleStr_.e2x5Max_;}
+//			float e5x5(){return eleStr_.e5x5_;}
 			float e1x5Over5x5(){return eleStr_.e1x5Over5x5_;}
 			float e2x5MaxOver5x5(){return eleStr_.e2x5MaxOver5x5_;}
 
 			// Isolation variables ...
 			float isolEm(){return eleStr_.isolEm_;}
-			float isolHad(){return eleStr_.isolHad_;}
+//			float isolHad(){return eleStr_.isolHad_;}
 			float isolHadDepth1(){return eleStr_.isolHadDepth1_;}
 			float isolHadDepth2(){return eleStr_.isolHadDepth2_;}
 			float isolPtTrks(){return eleStr_.isolPtTrks_;}
@@ -113,34 +118,34 @@ namespace tsw{
 		std::cout << "; gsfEt=" << gsfEt();
 		std::cout << "; scEt=" << scEt() << std::endl;
 		std::cout << "       energy=" << energy();
-		std::cout << "; gsfEnergy=" << gsfEnergy();
+//		std::cout << "; gsfEnergy=" << gsfEnergy();
 		std::cout << "; caloEnergy=" << caloEnergy() << std::endl;
 		std::cout << "       eta=" << eta();
 		std::cout << "; scEta=" << scEta();
-		std::cout << "; detEta=" << detEta();
-		std::cout << "; detEtaAbs=" << detEtaAbs() << std::endl;
+//		std::cout << "; detEta=" << detEta();
+		std::cout << std::endl;//		std::cout << "; detEtaAbs=" << detEtaAbs() << std::endl;
 		std::cout << "       phi=" << phi();
 		std::cout << "; scPhi=" << scPhi();
-		std::cout << "; detPhi=" << detPhi();
-		std::cout << "; zVtx=" << zVtx() << std::endl;
+//		std::cout << "; detPhi=" << detPhi();
+		std::cout <<  std::endl;//		std::cout << "; zVtx=" << zVtx() << std::endl;
 		std::cout << "       p4,E=" << p4().E() << "; p4,p=(" << p4().Px() << ", " << p4().Py() << ", " << p4().Pz() << ")" << std::endl;
 		std::cout << "       gsfP4,E=" << gsfP4().E() << "; gsfP4,p=(" << gsfP4().Px() << ", " << gsfP4().Py() << ", " << gsfP4().Pz() << ")" << std::endl;
 
 		// Classification variables ...
 		std::cout << "         -=-=-" << std::endl;
-		std::cout << "       classification=" << classification();
-		std::cout << "; isEcalDriven=" << isEcalDriven();
-		std::cout << "; isTrakerDriven=" << isTrackerDriven() << std::endl;
+//		std::cout << "       classification=" << classification();
+		std::cout << "       isEcalDriven=" << isEcalDriven();//		std::cout << "; isEcalDriven=" << isEcalDriven();
+//		std::cout << "; isTrakerDriven=" << isTrackerDriven() << std::endl;
 		std::cout << "       isEB=" << isEB();
 		std::cout << "; isEE=" << isEE() <<std::endl;
 
 		// Track methods ...
 		std::cout << "         -=-=-" << std::endl;
 		std::cout << "       charge=" << charge();
-		std::cout << "; trkCharge=" << trkCharge() << std::endl;
-		std::cout << "       pVtx=" << pVtx();
-		std::cout << "; pCalo=" << pCalo();
-		std::cout << "; ptVtx=" << ptVtx();
+		std::cout << std::endl;//		std::cout << "; trkCharge=" << trkCharge() << std::endl;
+//		std::cout << "       pVtx=" << pVtx();
+//		std::cout << "; pCalo=" << pCalo();
+		std::cout << "       ptVtx=" << ptVtx();
 		std::cout << "; ptCalo=" << ptCalo() << std::endl;
 
 		// Various other methods ...
@@ -148,28 +153,28 @@ namespace tsw{
 		std::cout << "       hOver=" << hOverE();
 		std::cout << "; dEtaIn=" << dEtaIn();
 		std::cout << "; dPhiIn=" << dPhiIn();
-		std::cout << "; dPhiOut=" << dPhiOut() << std::endl;
+		std::cout << std::endl;//		std::cout << "; dPhiOut=" << dPhiOut() << std::endl;
 		std::cout << "       epIn=" << epIn();
 		std::cout << "; epOut=" << epOut();
-		std::cout << "; fbrem=" << fbrem();
-		std::cout << "; bremFrac=" << bremFrac();
+//		std::cout << "; fbrem=" << fbrem();
+//		std::cout << "; bremFrac=" << bremFrac();
 		std::cout << "; invEOverInvP=" << invEOverInvP() << std::endl;
 
 		// Shower shape variables ...
 		std::cout << "         -=-=-" << std::endl;
-		std::cout << "       sigmaEtaEta=" << sigmaEtaEta();
-		std::cout << "; sigmaEtaEtaUnCorr=" << sigmaEtaEtaUnCorr();
-		std::cout << "; sigmaIEtaIEta=" << sigmaIEtaIEta() << std::endl;
-		std::cout << "       e1x5=" << e1x5();
-		std::cout << "; e2x5Max=" << e2x5Max();
-		std::cout << "; e5x5=" << e5x5();
-		std::cout << "; e1x5Over5x5=" << e1x5Over5x5();
+//		std::cout << "       sigmaEtaEta=" << sigmaEtaEta();
+//		std::cout << "; sigmaEtaEtaUnCorr=" << sigmaEtaEtaUnCorr();
+		std::cout << "       sigmaIEtaIEta=" << sigmaIEtaIEta() << std::endl;//		std::cout << "; sigmaIEtaIEta=" << sigmaIEtaIEta() << std::endl;
+//		std::cout << "       e1x5=" << e1x5();
+//		std::cout << "; e2x5Max=" << e2x5Max();
+//		std::cout << "; e5x5=" << e5x5();
+		std::cout << "       e1x5Over5x5=" << e1x5Over5x5();//		std::cout << "; e1x5Over5x5=" << e1x5Over5x5();
 		std::cout << "; e2x5MaxOver5x5=" << e2x5MaxOver5x5() << std::endl;
 
 		// Isolation variables ...
 		std::cout << "         -=-=-" << std::endl;
 		std::cout << "       isolEm=" << isolEm();
-		std::cout << "; isolHad=" << isolHad();
+//		std::cout << "; isolHad=" << isolHad();
 		std::cout << "; isolHadDepth1=" << isolHadDepth1();
 		std::cout << "; isolHadDepth2=" << isolHadDepth2() << std::endl;
 		std::cout << "       isolPtTrks=" << isolPtTrks();
@@ -188,12 +193,19 @@ namespace tsw{
 		return tmpCutsFlag;
 	}
 
+	bool HEEPEle::isHEEPEB(){
+		return ( fabs(scEta()) < 1.442 );
+	}
+	bool HEEPEle::isHEEPEE(){
+		return ( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) );
+	}
+
 	bool HEEPEle::ApplyHEEPCutsNoIso(){
 		bool tmpCutsFlag = false;
 
 		if( fabs(scEta()) < 1.442 ){
 			// E_T cut ...
-			tmpCutsFlag = ( et()>25.0 );
+			tmpCutsFlag = ( et()>35.0 );
 			// isEcalDriven cut ...
 			tmpCutsFlag = tmpCutsFlag && isEcalDriven();
 			// dEtaIn cut ...
@@ -209,7 +221,7 @@ namespace tsw{
 		}
 		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) ){
 			// E_T cut ...
-			tmpCutsFlag = ( et()>25.0 );
+			tmpCutsFlag = ( et()>40.0 );
 			// isEcalDriven cut ...
 			tmpCutsFlag = tmpCutsFlag && isEcalDriven();
 			// dEtaIn cut ...
@@ -229,12 +241,62 @@ namespace tsw{
 		return tmpCutsFlag;
 	}
 
+	bool HEEPEle::ApplyHEEPIsoCut_Trk(){
+		bool tmpCutsFlag = false;
+		if( fabs(scEta()) < 1.442 ){
+			tmpCutsFlag = ( isolPtTrks()<7.5 );
+		}
+		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) )
+			tmpCutsFlag = ( isolPtTrks()<15.0 );
+		else
+			tmpCutsFlag = false;
+
+		return tmpCutsFlag;
+	}
+
+	bool HEEPEle::ApplyHEEPIsoCut_EmHad1(){
+		bool tmpCutsFlag = false;
+		if( fabs(scEta()) < 1.442 ){
+			tmpCutsFlag = ( isolEmHadDepth1()<(2.0+0.03*et()) );
+		}
+		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) ){
+			if( et()<50.0 ){
+				tmpCutsFlag = ( isolEmHadDepth1()<2.5 );}
+			else{
+				tmpCutsFlag = ( isolEmHadDepth1()<(2.5+0.03*(et()-50.0)) );}
+		}
+		else
+			tmpCutsFlag = false;
+
+		return tmpCutsFlag;
+	}
+
+	bool HEEPEle::ApplyHEEPIsoCut_Had2(){
+		bool tmpCutsFlag = false;
+
+		if( fabs(scEta()) < 1.442 ){
+			tmpCutsFlag = true; // (No had depth 2 isol cut)
+		}
+		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) )
+			tmpCutsFlag = ( isolHadDepth2()<0.5 );
+		else
+			tmpCutsFlag = false;
+
+		return tmpCutsFlag;
+	}
+
 	bool HEEPEle::ApplyIsoVarHEEPCuts(){
+		bool tmpCutsFlag = ( ApplyHEEPIsoCut_Trk() && ApplyHEEPIsoCut_EmHad1() );
+		tmpCutsFlag = tmpCutsFlag && ApplyHEEPIsoCut_Had2();
+
+		return tmpCutsFlag;
+	}
+	/*bool HEEPEle::ApplyIsoVarHEEPCuts(){
 		bool tmpCutsFlag = false;
 
 		if( fabs(scEta()) < 1.442 ){
 			// EM + Had depth 1 isol cut ...
-			tmpCutsFlag = ( isolEmHadDepth1()<2.0+0.03*et() );
+			tmpCutsFlag = ( isolEmHadDepth1()<(2.0+0.03*et()) );
 			// (No had depth 2 isol cut)
 			// Track isol cut ...
 			tmpCutsFlag = tmpCutsFlag && ( isolPtTrks()<7.5 );
@@ -254,7 +316,7 @@ namespace tsw{
 			tmpCutsFlag = false;
 
 		return tmpCutsFlag;
-	}
+	}*/
 	bool HEEPEle::ApplyAllHEEPCuts(){
 		return ( ApplyHEEPCutsNoIso() && ApplyIsoVarHEEPCuts() );
 	}
