@@ -30,14 +30,25 @@ namespace tsw{
 			TH1D* diEleHist_deltaEta_;
 			TH1D* diEleHist_deltaPhi_;
 			TH1D* diEleHist_deltaR_;
+			TH1D* diEleHist_modTrkIso_;
+			TH1D* diEleHist_dRleq03modTrkIso_;
+			TH1D* diEleHist_dRleq03modTrkIsoNoCtfTrk_;
+
 			TH1D* eleAHist_et_;
 			TH1D* eleAHist_energy_;
 			TH1D* eleAHist_eta_;
 			TH1D* eleAHist_phi_;
+			TH1D* eleAHist_modTrkIso_;
+			TH1D* eleAHist_dRleq03modTrkIso_;
+			TH1D* eleAHist_dRleq03modTrkIsoNoCtfTrk_;
+
 			TH1D* eleBHist_et_;
 			TH1D* eleBHist_energy_;
 			TH1D* eleBHist_eta_;
 			TH1D* eleBHist_phi_;
+			TH1D* eleBHist_modTrkIso_;
+			TH1D* eleBHist_dRleq03modTrkIso_;
+			TH1D* eleBHist_dRleq03modTrkIsoNoCtfTrk_;
 	};
 
 	/////////////////////
@@ -94,6 +105,17 @@ namespace tsw{
 		eleAHist_phi_ = new TH1D(hNamePrefix + "eleA_phi",  "eleA #phi distribution  (" + str_eleType_GSFeles_cutsPhrase + ");" + str_NoOfEles + "; ele A #phi", hNBins_elePhi, hMin_elePhi, hMax_elePhi);
 		eleBHist_phi_ = new TH1D(hNamePrefix + "eleB_phi",  "eleB #phi distribution  (" + str_eleType_GSFeles_cutsPhrase + ");" + str_NoOfEles + "; ele B #phi", hNBins_elePhi, hMin_elePhi, hMax_elePhi);
 
+		//Initialise the tracker isolation histograms ...
+		diEleHist_modTrkIso_ = new TH1D(hNamePrefix + "both_modTrkIso",  "Sum modTrkIso for both eles (" + str_eleType_GSFeles_cutsPhrase + "); eleA+eleB #Sigma p_{T}^{trk};" + str_NoOfDiEles, 80, -600.0, +600.0);
+		diEleHist_dRleq03modTrkIso_ = new TH1D(hNamePrefix + "both_dRleq03modTrkIso",  "Sum modTrkIso for both eles if modified (" + str_eleType_GSFeles_cutsPhrase + "); eleA+eleB #Sigma p_{T}^{trk} if #Delta R_{ee}<0.3;" + str_NoOfDiEles, 80, -600.0, +600.0);
+		diEleHist_dRleq03modTrkIsoNoCtfTrk_ = new TH1D(hNamePrefix + "both_dRleq03modTrkIsoNoCtfTrk",  "Sum modTrkIso for both eles if modified AND no CTF track for 1 ele (" + str_eleType_GSFeles_cutsPhrase + "); eleA+eleB #Sigma p_{T}^{trk} if #Delta R_{ee}<0.3 and 1 ele hasn't got closest CTF track;" + str_NoOfDiEles, 80, -600.0, +600.0);
+		eleAHist_modTrkIso_ = new TH1D(hNamePrefix + "eleA_modTrkIso",  "eleA modTrkIso distribution (" + str_eleType_GSFeles_cutsPhrase + "); eleA #Sigma p_{T}^{trk};" + str_NoOfEles, 80, -300.0, +300.0);
+		eleAHist_dRleq03modTrkIso_ = new TH1D(hNamePrefix + "eleA_dRleq03modTrkIso",  "eleA modTrkIso if modified distribution (" + str_eleType_GSFeles_cutsPhrase + "); eleA #Sigma p_{T}^{trk} if #Delta R_{ee}<0.3;" + str_NoOfEles, 80, -300.0, +300.0);
+		eleAHist_dRleq03modTrkIsoNoCtfTrk_ = new TH1D(hNamePrefix + "eleA_dRleq03modTrkIsoNoCtfTrk",  "eleA modTrkIso if (modified AND no eleB CTF) distribution (" + str_eleType_GSFeles_cutsPhrase + "); eleA #Sigma p_{T}^{trk} if #Delta R_{ee}<0.3 and eleB hasn't got closest CTF track;" + str_NoOfEles, 80, -300.0, +300.0);
+		eleBHist_modTrkIso_ = new TH1D(hNamePrefix + "eleB_modTrkIso",  "eleB modTrkIso distribution (" + str_eleType_GSFeles_cutsPhrase + "); eleB #Sigma p_{T}^{trk};" + str_NoOfEles, 80, -300.0, +300.0);
+		eleBHist_dRleq03modTrkIso_ = new TH1D(hNamePrefix + "eleB_dRleq03modTrkIso",  "eleB modTrkIso if modified distribution (" + str_eleType_GSFeles_cutsPhrase + "); eleB #Sigma p_{T}^{trk} if #Delta R_{ee}<0.3;" + str_NoOfEles, 80, -300.0, +300.0);
+		eleBHist_dRleq03modTrkIsoNoCtfTrk_ = new TH1D(hNamePrefix + "eleB_dRleq03modTrkIsoNoCtfTrk",  "eleB modTrkIso if (modified AND no eleA CTF) distribution (" + str_eleType_GSFeles_cutsPhrase + "); eleB #Sigma p_{T}^{trk} if #Delta R_{ee}<0.3 and eleA hasn't got closest CTF track;" + str_NoOfEles, 80, -300.0, +300.0);
+
 		SetHistAttributes(lineColorIdx, lineStyleIdx);
 	}
 
@@ -109,16 +131,24 @@ namespace tsw{
 		delete diEleHist_deltaEta_;
 		delete diEleHist_deltaPhi_;
 		delete diEleHist_deltaR_;
+		delete diEleHist_modTrkIso_;
+		delete diEleHist_dRleq03modTrkIso_;
 
 		delete eleAHist_et_;
 		delete eleAHist_energy_;
 		delete eleAHist_eta_;
 		delete eleAHist_phi_;
+		delete eleAHist_modTrkIso_;
+		delete eleAHist_dRleq03modTrkIso_;
+		delete eleAHist_dRleq03modTrkIsoNoCtfTrk_;
 
 		delete eleBHist_et_;
 		delete eleBHist_energy_;
 		delete eleBHist_eta_;
 		delete eleBHist_phi_;
+		delete eleBHist_modTrkIso_;
+		delete eleBHist_dRleq03modTrkIso_;
+		delete eleBHist_dRleq03modTrkIsoNoCtfTrk_;
 	}
 
 	/////////////////////////////////
@@ -150,6 +180,23 @@ namespace tsw{
 		eleBHist_energy_->Fill( theDiEle.eleB().energy() , dieleWeight);
 		eleBHist_eta_->Fill(    theDiEle.eleB().eta()    , dieleWeight);
 		eleBHist_phi_->Fill(    theDiEle.eleB().phi()    , dieleWeight);
+
+		//Filling the tracker isolation histos ...
+		diEleHist_modTrkIso_->Fill( (theDiEle.eleA_modTrkIso()+theDiEle.eleB_modTrkIso()), dieleWeight);
+		eleAHist_modTrkIso_->Fill( theDiEle.eleA_modTrkIso(), dieleWeight);
+		eleBHist_modTrkIso_->Fill( theDiEle.eleB_modTrkIso(), dieleWeight);
+		if( theDiEle.deltaR()<0.3 ){
+			diEleHist_dRleq03modTrkIso_->Fill( (theDiEle.eleA_modTrkIso()+theDiEle.eleB_modTrkIso()), dieleWeight);
+			eleAHist_dRleq03modTrkIso_->Fill( theDiEle.eleA_modTrkIso(), dieleWeight);
+			eleBHist_dRleq03modTrkIso_->Fill( theDiEle.eleB_modTrkIso(), dieleWeight);
+			if( (!(theDiEle.eleA().closestCtfTrk_exists())) || (!(theDiEle.eleB().closestCtfTrk_exists())) )
+				diEleHist_dRleq03modTrkIsoNoCtfTrk_->Fill( (theDiEle.eleA_modTrkIso()+theDiEle.eleB_modTrkIso()), dieleWeight);
+			if( !(theDiEle.eleB().closestCtfTrk_exists()) )
+				eleAHist_dRleq03modTrkIsoNoCtfTrk_->Fill( theDiEle.eleA_modTrkIso(), dieleWeight);
+			if( !(theDiEle.eleA().closestCtfTrk_exists()) )
+				eleBHist_dRleq03modTrkIsoNoCtfTrk_->Fill( theDiEle.eleB_modTrkIso(), dieleWeight);
+		}
+
 	}
 
 	void DiEleDistns::SetHistAttributes(Int_t lineCol, Int_t lineStyle){
@@ -179,18 +226,27 @@ namespace tsw{
 		diEleHist_deltaEta_->Write();
 		diEleHist_deltaPhi_->Write();
 		diEleHist_deltaR_->Write();
+		diEleHist_modTrkIso_->Write();
+		diEleHist_dRleq03modTrkIso_->Write();
+		diEleHist_dRleq03modTrkIsoNoCtfTrk_->Write();
 
 		//Write out the eleA_ histos ...
 		eleAHist_et_->Write();
 		eleAHist_energy_->Write();
 		eleAHist_eta_->Write();
 		eleAHist_phi_->Write();
+		eleAHist_modTrkIso_->Write();
+		eleAHist_dRleq03modTrkIso_->Write();
+		eleAHist_dRleq03modTrkIsoNoCtfTrk_->Write();
 
 		//Write out the eleB_ histos ...
 		eleBHist_et_->Write();
 		eleBHist_energy_->Write();
 		eleBHist_eta_->Write();
 		eleBHist_phi_->Write();
+		eleBHist_modTrkIso_->Write();
+		eleBHist_dRleq03modTrkIso_->Write();
+		eleBHist_dRleq03modTrkIsoNoCtfTrk_->Write();
 
 		//Move back to the original directory within the output file ...
 		ptr_outFile->cd("..");
@@ -208,14 +264,25 @@ namespace tsw{
 		tmpPtrsVector.push_back(diEleHist_deltaEta_);
 		tmpPtrsVector.push_back(diEleHist_deltaPhi_);
 		tmpPtrsVector.push_back(diEleHist_deltaR_);
+		tmpPtrsVector.push_back(diEleHist_modTrkIso_);
+		tmpPtrsVector.push_back(diEleHist_dRleq03modTrkIso_);
+		tmpPtrsVector.push_back(diEleHist_dRleq03modTrkIsoNoCtfTrk_);
+
 		tmpPtrsVector.push_back(eleAHist_et_);
 		tmpPtrsVector.push_back(eleAHist_energy_);
 		tmpPtrsVector.push_back(eleAHist_eta_);
 		tmpPtrsVector.push_back(eleAHist_phi_);
+		tmpPtrsVector.push_back(eleAHist_modTrkIso_);
+		tmpPtrsVector.push_back(eleAHist_dRleq03modTrkIso_);
+		tmpPtrsVector.push_back(eleAHist_dRleq03modTrkIsoNoCtfTrk_);
+
 		tmpPtrsVector.push_back(eleBHist_et_);
 		tmpPtrsVector.push_back(eleBHist_energy_);
 		tmpPtrsVector.push_back(eleBHist_eta_);
 		tmpPtrsVector.push_back(eleBHist_phi_);
+		tmpPtrsVector.push_back(eleBHist_modTrkIso_);
+		tmpPtrsVector.push_back(eleBHist_dRleq03modTrkIso_);
+		tmpPtrsVector.push_back(eleBHist_dRleq03modTrkIsoNoCtfTrk_);
 
 		return tmpPtrsVector;
 	}
