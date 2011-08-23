@@ -29,6 +29,7 @@ namespace tsw{
 			bool ApplyHEEPCutsNoIso();
 			bool ApplyHEEPIsoCut_Trk();
 			bool ApplyHEEPIsoCut_EmHad1();
+			bool ApplyHEEPIsoCut_EmHad1(float );
 			bool ApplyHEEPIsoCut_Had2();
 			bool ApplyIsoVarHEEPCuts();
 			bool ApplyAllHEEPCuts();
@@ -67,8 +68,9 @@ namespace tsw{
 			float ptVtx(){return eleStr_.ptVtx_;}
 			float ptCalo(){return eleStr_.ptCalo_;}
 			bool  closestCtfTrk_exists(){
-				if( (closestCtfTrk_pt()<-0.1 && closestCtfTrk_innerPt()<-0.1) && closestCtfTrk_outerPt()<-0.1)
-					return false;
+				if( (closestCtfTrk_pt()<-0.1 && closestCtfTrk_innerPt()<-0.1) && closestCtfTrk_outerPt()<-0.1){
+					//std::cout << std::endl << "    ***** closestCtfTrackRef is NULL *****" << std::endl << std::endl;
+					return false;}
 				else
 					return true;
 			}
@@ -111,6 +113,35 @@ namespace tsw{
 			float isolPtTrks(){return eleStr_.isolPtTrks_;}
 			float isolEmHadDepth1(){return eleStr_.isolEmHadDepth1_;}
 			/////////////////////////////////////////////////////
+
+			//Methods used in applying the modified EmHad1 isolation HEEP cut ...
+			float dR_SCs(tsw::HEEPEle* theOtherEle){
+				// Calculate deltaEta ...
+				float dEta = this->scEta() - theOtherEle->scEta();
+				// Calculate deltaPhi ...
+				double value_pi = 3.14159265;
+				float dPhi = this->scPhi() - theOtherEle->scPhi();
+				while(dPhi >= value_pi)
+					dPhi -= 2.0*value_pi;
+				while(dPhi < -value_pi)
+					dPhi += 2.0*value_pi;
+
+				// Now calculate deltaR ...
+				float dR = sqrt( pow(dEta, 2.0) + pow(dPhi,2.0) );
+				return dR;
+			}
+			float modEmHad1Iso(tsw::HEEPEle* theOtherEle){
+				bool coutDebugTxt = false;
+				double isolEmHad1 = this->isolEmHadDepth1();
+				// If deltaR for the di-electron SCs is < 0.3, then the centres of each electron's SC lies in the other ele's isolation cone, ...
+				// and so remove the other electron's SC Et from that electron ...
+				if(dR_SCs(theOtherEle)<0.3){
+					isolEmHad1 -= theOtherEle->scEt();
+					if(coutDebugTxt){std::cout << "                       << An isolEmHadDepth1 value has been modified!! >>" << std::endl;}
+				}
+				return isolEmHad1;
+			}
+
 		//private:
 			//ClassDef(tsw::HEEPEle,1);
 	};
@@ -162,6 +193,8 @@ namespace tsw{
 //		std::cout << "; pCalo=" << pCalo();
 		std::cout << "       ptVtx=" << ptVtx();
 		std::cout << "; ptCalo=" << ptCalo() << std::endl;
+		if(!closestCtfTrk_exists())
+			std::cout << std::endl << "    ***** closestCtfTrackRef is NULL *****" << std::endl << std::endl;
 		std::cout << "       closestCtfTrk... (pt,eta,phi)=(" << closestCtfTrk_pt() << ", " << closestCtfTrk_eta() << ", " << closestCtfTrk_phi() << ")" << std::endl;
 		std::cout << "          ... inner:    (pt,eta,phi)=(" << closestCtfTrk_innerPt() << ", " << closestCtfTrk_innerEta() << ", " << closestCtfTrk_innerPhi() << ")" << std::endl;
 		std::cout << "          ... outer:    (pt,eta,phi)=(" << closestCtfTrk_outerPt() << ", " << closestCtfTrk_outerEta() << ", " << closestCtfTrk_outerPhi() << ")" << std::endl;
@@ -288,6 +321,22 @@ namespace tsw{
 
 		return tmpCutsFlag;
 	}
+	bool HEEPEle::ApplyHEEPIsoCut_EmHad1(float emHad1IsolValue){
+			bool tmpCutsFlag = false;
+			if( isHEEPEB() ){
+				tmpCutsFlag = ( emHad1IsolValue<(2.0+0.03*et()) );
+			}
+			else if( isHEEPEE() ){
+				if( et()<50.0 ){
+					tmpCutsFlag = ( emHad1IsolValue<2.5 );}
+				else{
+					tmpCutsFlag = ( emHad1IsolValue<(2.5+0.03*(et()-50.0)) );}
+			}
+			else
+				tmpCutsFlag = false;
+
+			return tmpCutsFlag;
+		}
 
 	bool HEEPEle::ApplyHEEPIsoCut_Had2(){
 		bool tmpCutsFlag = false;
