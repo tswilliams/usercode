@@ -46,6 +46,7 @@
 
 #ifdef __MAKECINT__
 #pragma link C++ class vector<Int_t>+;
+#pragme link C++ class vector< vector<float> >;
 #endif
 
 //Functions...
@@ -273,6 +274,11 @@ class BstdZeeFirstAnalyser{
 		std::vector<float>* normHEEPEles_isolPtTrks_;
 		std::vector<float>* normHEEPEles_isolEmHadDepth1_;
 
+		std::vector< std::vector<float> >* normHEEPEles_SC_recHits_Et_;
+		std::vector< std::vector<float> >* normHEEPEles_SC_recHits_eta_;
+		std::vector< std::vector<float> >* normHEEPEles_SC_recHits_phi_;
+		std::vector< std::vector<bool> >*  normHEEPEles_SC_recHits_isFromEB_;
+
 		std::vector<tsw::HEEPEle>  normEles_;
 
 		//------------//
@@ -419,6 +425,7 @@ class BstdZeeFirstAnalyser{
 		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_trgA_Histos_;
 		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_Histos_;
 		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_;
+		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_;
 		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_;
 		tsw::EleMuDistns h_eleMu_EB_HEEPNoIso_tight_MZ_;
 
@@ -506,6 +513,7 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, unsigned int numEvts, bo
 	normDiEle_EB_HEEPNoIso_trgA_Histos_(   "h_normDiEle_EB_HEEPNoIso_trgA_",    "standard", "EB and HEEP cuts w/o isol, trgA",        2, 1, nbins_mass, nbins_pt, ptmax),
 	normDiEle_EB_HEEPNoIso_MZ_Histos_(     "h_normDiEle_EB_HEEPNoIso_MZ_",      "standard", "EB and HEEP cuts w/o isol, Z mass",      2, 1, nbins_mass, nbins_pt, ptmax),
 	normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_(     "h_normDiEle_EB_HEEPNoIso_MZ_trkIso_",      "standard", "EB and HEEP cuts w/o isol, Z mass, trkIso",      2, 1, nbins_mass, nbins_pt, ptmax),
+	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_(  "h_normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_",   "standard", "EB and HEEP cuts w/o isol, Z mass, EmHad1Iso",   2, 1, nbins_mass, nbins_pt, ptmax),
 	normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_("h_normDiEle_EB_HEEPNoIso_MZ_trgA_", "standard", "EB and HEEP cuts w/o isol, Z mass, trgA",2, 1, nbins_mass, nbins_pt, ptmax),//
 	//
 	h_eleMu_EB_HEEPNoIso_tight_MZ_( "h_eleMu_EB_HEEPNoIso_tight_MZ_", "standard", "EB+HEEPNoIso cuts, barrel+tight cuts, Z mass", 2, 1, nbins_mass, nbins_pt, ptmax ),
@@ -618,7 +626,7 @@ void BstdZeeFirstAnalyser::DoAnalysis(const Double_t evtWeight){
 		inputFile_tree_->GetEntry(dataTreeEntry);
 		timer_DoAnalysis_readIn_.Stop();
 
-		if( (vFlg_>-2) && (evtIdx%250000==0) ){std::cout << " *** Event no. " << evtIdx << " reached." << std::endl;}
+		if( (vFlg_>-2) && (evtIdx%1==0) ){std::cout << std::endl << " *** Event no. " << evtIdx << " reached." << std::endl;}
 		//TODO - Put setting up of TLorentzVector 4 momenta here ...
 
 		//Analyse this data...
@@ -782,6 +790,11 @@ void BstdZeeFirstAnalyser::SetupEleClassVectors(){
 		ithEleStruct.isolHadDepth2_ = normHEEPEles_isolHadDepth2_->at(iEle);
 		ithEleStruct.isolPtTrks_ = normHEEPEles_isolPtTrks_->at(iEle);
 		ithEleStruct.isolEmHadDepth1_ = normHEEPEles_isolEmHadDepth1_->at(iEle);
+
+		ithEleStruct.SC_recHits_Et_  = normHEEPEles_SC_recHits_Et_->at(iEle);
+		ithEleStruct.SC_recHits_eta_ = normHEEPEles_SC_recHits_eta_->at(iEle);
+		ithEleStruct.SC_recHits_phi_ = normHEEPEles_SC_recHits_phi_->at(iEle);
+		ithEleStruct.SC_recHits_isFromEB_ = normHEEPEles_SC_recHits_isFromEB_->at(iEle);
 
 		ithHEEPEle = tsw::HEEPEle::HEEPEle(ithEleStruct);
 		normEles_.push_back(ithHEEPEle);
@@ -1312,15 +1325,20 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight){
 		// Set some of the emu method diele tree branch variablles here ...
 		normDiEle_EB_HEEPNoIso = tsw::HEEPDiEle::HEEPDiEle( normEles_, normEles_EB_HEEPCutsNoIsoFlags );
 
+//		if(normDiEle_EB_HEEPNoIso.deltaR()<0.4 && fabs(normDiEle_EB_HEEPNoIso.deltaEta())<0.1){
 		// Code for testing ApplyDiEleTrkIsolCut method ...
-//		std::cout << std::endl << "   ****------------------------------------------------------------------****" << std::endl;
-//		std::cout << "   * EB HEEPNoIso di-electron formed in this event!!" << std::endl;
-//		normDiEle_EB_HEEPNoIso.PrintOutInfo();
-//		if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
-//			std::cout << " ->* This di-electron pair has passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
-//		else
-//			std::cout << " ->* This di-electron pair has NOT passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
-
+		std::cout << std::endl << "   ****------------------------------------------------------------------****" << std::endl;
+		std::cout << "   * EB HEEPNoIso di-electron formed in this event!!" << std::endl;
+		normDiEle_EB_HEEPNoIso.PrintOutInfo();
+////		if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
+////			std::cout << " ->* This di-electron pair has passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
+////		else
+////			std::cout << " ->* This di-electron pair has NOT passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
+		if(normDiEle_EB_HEEPNoIso.ApplyDiEleEmHad1IsolCut())
+			std::cout << " ->* This di-electron pair has passed cut in ApplyDiEleEmHad1IsolCut() method." << std::endl;
+		else
+			std::cout << " ->* This di-electron pair has NOT passed cut in ApplyDiEleEmHad1IsolCut() method." << std::endl;
+//		}
 		normDiEle_EB_HEEPNoIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
 		if(trg_PathA_decision_)
 			normDiEle_EB_HEEPNoIso_trgA_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
@@ -1330,6 +1348,8 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight){
 			normDiEle_EB_HEEPNoIso_MZ_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
 			if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
 				normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
+//			if(normDiEle_EB_HEEPNoIso.ApplyDiEleEmHad1IsolCut())
+//				normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
 			if(trg_PathA_decision_){
 				normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
 				normDiEle_HEEPNoIso_ = normDiEle_EB_HEEPNoIso;
@@ -1513,6 +1533,7 @@ void BstdZeeFirstAnalyser::SaveReconValidationHistos(TFile* histosFile){
 	normDiEle_EB_HEEPNoIso_trgA_Histos_.WriteHistos(histosFile);
 	normDiEle_EB_HEEPNoIso_MZ_Histos_.WriteHistos(histosFile);
 	normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_.WriteHistos(histosFile);
+	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_.WriteHistos(histosFile);
 	normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_.WriteHistos(histosFile);
 
 	h_eleMu_EB_HEEPNoIso_tight_MZ_.WriteHistos(histosFile);
@@ -1728,6 +1749,11 @@ void BstdZeeFirstAnalyser::SetMemberVariablesToDefaultValues(){
 	normHEEPEles_isolHadDepth2_ = 0;
 	normHEEPEles_isolPtTrks_ = 0;
 	normHEEPEles_isolEmHadDepth1_ = 0;
+
+	normHEEPEles_SC_recHits_Et_  = 0;
+	normHEEPEles_SC_recHits_eta_ = 0;
+	normHEEPEles_SC_recHits_phi_ = 0;
+	normHEEPEles_SC_recHits_isFromEB_ = 0;
 
 	normEles_.clear();
 
@@ -2016,6 +2042,11 @@ void BstdZeeFirstAnalyser::SetupBranchLinks(const TFile* inFile_ptr){
 	inputFile_tree_->SetBranchAddress("normHEEPEles_isolPtTrks", &normHEEPEles_isolPtTrks_);
 	inputFile_tree_->SetBranchAddress("normHEEPEles_isolEmHadDepth1", &normHEEPEles_isolEmHadDepth1_);
 
+	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_recHits_Et",  &normHEEPEles_SC_recHits_Et_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_recHits_eta", &normHEEPEles_SC_recHits_eta_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_recHits_phi", &normHEEPEles_SC_recHits_phi_);
+	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_recHits_isFromEB", &normHEEPEles_SC_recHits_isFromEB_);
+
 	/////////////////////////////////////////////////////////////////////////////////////////
 	//Setting up the pointer links for the special reconstruction GSF electron branches ...
 	if(readInBstdEles_){
@@ -2239,8 +2270,9 @@ int main()
 		std::cout << " Running the DoAnalysis method ..." << std::endl;
 		//sigAnalyserC.DoAnalysis( 1.0 ); //sigAnalyserC.DoAnalysis( 1.0*(1.2/20000.0) );*/
 
-		TString inFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/NTuples/42Xv1b/2011-07-17/";
-		TString outFilePrefix = "2011-08-16/";
+		//TString inFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/NTuples/42Xv1c/local/2011-08-17/";
+		TString inFilePrefix = "/home/ppd/nnd85574/Work/BstdZee/CMSSW_4_2_4_patch1/src/NTupler/BstdZeeNTupler/";
+		TString outFilePrefix = "2011-08-23/";
 		std::vector<BstdZeeFirstAnalyser> myAnalysers; myAnalysers.clear();
 		std::vector<TString> inFile; inFile.clear();
 		std::vector<TString> outFile; outFile.clear();
@@ -2338,16 +2370,16 @@ int main()
 //		outFile.push_back("histos_1-00TeVu_2011-08-16");
 //		nEvents.push_back( 10000 );
 //		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/110.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
-//
-//		// SigMC - 2.00TeVu*
-//		inFile.push_back("../local/2011-08-01/mcNTuple-42X_v1b_2-00TeVu-10kEvts.root"); isMCflag.push_back(false);
-//		outFile.push_back("histos_2-00TeVu_2011-08-16");
-//		nEvents.push_back( 10000 );
-//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/1.2 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
 
-		// Test
-		BstdZeeFirstAnalyser myAnalyser = BstdZeeFirstAnalyser(0, 10, true, "../../NTupler/BstdZeeNTupler/testNTuple_2-00TeVu.root", "testOut.root", 6, 80, 55, 1100.0);
-		myAnalyser.DoAnalysis(  1.0  );
+		// SigMC - 2.00TeVu*
+		inFile.push_back("testNTuple_2-00TeVu.root"); isMCflag.push_back(false);
+		outFile.push_back("histos_2-00TeVu_2011-08-23");
+		nEvents.push_back( 5 );
+		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/1.2 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+
+//		// Test
+//		BstdZeeFirstAnalyser myAnalyser = BstdZeeFirstAnalyser(0, 10, true, "../../NTupler/BstdZeeNTupler/testNTuple_2-00TeVu.root", "testOut.root", 6, 80, 55, 1100.0);
+//		myAnalyser.DoAnalysis(  1.0  );
 
 		// Doing the analysis ...
 		for(unsigned int idx=0; idx<inFile.size(); idx++){
