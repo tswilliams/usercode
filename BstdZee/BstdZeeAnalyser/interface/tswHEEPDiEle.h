@@ -221,7 +221,9 @@ namespace tsw{
 			std::cout << "      **     Initial values...  eleA: " << eleA_isolEmHad1 << ", eleB: " << eleB_isolEmHad1 << std::endl;}
 
 		// Getting the modified isolation values ...
+		if(coutDebugTxt){std::cout << "             *** eleA calcn ... ***" << std::endl;}
 		eleA_isolEmHad1 = eleA_modEmHad1Iso();
+		if(coutDebugTxt){std::cout << "             *** eleB calcn ... ***" << std::endl;}
 		eleB_isolEmHad1 = eleB_modEmHad1Iso();
 		if(coutDebugTxt){std::cout << "      **     Modified values... eleA: " << eleA_isolEmHad1 << ", eleB: " << eleB_isolEmHad1 << std::endl;}
 
@@ -242,14 +244,14 @@ namespace tsw{
 		std::cout << "          p4,E=" << totalP4().E() << "; p4,p=(" << totalP4().Px() << ", " << totalP4().Py() << ", " <<totalP4().Pz() << ")" << std::endl;
 		std::cout << "          pT=" << pT() << "; mass=" << invMass() << "; opening angle = " << openingAngle() << std::endl;
 		std::cout << "          deltaEta=" << deltaEta() << "; deltaPhi=" << deltaPhi() << "; deltaR=" << deltaR() << std::endl;
-		std::cout << "          dR_gsfAToCtfB=" << dR_gsfAToCtfB() << "; dR_gsfBToCtfA=" << dR_gsfBToCtfA() << "; dR_SCs=" << eleA_.dR_SCs(&eleB_) << "=" << eleB_.dR_SCs(&eleB_) << std::endl;
+		std::cout << "          dR_gsfAToCtfB=" << dR_gsfAToCtfB() << "; dR_gsfBToCtfA=" << dR_gsfBToCtfA() << "; dR_SCs=" << eleA_.dR_SCs(&eleB_) << "=" << eleB_.dR_SCs(&eleA_) << std::endl;
 		std::cout << "        EleA:" << std::endl;
 		std::cout << "          p4,E=" << eleA_.p4().E() << "; p4,p=(" << eleA_.p4().Px() << ", " << eleA_.p4().Py() << ", " << eleA_.p4().Pz() << std::endl;
-		std::cout << "          et=" << eleA_.et() << "; energy=" << eleA_.energy() << "; eta=" << eleA_.eta() << "; phi=" << eleA_.phi() << std::endl;
+		std::cout << "          et=" << eleA_.et() << "; scEt=" << eleA_.scEt() << "; energy=" << eleA_.energy() << "; eta=" << eleA_.eta() << "; phi=" << eleA_.phi() << "; sc(eta,phi) = (" << eleA_.scEta() << ", " << eleA_.scPhi() << ")" << std::endl;
 		std::cout << "          ptVtx=" << eleA_.ptVtx() << "; ptCalo=" << eleA_.ptCalo() << "; closestCtfTrk... (pT,eta,phi)=(" << eleA_.closestCtfTrk_pt() << ", " << eleA_.closestCtfTrk_eta() << ", " << eleA_.closestCtfTrk_phi() << ")" << std::endl;
 		std::cout << "        EleB:" << std::endl;
 		std::cout << "          p4,E=" << eleB_.p4().E() << "; p4,p=(" << eleB_.p4().Px() << ", " << eleB_.p4().Py() << ", " << eleB_.p4().Pz() << std::endl;
-		std::cout << "          et=" << eleB_.et() << "; energy=" << eleB_.energy() << "; eta=" << eleB_.eta() << "; phi=" << eleB_.phi() << std::endl;
+		std::cout << "          et=" << eleB_.et() << "; scEt=" << eleB_.scEt() << "; energy=" << eleB_.energy() << "; eta=" << eleB_.eta() << "; phi=" << eleB_.phi() << "; sc(eta,phi) = (" << eleB_.scEta() << ", " << eleB_.scPhi() << ")" << std::endl;
 		std::cout << "          ptVtx=" << eleB_.ptVtx() << "; ptCalo=" << eleB_.ptCalo() << "; closestCtfTrk... (pT,eta,phi)=(" << eleB_.closestCtfTrk_pt() << ", " << eleB_.closestCtfTrk_eta() << ", " << eleB_.closestCtfTrk_phi() << ")" << std::endl;
 
 	}
