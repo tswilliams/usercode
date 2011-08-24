@@ -112,6 +112,14 @@ namespace tsw{
 			float isolHadDepth2(){return eleStr_.isolHadDepth2_;}
 			float isolPtTrks(){return eleStr_.isolPtTrks_;}
 			float isolEmHadDepth1(){return eleStr_.isolEmHadDepth1_;}
+
+			//SC recHits information ...
+			unsigned int numRecHits(){return eleStr_.SC_recHits_Et_.size();}
+			float recHits_Et(int recHitIdx){return eleStr_.SC_recHits_Et_.at(recHitIdx);}
+			float recHits_eta(int recHitIdx){return eleStr_.SC_recHits_eta_.at(recHitIdx);}
+			float recHits_phi(int recHitIdx){return eleStr_.SC_recHits_phi_.at(recHitIdx);}
+			bool recHits_isFromEB(int recHitIdx){return eleStr_.SC_recHits_isFromEB_.at(recHitIdx);}
+
 			/////////////////////////////////////////////////////
 
 			//Methods used in applying the modified EmHad1 isolation HEEP cut ...
@@ -130,7 +138,7 @@ namespace tsw{
 				float dR = sqrt( pow(dEta, 2.0) + pow(dPhi,2.0) );
 				return dR;
 			}
-			float modEmHad1Iso(tsw::HEEPEle* theOtherEle){
+			float modEmHad1Iso_v0(tsw::HEEPEle* theOtherEle){
 				bool coutDebugTxt = false;
 				double isolEmHad1 = this->isolEmHadDepth1();
 				// If deltaR for the di-electron SCs is < 0.3, then the centres of each electron's SC lies in the other ele's isolation cone, ...
@@ -141,6 +149,7 @@ namespace tsw{
 				}
 				return isolEmHad1;
 			}
+			float modEmHad1Iso(tsw::HEEPEle* theOtherEle);
 
 		//private:
 			//ClassDef(tsw::HEEPEle,1);
@@ -148,6 +157,8 @@ namespace tsw{
 
 	HEEPEle::HEEPEle(tsw::EleStruct eleStruct){
 		eleStr_ = eleStruct;
+		if( (eleStr_.SC_recHits_Et_.size()!=eleStr_.SC_recHits_eta_.size()) || (eleStr_.SC_recHits_Et_.size()!=eleStr_.SC_recHits_phi_.size()) || (eleStr_.SC_recHits_Et_.size()!=eleStr_.SC_recHits_isFromEB_.size()) )
+			std::cout << std::endl << "   *** WARNING (in tsw::HEEPEle CTOR): The SC_recHits_* vectors in the electron struct are NOT the same size!!! ***" << std::endl << std::endl;
 	}
 	HEEPEle::HEEPEle(){
 		EleStruct eleStruct;
@@ -230,6 +241,11 @@ namespace tsw{
 		std::cout << "; isolHadDepth2=" << isolHadDepth2() << std::endl;
 		std::cout << "       isolPtTrks=" << isolPtTrks();
 		std::cout << "; isolEmHadDepth1=" << isolEmHadDepth1() << std::endl;
+
+		std::cout << "         -=-=-" << std::endl;
+		std::cout << "       recHits (This ele is made up from " << numRecHits() << " of them)" << std::endl;
+		for(unsigned int recHitIdx=0; recHitIdx<numRecHits(); recHitIdx++)
+			std::cout << "          #" << recHitIdx << ": (Et, eta, phi, isFromEB)=(" << recHits_Et(recHitIdx) << ", " << recHits_eta(recHitIdx) << ", " << recHits_phi(recHitIdx) << "; " << recHits_isFromEB(recHitIdx) << ")" << std::endl;
 	}
 
 	bool HEEPEle::ApplySimpleCuts(){
@@ -394,6 +410,60 @@ namespace tsw{
 		//Placeholder
 	}*/
 
+}
+
+float tsw::HEEPEle::modEmHad1Iso(tsw::HEEPEle* theOtherEle){
+	bool coutDebugTxt = true;
+	double isolEmHad1 = this->isolEmHadDepth1();
+
+	// Now running over the recHits from 'the other electron' ...
+	for(unsigned int recHitIdx=0; recHitIdx<theOtherEle->numRecHits(); recHitIdx++){
+		double recHit_Et = theOtherEle->recHits_Et(recHitIdx);
+		double recHit_eta = theOtherEle->recHits_eta(recHitIdx);
+		double recHit_phi = theOtherEle->recHits_phi(recHitIdx);
+		bool recHit_isFromEB = theOtherEle->recHits_isFromEB(recHitIdx);
+		TVector3 tmp3Vector; tmp3Vector.SetPtEtaPhi(recHit_Et,recHit_eta,recHit_phi);
+		double recHit_energy = tmp3Vector.Mag();
+		if(coutDebugTxt){std::cout << "                 recHit: (energy, Et, eta, phi) = (" << recHit_energy << ", " << recHit_Et << ", " << recHit_eta << ", " << recHit_phi << "), isFromEB=" << recHit_isFromEB << std::endl;}
+
+		//Calculate delta eta and phi of this recHit relative to cluster
+		double etaDiff = recHit_eta - scEta();
+		double phiDiff = tsw::deltaPhi(recHit_phi, scPhi());
+		double recHitSC_dR = sqrt(etaDiff*etaDiff+phiDiff*phiDiff);
+		if(coutDebugTxt){std::cout << "                         (eta,phi)Diff = (" << etaDiff << ", " << phiDiff << "), recHitSC_dR=" << recHitSC_dR << std::endl;}
+
+		// Skip to the next recHit if this one is not in electron's isolation cone ...
+		double etaStripHalfWidth = 1.5; double isoCone_intRadius = 3.0;
+		if( recHitSC_dR>0.3 ) continue;
+		if( fabs(scEta())<1.479 ){ //EB: Crystal width = 0.0174 in eta & phi
+			if( fabs(etaDiff)<0.0174*etaStripHalfWidth ) continue;
+			if(recHitSC_dR<isoCone_intRadius*0.0174) continue;
+		}
+		else{ //EE: Crystal width = 0.00864*fabs(sinh(recHit_eta))
+			double xtalWidth_eta = 0.00864*fabs(sinh(recHit_eta));
+			if( fabs(etaDiff)<etaStripHalfWidth*xtalWidth_eta ) continue;
+			if( recHitSC_dR< isoCone_intRadius*xtalWidth_eta ) continue;
+		}
+
+		// However, if have got this far, and IF the recHit is above threshold Et/energy, then it contributed to the isolEmHad1 value ...
+		// ... and so must take this recHit's Et away from the isolEmHad1 value of the electron.
+		double thrEt_recHit = 0.0; double thrEnergy_recHit = 0.0;
+		if(recHit_isFromEB){
+			thrEt_recHit = 0.0; thrEnergy_recHit = 0.08;}
+		else{
+			thrEt_recHit = 0.1; thrEnergy_recHit = 0.0;}
+		if( (fabs(recHit_Et)>thrEt_recHit) && (fabs(recHit_energy)>thrEnergy_recHit) ){
+			isolEmHad1 -= recHit_Et;
+			if(coutDebugTxt){std::cout << "                       << isolEmHadDepth1 value has been modified!! (to " << isolEmHad1 << ") >>" << std::endl;}
+		}
+	}// End of for loop over recHits
+
+	return isolEmHad1;
+}
+
+
+
+namespace tsw{
 	std::vector<tsw::HEEPEle> OrderHEEPElesByEt(std::vector<tsw::HEEPEle> vecOfEles){
 		// Declare variables used to temporarily store i'th and (i+1)'th electron
 		tsw::HEEPEle ithEle;
@@ -482,8 +552,6 @@ namespace tsw{
 
 		return vecOfEles;
 	}
-
-
 
 } //end of namespace tsw
 
