@@ -31,11 +31,21 @@ sjlkd
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+#include "FWCore/Framework/interface/ESHandle.h"
+
 //To use the GenParticle MC-truth collection...
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
 //...for the GSF electron collection...
 #include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
+
+//...for the calo geometry classes ...
+#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
+#include "Geometry/Records/interface/CaloGeometryRecord.h"
+
+// ... for using the recHits collections and information ...
+#include "RecoCaloTools/MetaCollections/interface/CaloRecHitMetaCollections.h"
+#include "DataFormats/Common/interface/SortedCollection.h"
 
 //...in order to use the heep::Ele class ...
 #include "SHarper/HEEPAnalyzer/interface/HEEPEle.h"
@@ -129,7 +139,7 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		void ReadInEvtInfo(bool, const edm::Event&);
 
 		//For reading the electron information into the member variables...
-		void ReadInNormGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&);
+		void ReadInNormGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&, edm::ESHandle<CaloGeometry>&, EcalRecHitMetaCollection*, EcalRecHitMetaCollection*);
 		void ReadInBstdGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&);
 
 		//For reading in the muon information, and dumping it into tsw::Event class ...
@@ -336,6 +346,11 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		std::vector<float> normHEEPEles_isolHadDepth2_;
 		std::vector<float> normHEEPEles_isolPtTrks_;
 		std::vector<float> normHEEPEles_isolEmHadDepth1_;
+
+		std::vector< std::vector<float> > normHEEPEles_SC_recHits_Et_;
+		std::vector< std::vector<float> > normHEEPEles_SC_recHits_eta_;
+		std::vector< std::vector<float> > normHEEPEles_SC_recHits_phi_;
+		std::vector< std::vector<bool> >  normHEEPEles_SC_recHits_isFromEB_;
 
 		//std::vector<tsw::HEEPEle>  normGsfEles_tswHEEPEle_;
 		//std::vector<tsw::HEEPEle>* normGsfEles_tswHEEPElePtr_;
@@ -545,6 +560,8 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	//Handles, and grabbing various CMSSW-specific data types from event...
 	Handle<reco::GenParticleCollection> genParticles;
 	edm::Handle<reco::GsfElectronCollection> normGsfElesH, bstdGsfElesH;
+	edm::ESHandle<CaloGeometry> caloGeomH;
+	edm::Handle<EcalRecHitCollection> reducedEBRecHitsH, reducedEERecHitsH;
 
 	if(mcFlag_)
 		iEvent.getByLabel("genParticles", genParticles);
@@ -555,6 +572,15 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	//iEvent.getByLabel(edm::InputTag("gsfElectrons::BOOSTEDRECO"), bstdGsfElesH);
 	if(readInBstdReco_)
 		iEvent.getByLabel(edm::InputTag("ecalDrivenGsfElectrons"), bstdGsfElesH);
+
+	// Setting the handle for the calo geometry information ...
+	iSetup.get<CaloGeometryRecord>().get(caloGeomH);
+
+	// Setting the handle for the EB and EE recHits collections ...
+	iEvent.getByLabel(edm::InputTag("ecalRecHit:EcalRecHitsEB:stdRECO"), reducedEBRecHitsH);
+	iEvent.getByLabel(edm::InputTag("ecalRecHit:EcalRecHitsEE:stdRECO"), reducedEERecHitsH);
+	EcalRecHitMetaCollection* ecalBarrelHitsMeta = new EcalRecHitMetaCollection(*reducedEBRecHitsH);
+	EcalRecHitMetaCollection* ecalEndcapHitsMeta = new EcalRecHitMetaCollection(*reducedEERecHitsH);
 
 	//Reading in the event information...
 	ReadInEvtInfo(vBool_, iEvent);
@@ -578,9 +604,12 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	//Reading in the kin variables for the standard and special reco'n GSF electrons... 
 	if(readInNormReco_)
-		ReadInNormGsfEles(vBool_, normGsfElesH);
+		ReadInNormGsfEles(vBool_, normGsfElesH, caloGeomH, ecalBarrelHitsMeta, ecalEndcapHitsMeta);
 	if(readInBstdReco_)
 		ReadInBstdGsfEles(vBool_, bstdGsfElesH);
+
+	delete ecalBarrelHitsMeta;
+	delete ecalEndcapHitsMeta;
 
 	ReadInMuons(vBool_, iEvent);
 
@@ -1106,6 +1135,11 @@ void BstdZeeNTupler::SetupStdEleBranches(){
 	EventDataTree->Branch("normHEEPEles_isolHadDepth2",     &normHEEPEles_isolHadDepth2_);
 	EventDataTree->Branch("normHEEPEles_isolPtTrks",        &normHEEPEles_isolPtTrks_);
 	EventDataTree->Branch("normHEEPEles_isolEmHadDepth1",   &normHEEPEles_isolEmHadDepth1_);
+
+	EventDataTree->Branch("normHEEPEles_SC_recHits_Et",  &normHEEPEles_SC_recHits_Et_);
+	EventDataTree->Branch("normHEEPEles_SC_recHits_eta", &normHEEPEles_SC_recHits_eta_);
+	EventDataTree->Branch("normHEEPEles_SC_recHits_phi", &normHEEPEles_SC_recHits_phi_);
+	EventDataTree->Branch("normHEEPEles_SC_recHits_isFromEB", &normHEEPEles_SC_recHits_isFromEB_);
 }
 
 void BstdZeeNTupler::SetupBstdEleBranches(){
@@ -1340,6 +1374,11 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 	normHEEPEles_isolPtTrks_.clear();
 	normHEEPEles_isolEmHadDepth1_.clear();
 
+	normHEEPEles_SC_recHits_Et_.clear();
+	normHEEPEles_SC_recHits_eta_.clear();
+	normHEEPEles_SC_recHits_phi_.clear();
+	normHEEPEles_SC_recHits_isFromEB_.clear();
+
 	///////////////////////////////////////////////////////
 	//Clearing contents of standard GSF electron vectors...
 	bstdGsfEles_number_ = 0;
@@ -1542,7 +1581,7 @@ void BstdZeeNTupler::ReadInEvtInfo(bool beVerbose, const edm::Event& edmEventObj
 }
 
 //------------ method for reading in the values of the standard GSF electron variables ---------------
-void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::GsfElectronCollection>& handle_normGsfEles){
+void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::GsfElectronCollection>& handle_normGsfEles, edm::ESHandle<CaloGeometry>& handle_caloGeom, EcalRecHitMetaCollection* recHitsMeta_EB, EcalRecHitMetaCollection* recHitsMeta_EE){
 	
 	reco::GsfElectron ithGsfEle;
 	heep::Ele ithHEEPEle(ithGsfEle);
@@ -1670,6 +1709,61 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 
 	   ithtswHEEPEle = tsw::EleStruct(ithtswEleStruct);
 		//normGsfEles_tswHEEPEle_.push_back(ithtswHEEPEle);
+
+	   // For getting the caloGeometry information ... es.get<CaloGeometryRecord>().get(eventSetupData_->caloGeom);
+	   // Variables storing the recHits information ...
+	   std::vector<float> recHits_EtValues; recHits_EtValues.clear();
+	   std::vector<float> recHits_etaValues; recHits_etaValues.clear();
+	   std::vector<float> recHits_phiValues; recHits_phiValues.clear();
+	   std::vector<bool>  recHits_isFromEBFlags; recHits_isFromEBFlags.clear();
+//	   std::cout << "         -=-=-" << std::endl;
+//	   std::cout << "         -=-=-" << std::endl;
+//	   std::cout << "       SC INFORMATION ..." << std::endl;
+	   reco::SuperClusterRef eleSC = ithGsfEle.superCluster();
+	   GlobalPoint scPosition( eleSC->position().x(), eleSC->position().y(), eleSC->position().z());
+//	   float eleSC_eta = scPosition.eta();
+//	   float eleSC_phi = scPosition.phi();
+//	   float eleSC_rawEnergy = eleSC->rawEnergy();
+//	   std::cout << "         rawEnergy=" << eleSC_rawEnergy << "; eta=" << eleSC_eta << "; phi=" << eleSC_phi << std::endl;
+//	   std::cout << "         Made of " << eleSC->clustersSize() << " basic clusters..." << std::endl;
+	   for(reco::CaloCluster_iterator eleBCIt=eleSC->clustersBegin(); eleBCIt != eleSC->clustersEnd(); ++eleBCIt) {
+//	   	std::cout << "            ->BasicCluster:" << std::endl;
+	   	std::vector< std::pair<DetId,float> > eleBC_hitsAndFracs = (*eleBCIt)->hitsAndFractions();
+	   	for(unsigned int recHitIdx = 0; recHitIdx<eleBC_hitsAndFracs.size(); recHitIdx++){
+	   		double recHitEtMin = 0.0;
+	   		double recHitEnergyMin = 0.0;
+	   		bool recHit_isFromEB = true;
+	   		DetId recHitDetId = eleBC_hitsAndFracs.at(recHitIdx).first;
+	   		// Grab (an iterator for) this recHit for this collection; first look in the EB recHits collection
+	   		CaloRecHitMetaCollectionV::const_iterator recHit_tmpIt = recHitsMeta_EB->find(recHitDetId);
+   			recHitEtMin = 0.0; recHitEnergyMin = 0.08;
+   			recHit_isFromEB = true;
+	   		// ... then, if this recHit isn't in EB coll'n, look in the EE coll'n ...
+	   		if(recHit_tmpIt==recHitsMeta_EB->end()){
+	   			recHit_tmpIt = recHitsMeta_EE->find(recHitDetId);
+	   			recHitEtMin = 0.1; recHitEnergyMin = 0.0; recHit_isFromEB = false;}
+	   		// ... then if still haven't been able to find this recHit, skip it and move onto the next one! (This is exactly what is done in calculating GSF electron isolation variables)
+	   		if(recHit_tmpIt==recHitsMeta_EE->end())
+	   			continue;
+
+	   		// Now, add the (eta, phi) position, and the corresponding Et value for the recHit to the recHits vectors ...
+	   		const GlobalPoint recHitPosn = handle_caloGeom.product()->getPosition(recHitDetId);
+	   		float recHit_energy = recHit_tmpIt->energy();
+	   		float recHit_Et = recHit_energy*recHitPosn.perp()/recHitPosn.mag();
+//	   		std::cout << "                recHit #" << recHitIdx << ": (energy=" << recHit_energy << "; et=" << recHit_Et << "; eta=" << recHitPosn.eta() << "; phi=" << recHitPosn.phi() << ")" << std::endl;
+	   		if(fabs(recHit_energy)>recHitEnergyMin && fabs(recHit_Et)>recHitEtMin){
+	   			recHits_EtValues.push_back(  recHit_Et        );
+	   			recHits_etaValues.push_back( recHitPosn.eta() );
+	   			recHits_phiValues.push_back( recHitPosn.phi() );
+	   			recHits_isFromEBFlags.push_back( recHit_isFromEB );
+	   		}
+	   	}// end of recHits for loop
+	   }// end of BCs for loop
+
+	   normHEEPEles_SC_recHits_Et_.push_back(  recHits_EtValues  );
+	   normHEEPEles_SC_recHits_eta_.push_back( recHits_etaValues );
+	   normHEEPEles_SC_recHits_phi_.push_back( recHits_phiValues );
+	   normHEEPEles_SC_recHits_isFromEB_.push_back( recHits_isFromEBFlags );
 	}
 	
 	//Printing these values to screen...
@@ -1773,6 +1867,12 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		   std::cout << "; isolHadDepth2=" << normHEEPEles_isolHadDepth2_.at(iEle) << std::endl;
 		   std::cout << "       isolPtTrks=" << normHEEPEles_isolPtTrks_.at(iEle);
 		   std::cout << "; isolEmHadDepth1=" << normHEEPEles_isolEmHadDepth1_.at(iEle) << std::endl;
+
+		   std::cout << "         -=-=-" << std::endl;
+		   std::cout << "       recHits... (This ele is made up from " << normHEEPEles_SC_recHits_Et_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_eta_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_phi_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_isFromEB_.at(iEle).size() << "?? of them)" << std::endl;
+		   for(unsigned int recHitIdx=0; recHitIdx<normHEEPEles_SC_recHits_Et_.at(iEle).size(); recHitIdx++){
+		   	std::cout << "          #" << recHitIdx << ": (Et, eta, phi; isFromEB)=(" << normHEEPEles_SC_recHits_Et_.at(iEle).at(recHitIdx) << ", " << normHEEPEles_SC_recHits_eta_.at(iEle).at(recHitIdx) << ", " << normHEEPEles_SC_recHits_phi_.at(iEle).at(recHitIdx) << "; " << normHEEPEles_SC_recHits_isFromEB_.at(iEle).at(recHitIdx) << ")" << std::endl;
+		   }
 		}
 	}
 	
