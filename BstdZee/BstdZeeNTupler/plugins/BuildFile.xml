@@ -3,9 +3,14 @@
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/ServiceRegistry"/>
 <use name="DataFormats/EgammaCandidates"/>
+<use name="DataFormats/HLTReco"/>
 <use name="DataFormats/MuonReco"/>
 <use name="DataFormats/HepMCCandidate"/>
+<use name="DataFormats/Common"/>
 <use name="HLTrigger/HLTcore"/>
+<use name="Geometry/CaloGeometry"/>
+<use name="Geometry/Records"/>
+<use name="RecoCaloTools/MetaCollections"/>
 <use name="CommonTools/UtilAlgos"/>
 <use name="PhysicsTools/UtilAlgos"/>
 <use name="SHarper/HEEPAnalyzer"/>
