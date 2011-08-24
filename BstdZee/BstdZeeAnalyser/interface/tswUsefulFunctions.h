@@ -6,7 +6,6 @@ void SetBinomialErrorsOnNumerator(TH1D* numeratorHist, TH1D* denomHist);
 void SetPoissonErrorsOnHist(TH1D* myHist, Double_t eventWeight);
 void CalcPreWeightEffiHist(TH1D* effiHist, TH1D* numeratorHist, TH1D* denomHist, Double_t eventWeight);
 
-
 TLorentzVector ConvertToTLorentzVector(const ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >* p4_old)
 {
 	TLorentzVector p4_new;
@@ -63,6 +62,18 @@ void CalcPreWeightEffiHist(TH1D* effiHist, TH1D* numeratorHist, TH1D* denomHist,
 	}
 
 	return;
+}
+
+namespace tsw{
+	double deltaPhi(double phi1, double phi2){
+		double value_pi = 3.14159265;
+		double dPhi = phi1 - phi2;
+		while(dPhi >= value_pi)
+			dPhi -= 2.0*value_pi;
+		while(dPhi < -value_pi)
+			dPhi += 2.0*value_pi;
+		return dPhi;
+	}
 }
 
 #endif
