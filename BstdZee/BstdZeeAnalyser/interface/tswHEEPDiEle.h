@@ -67,11 +67,47 @@ namespace tsw{
 			float eleB_modTrkIso();
 			bool ApplyDiEleTrkIsolCut();
 
+		private:
+			// Member variables for the caching of the modified electron isolation values ...
+			float cache_eleA_modEmHad1Iso_;
+			float cache_eleB_modEmHad1Iso_;
+			float cache_eleA_modHad1Iso_;
+			float cache_eleB_modHad1Iso_;
+			bool eleA_modEmHad1Iso_isCached_;
+			bool eleB_modEmHad1Iso_isCached_;
+			bool eleA_modHad1Iso_isCached_;
+			bool eleB_modHad1Iso_isCached_;
+
+		public:
 			//Methods for applying the modified EmHad1 isolation HEEP cut ...
 			float eleA_modEmHad1Iso(){
-				return eleA_.modEmHad1Iso(&eleB_);}
+				if(!eleA_modEmHad1Iso_isCached_){
+					cache_eleA_modEmHad1Iso_ = eleA_.modEmHad1Iso(&eleB_);
+					eleA_modEmHad1Iso_isCached_ = true;
+				}
+				return cache_eleA_modEmHad1Iso_;
+			}
 			float eleB_modEmHad1Iso(){
-				return eleB_.modEmHad1Iso(&eleA_);}
+				if(!eleB_modEmHad1Iso_isCached_){
+					cache_eleB_modEmHad1Iso_ = eleB_.modEmHad1Iso(&eleA_);
+					eleB_modEmHad1Iso_isCached_ = true;
+				}
+				return cache_eleB_modEmHad1Iso_;
+			}
+			float eleA_modHad1Iso(){
+				if(!eleA_modHad1Iso_isCached_){
+					cache_eleA_modHad1Iso_ = eleA_.modHad1Iso(&eleB_);
+					eleA_modHad1Iso_isCached_ = true;
+				}
+				return cache_eleA_modHad1Iso_;
+			}
+			float eleB_modHad1Iso(){
+				if(!eleB_modHad1Iso_isCached_){
+					cache_eleB_modHad1Iso_ = eleB_.modHad1Iso(&eleA_);
+					eleB_modHad1Iso_isCached_ = true;
+				}
+				return cache_eleB_modHad1Iso_;
+			}
 			bool ApplyDiEleEmHad1IsolCut();
 //			bool ApplyDiEleHEEPIsolCuts(){
 //				return ( ApplyDiEleTrkIsolCut() && ApplyDiEleEmHad1IsolCut() );
@@ -87,11 +123,18 @@ namespace tsw{
 		private:
 			tsw::HEEPEle eleA_;
 			tsw::HEEPEle eleB_;
-
-
 	};
 
-	HEEPDiEle::HEEPDiEle(const std::vector<tsw::HEEPEle>& etOrderedEles, const std::vector<bool> cutsPassFailFlags){
+	HEEPDiEle::HEEPDiEle(const std::vector<tsw::HEEPEle>& etOrderedEles, const std::vector<bool> cutsPassFailFlags):
+		cache_eleA_modEmHad1Iso_(9999.9),
+		cache_eleB_modEmHad1Iso_(9999.9),
+		cache_eleA_modHad1Iso_(9999.9),
+		cache_eleB_modHad1Iso_(9999.9),
+		eleA_modEmHad1Iso_isCached_(false),
+		eleB_modEmHad1Iso_isCached_(false),
+		eleA_modHad1Iso_isCached_(false),
+		eleB_modHad1Iso_isCached_(false)
+	{
 		// General declarations ...
 		// Get vector of the indices of the electrons that passed the cuts ....
 		std::vector<unsigned int> idxs_elesPassedCuts   = IndicesOfElesPassingCuts(etOrderedEles, cutsPassFailFlags, 0); //Flag of 0 => Include both EB and EE eles
@@ -150,7 +193,7 @@ namespace tsw{
 		// If deltaR for the di-electron is < 0.3, then the two electrons lie in each other's isolation cone, ...
 		// and so remove the other electron's (i.e. eleB's) track pT from that electron ...
 		if(eleB().closestCtfTrk_exists() && dR_gsfAToCtfB()<0.3){
-			eleA_isolPtTrks -= eleB().closestCtfTrk_pt(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
+			eleA_isolPtTrks -= eleB().closestCtfTrk_innerPt(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
 			if(coutDebugTxt){std::cout << "                       << isolPtTrks values have been modified!! >>" << std::endl;}
 		}
 		return eleA_isolPtTrks;
@@ -161,7 +204,7 @@ namespace tsw{
 		// If deltaR for the di-electron is < 0.3, then the two electrons lie in each other's isolation cone, ...
 		// and so remove the other electron's (i.e. eleA's) track pT from that electron ...
 		if(eleA().closestCtfTrk_exists() && dR_gsfBToCtfA()<0.3){
-			eleB_isolPtTrks -= eleA().closestCtfTrk_pt(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
+			eleB_isolPtTrks -= eleA().closestCtfTrk_innerPt(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
 			if(coutDebugTxt){std::cout << "                       << isolPtTrks values have been modified!! >>" << std::endl;}
 		}
 		return eleB_isolPtTrks;
@@ -209,7 +252,7 @@ namespace tsw{
 	//-------------------------------------------------------------------***
 	//Method for applying the modified EmHad1 isolation HEEP cut ...
 	bool HEEPDiEle::ApplyDiEleEmHad1IsolCut(){
-		bool coutDebugTxt = true;
+		bool coutDebugTxt = false;
 		if(coutDebugTxt){std::cout << "      **Applying the di-electron modified HEEP EmHad1 isolation cut ...:" << std::endl;}
 		double eleA_isolEmHad1 = eleA().isolEmHadDepth1();
 		bool eleA_cutFlag = false;
