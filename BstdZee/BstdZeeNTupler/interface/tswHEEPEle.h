@@ -68,7 +68,7 @@ namespace tsw{
 			float ptVtx(){return eleStr_.ptVtx_;}
 			float ptCalo(){return eleStr_.ptCalo_;}
 			bool  closestCtfTrk_exists(){
-				if( (closestCtfTrk_pt()<-0.1 && closestCtfTrk_innerPt()<-0.1) && closestCtfTrk_outerPt()<-0.1){
+				if(closestCtfTrk_pt()<-0.1){
 					//std::cout << std::endl << "    ***** closestCtfTrackRef is NULL *****" << std::endl << std::endl;
 					return false;}
 				else
@@ -77,12 +77,12 @@ namespace tsw{
 		  	float closestCtfTrk_pt(){return eleStr_.closestCtfTrk_pt_;}
 		  	float closestCtfTrk_eta(){return eleStr_.closestCtfTrk_eta_;}
 		  	float closestCtfTrk_phi(){return eleStr_.closestCtfTrk_phi_;}
-		  	float closestCtfTrk_innerPt(){return eleStr_.closestCtfTrk_innerPt_;}
-		  	float closestCtfTrk_innerEta(){return eleStr_.closestCtfTrk_innerEta_;}
-		  	float closestCtfTrk_innerPhi(){return eleStr_.closestCtfTrk_innerPhi_;}
-		  	float closestCtfTrk_outerPt(){return eleStr_.closestCtfTrk_outerPt_;}
-		  	float closestCtfTrk_outerEta(){return eleStr_.closestCtfTrk_outerEta_;}
-		  	float closestCtfTrk_outerPhi(){return eleStr_.closestCtfTrk_outerPhi_;}
+//		  	float closestCtfTrk_innerPt(){return eleStr_.closestCtfTrk_innerPt_;}
+//		  	float closestCtfTrk_innerEta(){return eleStr_.closestCtfTrk_innerEta_;}
+//		  	float closestCtfTrk_innerPhi(){return eleStr_.closestCtfTrk_innerPhi_;}
+//		  	float closestCtfTrk_outerPt(){return eleStr_.closestCtfTrk_outerPt_;}
+//		  	float closestCtfTrk_outerEta(){return eleStr_.closestCtfTrk_outerEta_;}
+//		  	float closestCtfTrk_outerPhi(){return eleStr_.closestCtfTrk_outerPhi_;}
 
 			// Various other variables ...
 			float hOverE(){return eleStr_.hOverE_;}
@@ -149,7 +149,11 @@ namespace tsw{
 				}
 				return isolEmHad1;
 			}
-			float modEmHad1Iso(tsw::HEEPEle* theOtherEle);
+			float modEmIso(tsw::HEEPEle* theOtherEle);
+			float modHad1Iso(tsw::HEEPEle* theOtherEle);
+			float modEmHad1Iso(tsw::HEEPEle* anotherEle){
+				return (this->modEmIso(anotherEle)+this->modHad1Iso(anotherEle));}
+			float modEmHad1Iso_v1(tsw::HEEPEle* theOtherEle);
 
 		//private:
 			//ClassDef(tsw::HEEPEle,1);
@@ -207,8 +211,8 @@ namespace tsw{
 		if(!closestCtfTrk_exists())
 			std::cout << std::endl << "    ***** closestCtfTrackRef is NULL *****" << std::endl << std::endl;
 		std::cout << "       closestCtfTrk... (pt,eta,phi)=(" << closestCtfTrk_pt() << ", " << closestCtfTrk_eta() << ", " << closestCtfTrk_phi() << ")" << std::endl;
-		std::cout << "          ... inner:    (pt,eta,phi)=(" << closestCtfTrk_innerPt() << ", " << closestCtfTrk_innerEta() << ", " << closestCtfTrk_innerPhi() << ")" << std::endl;
-		std::cout << "          ... outer:    (pt,eta,phi)=(" << closestCtfTrk_outerPt() << ", " << closestCtfTrk_outerEta() << ", " << closestCtfTrk_outerPhi() << ")" << std::endl;
+//		std::cout << "          ... inner:    (pt,eta,phi)=(" << closestCtfTrk_innerPt() << ", " << closestCtfTrk_innerEta() << ", " << closestCtfTrk_innerPhi() << ")" << std::endl;
+//		std::cout << "          ... outer:    (pt,eta,phi)=(" << closestCtfTrk_outerPt() << ", " << closestCtfTrk_outerEta() << ", " << closestCtfTrk_outerPhi() << ")" << std::endl;
 
 		// Various other methods ...
 		std::cout << "         -=-=-" << std::endl;
@@ -282,7 +286,7 @@ namespace tsw{
 			// H/E cut ...
 			tmpCutsFlag = tmpCutsFlag && ( hOverE()<0.05 );
 			// sigmaIEtaIEta cut ...
-			// ---> N/A
+			//tmpCutsFlag = tmpCutsFlag && ( sigmaIEtaIEta()< 0.01);
 			// E2x5/E5x5 cut ...
 			tmpCutsFlag = tmpCutsFlag && ( (e2x5MaxOver5x5()>0.94) || (e1x5Over5x5()>0.83) );
 		}
@@ -338,21 +342,21 @@ namespace tsw{
 		return tmpCutsFlag;
 	}
 	bool HEEPEle::ApplyHEEPIsoCut_EmHad1(float emHad1IsolValue){
-			bool tmpCutsFlag = false;
-			if( isHEEPEB() ){
-				tmpCutsFlag = ( emHad1IsolValue<(2.0+0.03*et()) );
-			}
-			else if( isHEEPEE() ){
-				if( et()<50.0 ){
-					tmpCutsFlag = ( emHad1IsolValue<2.5 );}
-				else{
-					tmpCutsFlag = ( emHad1IsolValue<(2.5+0.03*(et()-50.0)) );}
-			}
-			else
-				tmpCutsFlag = false;
-
-			return tmpCutsFlag;
+		bool tmpCutsFlag = false;
+		if( isHEEPEB() ){
+			tmpCutsFlag = ( emHad1IsolValue<(2.0+0.03*et()) );
 		}
+		else if( isHEEPEE() ){
+			if( et()<50.0 ){
+				tmpCutsFlag = ( emHad1IsolValue<2.5 );}
+			else{
+				tmpCutsFlag = ( emHad1IsolValue<(2.5+0.03*(et()-50.0)) );}
+		}
+		else
+			tmpCutsFlag = false;
+
+		return tmpCutsFlag;
+	}
 
 	bool HEEPEle::ApplyHEEPIsoCut_Had2(){
 		bool tmpCutsFlag = false;
@@ -412,8 +416,101 @@ namespace tsw{
 
 }
 
-float tsw::HEEPEle::modEmHad1Iso(tsw::HEEPEle* theOtherEle){
-	bool coutDebugTxt = true;
+float tsw::HEEPEle::modEmIso(tsw::HEEPEle* theOtherEle){
+	bool coutDebugTxt = false;
+	double isolEm = this->isolEm();
+
+	// Now running over the recHits from 'the other electron' ...
+	for(unsigned int recHitIdx=0; recHitIdx<theOtherEle->numRecHits(); recHitIdx++){
+		double recHit_Et = theOtherEle->recHits_Et(recHitIdx);
+		double recHit_eta = theOtherEle->recHits_eta(recHitIdx);
+		double recHit_phi = theOtherEle->recHits_phi(recHitIdx);
+		bool recHit_isFromEB = theOtherEle->recHits_isFromEB(recHitIdx);
+		TVector3 tmp3Vector; tmp3Vector.SetPtEtaPhi(recHit_Et,recHit_eta,recHit_phi);
+		double recHit_energy = tmp3Vector.Mag();
+		if(coutDebugTxt){std::cout << "                 recHit: (energy, Et, eta, phi) = (" << recHit_energy << ", " << recHit_Et << ", " << recHit_eta << ", " << recHit_phi << "), isFromEB=" << recHit_isFromEB << std::endl;}
+
+		//Calculate delta eta and phi of this recHit relative to cluster
+		double etaDiff = recHit_eta - scEta();
+		double phiDiff = tsw::deltaPhi(recHit_phi, scPhi());
+		double recHitSC_dR = sqrt(etaDiff*etaDiff+phiDiff*phiDiff);
+		if(coutDebugTxt){std::cout << "                         (eta,phi)Diff = (" << etaDiff << ", " << phiDiff << "), recHitSC_dR=" << recHitSC_dR << std::endl;}
+
+		// Skip to the next recHit if this one is not in electron's isolation cone ...
+		double etaStripHalfWidth = 1.5; double isoCone_intRadius = 3.0;
+		if( recHitSC_dR>0.3 ) continue;
+		if( fabs(scEta())<1.479 ){ //EB: Crystal width = 0.0174 in eta & phi
+			if( fabs(etaDiff)<0.0174*etaStripHalfWidth ) continue;
+			if(recHitSC_dR<isoCone_intRadius*0.0174) continue;
+		}
+		else{ //EE: Crystal width = 0.00864*fabs(sinh(recHit_eta))
+			double xtalWidth_eta = 0.00864*fabs(sinh(recHit_eta));
+			if( fabs(etaDiff)<etaStripHalfWidth*xtalWidth_eta ) continue;
+			if( recHitSC_dR< isoCone_intRadius*xtalWidth_eta ) continue;
+		}
+
+		// However, if have got this far, and IF the recHit is above threshold Et/energy, then it contributed to the isolEm value ...
+		// ... and so must take this recHit's Et away from the isolEm value of the electron.
+		double thrEt_recHit = 0.0; double thrEnergy_recHit = 0.0;
+		if(recHit_isFromEB){
+			thrEt_recHit = 0.0; thrEnergy_recHit = 0.08;}
+		else{
+			thrEt_recHit = 0.1; thrEnergy_recHit = 0.0;}
+		//if( (fabs(recHit_Et)>thrEt_recHit) && (fabs(recHit_energy)>thrEnergy_recHit) ){
+		if( (recHit_Et>thrEt_recHit) && (recHit_energy>thrEnergy_recHit) ){
+			isolEm -= recHit_Et;
+			if(coutDebugTxt){std::cout << "                       << isolEm value has been modified!! (to " << isolEm << ") >>" << std::endl;}
+		}
+	}// End of for loop over recHits
+
+	return isolEm;
+}
+
+float tsw::HEEPEle::modHad1Iso(tsw::HEEPEle* theOtherEle){
+	bool coutDebugTxt = false;
+	double isolHad1 = this->isolHadDepth1();
+
+	// Now running over the recHits from 'the other electron' ...
+	for(unsigned int recHitIdx=0; recHitIdx<theOtherEle->numRecHits(); recHitIdx++){
+		double recHit_Et = theOtherEle->recHits_Et(recHitIdx);
+		double recHit_eta = theOtherEle->recHits_eta(recHitIdx);
+		double recHit_phi = theOtherEle->recHits_phi(recHitIdx);
+		bool recHit_isFromEB = theOtherEle->recHits_isFromEB(recHitIdx);
+		TVector3 tmp3Vector; tmp3Vector.SetPtEtaPhi(recHit_Et,recHit_eta,recHit_phi);
+		double recHit_energy = tmp3Vector.Mag();
+		if(coutDebugTxt){std::cout << "                 recHit: (energy, Et, eta, phi) = (" << recHit_energy << ", " << recHit_Et << ", " << recHit_eta << ", " << recHit_phi << "), isFromEB=" << recHit_isFromEB << std::endl;}
+
+		//Calculate delta eta and phi of this recHit relative to cluster
+		double etaDiff = recHit_eta - scEta();
+		double phiDiff = tsw::deltaPhi(recHit_phi, scPhi());
+		double recHitSC_dR = sqrt(etaDiff*etaDiff+phiDiff*phiDiff);
+		if(coutDebugTxt){std::cout << "                         (eta,phi)Diff = (" << etaDiff << ", " << phiDiff << "), recHitSC_dR=" << recHitSC_dR << std::endl;}
+
+		// Skip to the next recHit if this one is not in electron's isolation cone ...
+		if( recHitSC_dR>0.3 )
+			continue;
+		if(recHitSC_dR<0.15)
+			continue;
+
+		// However, if have got this far, and IF the recHit is above threshold Et/energy, then it contributed to the isolHad1 value ...
+		// ... and so must take this recHit's Et away from the isolHad1 value of the electron.
+		double thrEt_recHit = 0.0; double thrEnergy_recHit = 0.0;
+		if(recHit_isFromEB){
+			thrEt_recHit = 0.0; thrEnergy_recHit = 0.08;}
+		else{
+			thrEt_recHit = 0.1; thrEnergy_recHit = 0.0;}
+		//if( (fabs(recHit_Et)>thrEt_recHit) && (fabs(recHit_energy)>thrEnergy_recHit) ){
+		if( (recHit_Et>thrEt_recHit) && (recHit_energy>thrEnergy_recHit) ){
+			isolHad1 -= (theOtherEle->hOverE())*recHit_Et;
+			if(coutDebugTxt){std::cout << "                       << isolHadDepth1 value has been modified!! (to " << isolHad1 << ") >>" << std::endl;}
+		}
+	}// End of for loop over recHits
+
+	return isolHad1;
+}
+
+float tsw::HEEPEle::modEmHad1Iso_v1(tsw::HEEPEle* theOtherEle){
+	bool coutDebugTxt = false;
 	double isolEmHad1 = this->isolEmHadDepth1();
 
 	// Now running over the recHits from 'the other electron' ...
@@ -452,7 +549,8 @@ float tsw::HEEPEle::modEmHad1Iso(tsw::HEEPEle* theOtherEle){
 			thrEt_recHit = 0.0; thrEnergy_recHit = 0.08;}
 		else{
 			thrEt_recHit = 0.1; thrEnergy_recHit = 0.0;}
-		if( (fabs(recHit_Et)>thrEt_recHit) && (fabs(recHit_energy)>thrEnergy_recHit) ){
+		//if( (fabs(recHit_Et)>thrEt_recHit) && (fabs(recHit_energy)>thrEnergy_recHit) ){
+		if( (recHit_Et>thrEt_recHit) && (recHit_energy>thrEnergy_recHit) ){
 			isolEmHad1 -= recHit_Et;
 			if(coutDebugTxt){std::cout << "                       << isolEmHadDepth1 value has been modified!! (to " << isolEmHad1 << ") >>" << std::endl;}
 		}
