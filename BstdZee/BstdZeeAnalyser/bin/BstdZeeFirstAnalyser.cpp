@@ -426,6 +426,9 @@ class BstdZeeFirstAnalyser{
 		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_Histos_;
 		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_;
 		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_;
+		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_Histos_;
+		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_Histos_;
+		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_Histos_;
 		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_;
 		tsw::EleMuDistns h_eleMu_EB_HEEPNoIso_tight_MZ_;
 
@@ -514,6 +517,9 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, unsigned int numEvts, bo
 	normDiEle_EB_HEEPNoIso_MZ_Histos_(     "h_normDiEle_EB_HEEPNoIso_MZ_",      "standard", "EB and HEEP cuts w/o isol, Z mass",      2, 1, nbins_mass, nbins_pt, ptmax),
 	normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_(     "h_normDiEle_EB_HEEPNoIso_MZ_trkIso_",      "standard", "EB and HEEP cuts w/o isol, Z mass, trkIso",      2, 1, nbins_mass, nbins_pt, ptmax),
 	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_(  "h_normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_",   "standard", "EB and HEEP cuts w/o isol, Z mass, EmHad1Iso",   2, 1, nbins_mass, nbins_pt, ptmax),
+	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_Histos_("h_normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_",   "standard", "EB and HEEP cuts w/o isol, Z mass, EmHad1Iso AND trkIso",   2, 1, nbins_mass, nbins_pt, ptmax),
+	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_Histos_("h_normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_",   "standard", "EB and HEEP cuts w/o isol, Z mass, EmHad1Iso AND trkIso, trgA passed",   2, 1, nbins_mass, nbins_pt, ptmax),
+	normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_Histos_(  "h_normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_",   "standard", "EB and HEEP cuts w/o isol, Z mass, notEmHad1Iso",   2, 1, nbins_mass, nbins_pt, ptmax),
 	normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_("h_normDiEle_EB_HEEPNoIso_MZ_trgA_", "standard", "EB and HEEP cuts w/o isol, Z mass, trgA",2, 1, nbins_mass, nbins_pt, ptmax),//
 	//
 	h_eleMu_EB_HEEPNoIso_tight_MZ_( "h_eleMu_EB_HEEPNoIso_tight_MZ_", "standard", "EB+HEEPNoIso cuts, barrel+tight cuts, Z mass", 2, 1, nbins_mass, nbins_pt, ptmax ),
@@ -626,7 +632,7 @@ void BstdZeeFirstAnalyser::DoAnalysis(const Double_t evtWeight){
 		inputFile_tree_->GetEntry(dataTreeEntry);
 		timer_DoAnalysis_readIn_.Stop();
 
-		if( (vFlg_>-2) && (evtIdx%1==0) ){std::cout << std::endl << " *** Event no. " << evtIdx << " reached." << std::endl;}
+		if( (vFlg_>-2) && (evtIdx%1000000==0) ){std::cout << " *** Event no. " << evtIdx << " reached." << std::endl;}
 		//TODO - Put setting up of TLorentzVector 4 momenta here ...
 
 		//Analyse this data...
@@ -755,12 +761,12 @@ void BstdZeeFirstAnalyser::SetupEleClassVectors(){
 		ithEleStruct.closestCtfTrk_pt_  = normHEEPEles_closestCtfTrk_pt_->at(iEle);
 		ithEleStruct.closestCtfTrk_eta_ = normHEEPEles_closestCtfTrk_eta_->at(iEle);
 		ithEleStruct.closestCtfTrk_phi_ = normHEEPEles_closestCtfTrk_phi_->at(iEle);
-		ithEleStruct.closestCtfTrk_innerPt_  = normHEEPEles_closestCtfTrk_innerPt_->at(iEle);
-		ithEleStruct.closestCtfTrk_innerEta_ = normHEEPEles_closestCtfTrk_innerEta_->at(iEle);
-		ithEleStruct.closestCtfTrk_innerPhi_ = normHEEPEles_closestCtfTrk_innerPhi_->at(iEle);
-		ithEleStruct.closestCtfTrk_outerPt_  = normHEEPEles_closestCtfTrk_outerPt_->at(iEle);
-		ithEleStruct.closestCtfTrk_outerEta_ = normHEEPEles_closestCtfTrk_outerEta_->at(iEle);
-		ithEleStruct.closestCtfTrk_outerPhi_ = normHEEPEles_closestCtfTrk_outerPhi_->at(iEle);
+//		ithEleStruct.closestCtfTrk_innerPt_  = normHEEPEles_closestCtfTrk_innerPt_->at(iEle);
+//		ithEleStruct.closestCtfTrk_innerEta_ = normHEEPEles_closestCtfTrk_innerEta_->at(iEle);
+//		ithEleStruct.closestCtfTrk_innerPhi_ = normHEEPEles_closestCtfTrk_innerPhi_->at(iEle);
+//		ithEleStruct.closestCtfTrk_outerPt_  = normHEEPEles_closestCtfTrk_outerPt_->at(iEle);
+//		ithEleStruct.closestCtfTrk_outerEta_ = normHEEPEles_closestCtfTrk_outerEta_->at(iEle);
+//		ithEleStruct.closestCtfTrk_outerPhi_ = normHEEPEles_closestCtfTrk_outerPhi_->at(iEle);
 
 		//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
 		ithEleStruct.hOverE_ = normHEEPEles_hOverE_->at(iEle);
@@ -1325,31 +1331,39 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight){
 		// Set some of the emu method diele tree branch variablles here ...
 		normDiEle_EB_HEEPNoIso = tsw::HEEPDiEle::HEEPDiEle( normEles_, normEles_EB_HEEPCutsNoIsoFlags );
 
-//		if(normDiEle_EB_HEEPNoIso.deltaR()<0.4 && fabs(normDiEle_EB_HEEPNoIso.deltaEta())<0.1){
-		// Code for testing ApplyDiEleTrkIsolCut method ...
-		std::cout << std::endl << "   ****------------------------------------------------------------------****" << std::endl;
-		std::cout << "   * EB HEEPNoIso di-electron formed in this event!!" << std::endl;
-		normDiEle_EB_HEEPNoIso.PrintOutInfo();
-////		if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
-////			std::cout << " ->* This di-electron pair has passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
-////		else
-////			std::cout << " ->* This di-electron pair has NOT passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
-		if(normDiEle_EB_HEEPNoIso.ApplyDiEleEmHad1IsolCut())
-			std::cout << " ->* This di-electron pair has passed cut in ApplyDiEleEmHad1IsolCut() method." << std::endl;
-		else
-			std::cout << " ->* This di-electron pair has NOT passed cut in ApplyDiEleEmHad1IsolCut() method." << std::endl;
-//		}
-		normDiEle_EB_HEEPNoIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
+////		if(normDiEle_EB_HEEPNoIso.deltaR()<0.4 && fabs(normDiEle_EB_HEEPNoIso.deltaEta())<0.1){
+//		// Code for testing ApplyDiEleTrkIsolCut method ...
+//		std::cout << std::endl << "   ****------------------------------------------------------------------****" << std::endl;
+//		std::cout << "   * EB HEEPNoIso di-electron formed in this event!!" << std::endl;
+//		normDiEle_EB_HEEPNoIso.PrintOutInfo();
+//////		if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
+//////			std::cout << " ->* This di-electron pair has passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
+//////		else
+//////			std::cout << " ->* This di-electron pair has NOT passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
+//		if(normDiEle_EB_HEEPNoIso.ApplyDiEleEmHad1IsolCut())
+//			std::cout << " ->* This di-electron pair has passed cut in ApplyDiEleEmHad1IsolCut() method." << std::endl;
+//		else
+//			std::cout << " ->* This di-electron pair has NOT passed cut in ApplyDiEleEmHad1IsolCut() method." << std::endl;
+////		}
+		normDiEle_EB_HEEPNoIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 		if(trg_PathA_decision_)
 			normDiEle_EB_HEEPNoIso_trgA_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
 
 		// Check if the di-electron mass is in the Z mass range ...
 		if(normDiEle_EB_HEEPNoIso.isInZMassRange()){
-			normDiEle_EB_HEEPNoIso_MZ_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
+			normDiEle_EB_HEEPNoIso_MZ_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 			if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
-				normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
-//			if(normDiEle_EB_HEEPNoIso.ApplyDiEleEmHad1IsolCut())
-//				normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
+				normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
+			if(normDiEle_EB_HEEPNoIso.ApplyDiEleEmHad1IsolCut()){
+				normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
+				if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut()){
+					normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
+					if(trg_PathA_decision_)
+						normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
+				}
+			}
+			else
+				normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 			if(trg_PathA_decision_){
 				normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
 				normDiEle_HEEPNoIso_ = normDiEle_EB_HEEPNoIso;
@@ -1534,6 +1548,9 @@ void BstdZeeFirstAnalyser::SaveReconValidationHistos(TFile* histosFile){
 	normDiEle_EB_HEEPNoIso_MZ_Histos_.WriteHistos(histosFile);
 	normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_.WriteHistos(histosFile);
 	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_.WriteHistos(histosFile);
+	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_Histos_.WriteHistos(histosFile);
+	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_Histos_.WriteHistos(histosFile);
+	normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_Histos_.WriteHistos(histosFile);
 	normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_.WriteHistos(histosFile);
 
 	h_eleMu_EB_HEEPNoIso_tight_MZ_.WriteHistos(histosFile);
@@ -1882,8 +1899,8 @@ void BstdZeeFirstAnalyser::InitialiseReconValidationHistos(){
 
 //================================================================//
 void BstdZeeFirstAnalyser::SetupBranchLinks(const TFile* inFile_ptr){
-	inputFile_tree_->SetBranchAddress("event", &event_);
-	//event_ = &dummyEvent_;
+	inputFile_tree_->SetBranchStatus("event",0); //inputFile_tree_->SetBranchAddress("event", &event_);
+	event_ = &dummyEvent_;
 	//Setting up the pointer links for the event information branches ...
 	inputFile_tree_->SetBranchAddress("evt_runNum",&evt_runNum_);   // unsigned int
 	inputFile_tree_->SetBranchAddress("evt_lumiSec",&evt_lumiSec_); // unsigned int
@@ -2006,12 +2023,12 @@ void BstdZeeFirstAnalyser::SetupBranchLinks(const TFile* inFile_ptr){
 	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_pt",  &normHEEPEles_closestCtfTrk_pt_);
 	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_eta", &normHEEPEles_closestCtfTrk_eta_);
 	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_phi", &normHEEPEles_closestCtfTrk_phi_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPt",  &normHEEPEles_closestCtfTrk_innerPt_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerEta", &normHEEPEles_closestCtfTrk_innerEta_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPhi", &normHEEPEles_closestCtfTrk_innerPhi_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPt",  &normHEEPEles_closestCtfTrk_outerPt_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerEta", &normHEEPEles_closestCtfTrk_outerEta_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPhi", &normHEEPEles_closestCtfTrk_outerPhi_);
+	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_innerPt",0);  // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPt",  &normHEEPEles_closestCtfTrk_innerPt_);
+	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_innerEta",0); // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerEta", &normHEEPEles_closestCtfTrk_innerEta_);
+	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_innerPhi",0); // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPhi", &normHEEPEles_closestCtfTrk_innerPhi_);
+	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_outerPt",0);  // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPt",  &normHEEPEles_closestCtfTrk_outerPt_);
+	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_outerEta",0); // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerEta", &normHEEPEles_closestCtfTrk_outerEta_);
+	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_outerPhi",0); // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPhi", &normHEEPEles_closestCtfTrk_outerPhi_);
 
 	//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
 	inputFile_tree_->SetBranchAddress("normHEEPEles_hOverE", &normHEEPEles_hOverE_);
@@ -2270,112 +2287,127 @@ int main()
 		std::cout << " Running the DoAnalysis method ..." << std::endl;
 		//sigAnalyserC.DoAnalysis( 1.0 ); //sigAnalyserC.DoAnalysis( 1.0*(1.2/20000.0) );*/
 
-		//TString inFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/NTuples/42Xv1c/local/2011-08-17/";
-		TString inFilePrefix = "/home/ppd/nnd85574/Work/BstdZee/CMSSW_4_2_4_patch1/src/NTupler/BstdZeeNTupler/";
-		TString outFilePrefix = "2011-08-23/";
+		TString inFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/NTuples/42Xv1d/";
+		//TString inFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/2e33HLT/NTuples/";
+		TString outFilePrefix = "2011-09-01/";
 		std::vector<BstdZeeFirstAnalyser> myAnalysers; myAnalysers.clear();
 		std::vector<TString> inFile; inFile.clear();
 		std::vector<TString> outFile; outFile.clear();
 		std::vector<bool> isMCflag; isMCflag.clear();
 		std::vector<unsigned int> nEvents; nEvents.clear();
 		std::vector<Double_t> intLumiPerEvent; intLumiPerEvent.clear(); // in inv fb !!
-		Double_t desiredIntLumi = 0.502; // in inv fb !!
+		Double_t desiredIntLumi = 2.00; // in inv fb !!
 
-//		// DYJetsToLL-ee
-//		inFile.push_back("../2011-08-01/mc/DYJetsToLL-ee_NTuple-42Xv1b_2011-08-03.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_DYJetsToLL-ee_2011-08-05");
-//		nEvents.push_back( 12095966 );
-//		intLumiPerEvent.push_back( (14.7/36277961.0)*3.0 ); // in inv fb
-//
-//		// DYJetsToLL-TauTau
-//		inFile.push_back("../2011-08-01/mc/DYJetsToLL-TauTau_NTuple-42Xv1b_2011-08-03.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_DYJetsToLL-TauTau_2011-08-05");
-//		nEvents.push_back( 12090500 );
-//		intLumiPerEvent.push_back( (14.7/36277961.0)*3.0 ); // in inv fb
-//
-//		/*// DYJetsToLL
-//		inFile.push_back("fullMC/DYJetsToLL_NTuple-42Xv1b_2011-07-17.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_DYJetsToLL_2011-08-05");
-//		nEvents.push_back( 5038605/10 );
-//		intLumiPerEvent.push_back( 14.7/36277961.0 ); // in inv fb */
-//
-//		// TTbar
-//		inFile.push_back("fullMC/TTbar_NTuple-42Xv1b_2011-07-17.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_TTbar_2011-08-05");
-//		nEvents.push_back( 1089625 );
-//		intLumiPerEvent.push_back( 11.6/1090000.0 ); // in inv fb
-//
-//		// WWTo2L2Nu
-//		inFile.push_back("fullMC/WWTo2L2Nu_NTuple-42Xv1b_2011-07-17.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_WWTo2L2Nu_2011-08-05");
-//		nEvents.push_back( 210667 );
-//		intLumiPerEvent.push_back( 72.0/210667.0 ); // in inv fb
-//
-//		// WZTo3LNu
-//		inFile.push_back("fullMC/WZTo3LNu_NTuple-42Xv1b_2011-07-17.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_WZTo3LNu_2011-08-05");
-//		nEvents.push_back( 204725 );
-//		intLumiPerEvent.push_back( 603.2/204725.0 ); // in inv fb
-//
-//		// ZZTo2L2Nu
-//		inFile.push_back("fullMC/ZZTo2L2Nu_NTuple-42Xv1b_2011-07-17.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_ZZTo2L2Nu_2011-08-05");
-//		nEvents.push_back( 220000 );
-//		intLumiPerEvent.push_back( 1141.7/220000.0 ); // in inv fb
-//
-//		// QCD-dblEM
-//		inFile.push_back("mc/QCD-dblEM_NTuple-42Xv1b_2011-08-03.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_QCD-dblEM_2011-08-05");
-//		nEvents.push_back( 22508855 );
-//		intLumiPerEvent.push_back( 1.0/(43571.0*1000.0) ); // in inv fb
-//
-//		// WJetsToLNu
-//		inFile.push_back("fullMC/WJetsToLNu_NTuple-42Xv1b_2011-07-17.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_WJetsToLNu_2011-08-05");
-//		nEvents.push_back( 28142086/4 );  // *** NEED TO REDO NTUPLE MERGE
-//		intLumiPerEvent.push_back( 2.0/54899972.0 ); // in inv fb
-//
-//		// Data - photon PD
-//		inFile.push_back("../2011-07-20/data/data-Photon_0-5invfb_NTuple-42Xv1b_2011-07-20.root"); isMCflag.push_back(false);
-//		outFile.push_back("histos_data-Photon_0-5invfb_2011-08-05");
-//		nEvents.push_back( 18212187 ); //4983755 // *** NEED TO REDO NTUPLE MERGE
-//		intLumiPerEvent.push_back( -1.0 ); // in inv fb
-//
-////		// Data - MuEG PD
-////		inFile.push_back("../2011-07-20/data/data-MuEG_0-5invfb_NTuple-42Xv1b_2011-08-05.root"); isMCflag.push_back(false);
-////		outFile.push_back("histos_data-MuEG_0-5invfb_2011-08-04");
-////		nEvents.push_back( 7658224 ); //4983755 // *** NEED TO REDO NTUPLE MERGE
-////		intLumiPerEvent.push_back( -1.0 ); // in inv fb */
-//
-//		/* // DYToTauTau
-//		inFile.push_back("mc/DYToTauTau_NTuple-42Xv1b_2011-07-18.root"); isMCflag.push_back(false);
-//		outFile.push_back("histos_DYToTauTau_2011-08-01");
-//		nEvents.push_back( 1358576 );
-//		intLumiPerEvent.push_back( 1.0/(1666.0*1000.0) ); // in inv fb
-//
-//		// DYToEE-M20
-//		inFile.push_back("../2011-07-28/mc/DYToEE-M20_NTuple-42Xv1b_2011-07-28.root"); isMCflag.push_back(false);
-//		outFile.push_back("histos_DYToEE-M20_2011-08-01");
-//		nEvents.push_back( 1772545 );
-//		intLumiPerEvent.push_back( 1.0/(1666.0*1000.0) ); // in inv fb*/
+		////////////////////
+		// Background MC
 
-//		// SigMC - 0.75TeVu*
-//		inFile.push_back("../local/2011-08-01/mcNTuple-42X_v1b_0-75TeVu-10kEvts.root"); isMCflag.push_back(false);
-//		outFile.push_back("histos_0-75TeVu_2011-08-16");
-//		nEvents.push_back( 10000 );
-//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/925.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
-//
-//		// SigMC - 1.00TeVu*
-//		inFile.push_back("../local/2011-08-01/mcNTuple-42X_v1b_1-00TeVu-10kEvts.root"); isMCflag.push_back(false);
-//		outFile.push_back("histos_1-00TeVu_2011-08-16");
-//		nEvents.push_back( 10000 );
-//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/110.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+		//// DYJetsToLL
+		//inFile.push_back("mc/DYJetsToLL_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+		//outFile.push_back("histos_DYJetsToLL_2011-09-01");
+		//nEvents.push_back( 36277961/10 );
+		//intLumiPerEvent.push_back( 1.0/2475000.0 ); // in inv fb
+
+		// DYJetsToLL-ee
+		inFile.push_back("mc/DYJetsToLL-ee_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(true);
+		outFile.push_back("histos_DYJetsToLL-ee_2011-09-01");
+		nEvents.push_back( 12095966 );
+		intLumiPerEvent.push_back( 1.0/(2475000.0/3.0) ); // in inv fb
+
+		// TTbar
+		inFile.push_back("mc/TTbar_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+		outFile.push_back("histos_TTbar_2011-09-01");
+		nEvents.push_back( 1089625 );
+		intLumiPerEvent.push_back( 1.0/94000.0 ); // in inv fb
+
+		// TTbarJets
+		inFile.push_back("mc/TTbarJets_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+		outFile.push_back("histos_TTbarJets_2011-09-01");
+		nEvents.push_back( 2776461 );
+		intLumiPerEvent.push_back( 1.0/94760.0 ); // in inv fb
+
+		// QCD-dblEM
+		inFile.push_back("mc/QCD-dblEM_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+		outFile.push_back("histos_QCD-dblEM_2011-09-01");
+		nEvents.push_back( 36983342/10 );
+		intLumiPerEvent.push_back( 1.0/43571000.0 ); // in inv fb
+
+		// WJetsToLNu
+		inFile.push_back("mc/WJetsToLNu_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+		outFile.push_back("histos_WJets_2011-09-01");
+		nEvents.push_back( 64576553/20 );
+		intLumiPerEvent.push_back( 1.0/27770000.0 ); // in inv fb
+
+
+		////////////////////
+		// Signal MC
+
+		// SigMC - 0.75TeVu*
+		inFile.push_back("local/2011-08-31/mcNTuple-42X_v1d_0-75TeVu-10kEvts.root"); isMCflag.push_back(true);
+		outFile.push_back("histos_0-75TeVu_2011-09-01");
+		nEvents.push_back( 10000 );
+		intLumiPerEvent.push_back( 1.0/925.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+
+		// SigMC - 1.00TeVu*
+		inFile.push_back("local/2011-08-31/mcNTuple-42X_v1d_1-00TeVu-10kEvts.root"); isMCflag.push_back(false);
+		outFile.push_back("histos_1-00TeVu_2011-09-01");
+		nEvents.push_back( 10000 );
+		intLumiPerEvent.push_back( 1.0/110.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
 
 		// SigMC - 2.00TeVu*
-		inFile.push_back("testNTuple_2-00TeVu.root"); isMCflag.push_back(false);
-		outFile.push_back("histos_2-00TeVu_2011-08-23");
-		nEvents.push_back( 5 );
-		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/1.2 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+		inFile.push_back("local/2011-08-31/mcNTuple-42X_v1d_2-00TeVu-10kEvts.root"); isMCflag.push_back(true);
+		outFile.push_back("histos_2-00TeVu_2011-09-01");
+		nEvents.push_back( 10000 );
+		intLumiPerEvent.push_back( 1.0/1.2 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+
+//		// SigMC - 0.75TeVu*
+//		inFile.push_back("sigMC_0-75TeVu_2e33NTuple_42Xv1d_2kEvts_2011-08-30.root"); isMCflag.push_back(false);
+//		outFile.push_back("histos_0-75TeVu_2011-08-30_2e33");
+//		nEvents.push_back( 2000 );
+//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/925.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb		// SigMC - 0.75TeVu*
+//		inFile.push_back("sigMC_0-75TeVu_2e33noCaloIdL-NTuple_42Xv1d_2kEvts_2011-08-30.root"); isMCflag.push_back(false);
+//		outFile.push_back("histos_0-75TeVu_2011-08-30_2e33noCaloIdL");
+//		nEvents.push_back( 2000 );
+//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/925.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+//		// SigMC - 2.00TeVu*
+//		inFile.push_back("sigMC_2-00TeVu_2e33NTuple_42Xv1d_2kEvts_2011-08-30.root"); isMCflag.push_back(false);
+//		outFile.push_back("histos_2-00TeVu_2011-08-30_2e33");
+//		nEvents.push_back( 2000 );
+//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/1.2 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
+
+
+		////////////////////
+		// Data
+
+//		// PhotonPromptV4 (small)
+//		inFile.push_back("mc/05invfbPhoton-PromptReco-v4_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+//		outFile.push_back("histos_0-5invfbPhoton-Prompt-v4_2011-09-01");
+//		nEvents.push_back( 17625548 );
+//		intLumiPerEvent.push_back( -1.0 ); // in inv fb
+//
+//		// May10ReReco
+//		inFile.push_back("mc/Photon-May10ReReco_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+//		outFile.push_back("histos_Photon-May10ReReco_2011-09-01");
+//		nEvents.push_back( 13254346 );
+//		intLumiPerEvent.push_back( -1.0 ); // in inv fb
+
+		// Aug05ReReco
+		inFile.push_back("mc/Photon-Aug05ReReco_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+		outFile.push_back("histos_Aug05ReReco_2011-09-01");
+		nEvents.push_back( 7244052 );
+		intLumiPerEvent.push_back( -1.0 ); // in inv fb
+
+		// Full promptReco v4
+		inFile.push_back("mc/fullPhoton-PromptReco-v4_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+		outFile.push_back("histos_fullPhoton-PromptReco-v4_2011-09-01");
+		nEvents.push_back( 31311020 );
+		intLumiPerEvent.push_back( -1.0 ); // in inv fb
+
+		// promptReco v6
+		inFile.push_back("mc/Photon-PromptReco-v6_NTuple-42Xv1d_2011-09-01.root"); isMCflag.push_back(false);
+		outFile.push_back("histos_Photon-PromptReco-v6_2011-09-01");
+		nEvents.push_back( 11297851 );
+		intLumiPerEvent.push_back( -1.0 ); // in inv fb
+
 
 //		// Test
 //		BstdZeeFirstAnalyser myAnalyser = BstdZeeFirstAnalyser(0, 10, true, "../../NTupler/BstdZeeNTupler/testNTuple_2-00TeVu.root", "testOut.root", 6, 80, 55, 1100.0);

@@ -193,7 +193,7 @@ namespace tsw{
 		// If deltaR for the di-electron is < 0.3, then the two electrons lie in each other's isolation cone, ...
 		// and so remove the other electron's (i.e. eleB's) track pT from that electron ...
 		if(eleB().closestCtfTrk_exists() && dR_gsfAToCtfB()<0.3){
-			eleA_isolPtTrks -= eleB().closestCtfTrk_innerPt(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
+			eleA_isolPtTrks -= eleB().closestCtfTrk_pt(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
 			if(coutDebugTxt){std::cout << "                       << isolPtTrks values have been modified!! >>" << std::endl;}
 		}
 		return eleA_isolPtTrks;
@@ -204,7 +204,7 @@ namespace tsw{
 		// If deltaR for the di-electron is < 0.3, then the two electrons lie in each other's isolation cone, ...
 		// and so remove the other electron's (i.e. eleA's) track pT from that electron ...
 		if(eleA().closestCtfTrk_exists() && dR_gsfBToCtfA()<0.3){
-			eleB_isolPtTrks -= eleA().closestCtfTrk_innerPt(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
+			eleB_isolPtTrks -= eleA().closestCtfTrk_pt(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
 			if(coutDebugTxt){std::cout << "                       << isolPtTrks values have been modified!! >>" << std::endl;}
 		}
 		return eleB_isolPtTrks;
