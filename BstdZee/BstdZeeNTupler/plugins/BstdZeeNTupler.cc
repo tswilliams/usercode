@@ -168,6 +168,7 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		const bool readInNormReco_;
 		const bool readInBstdReco_;
 		const bool is2010SignalDataset_;
+		const bool useReducedRecHitsCollns_;
 
 		double histoEtMin;
 		double histoEtMax;
@@ -230,6 +231,7 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		edm::InputTag hltResultsTag_;
 		edm::InputTag hltEventTag_;
 		std::string hltPathA_;
+		const std::vector<std::string> hltPathA_possNames_;
 		bool hltPathADecision_;
 		std::string hltPathA_nameOfLastFilter_;
 		float hltPathA_highestTrigObjEt_;
@@ -469,12 +471,14 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 	readInNormReco_(iConfig.getUntrackedParameter<bool>("readInNormReco",0)),
 	readInBstdReco_(iConfig.getUntrackedParameter<bool>("readInBstdReco",0)),
 	is2010SignalDataset_(iConfig.getUntrackedParameter<bool>("is2010SignalDataset",0)),
+	useReducedRecHitsCollns_(iConfig.getUntrackedParameter<bool>("useReducedRecHitsCollns",0)),
 	histoEtMin(0.0),
 	histoEtMax(80.0),
 	histoEtNBins(40),
 	hltResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltResultsTag",edm::InputTag("TriggerResults","","HLT"))),
 	hltEventTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltEventTag",edm::InputTag("hltTriggerSummaryAOD","","HLT"))),
-  	hltPathA_(iConfig.getUntrackedParameter<std::string>("hltPathA",std::string("HLT_DoublePhoton33_v2"))),
+  	hltPathA_("*** DEFAULT TRIGGER NAME ***"),
+  	hltPathA_possNames_(iConfig.getUntrackedParameter< std::vector<std::string> >("hltPathA_possNames")),
 	hltPathADecision_(false),
   	hltPathA_nameOfLastFilter_(iConfig.getUntrackedParameter<std::string>("hltPathA_nameOfLastFilter",std::string("hltEle45CaloIdVTTrkIdTDphiFilter"))),
   	hltPathA_highestTrigObjEt_(-999.9)
@@ -568,7 +572,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	
 	//Getting the handle for the standard and special reco'n GSF electron data...
 	if(readInNormReco_)
-		iEvent.getByLabel(edm::InputTag("gsfElectrons::stdRECO"),        normGsfElesH);
+		iEvent.getByLabel(edm::InputTag("gsfElectrons::RECO"),        normGsfElesH);
 	//iEvent.getByLabel(edm::InputTag("gsfElectrons::BOOSTEDRECO"), bstdGsfElesH);
 	if(readInBstdReco_)
 		iEvent.getByLabel(edm::InputTag("ecalDrivenGsfElectrons"), bstdGsfElesH);
@@ -577,8 +581,14 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	iSetup.get<CaloGeometryRecord>().get(caloGeomH);
 
 	// Setting the handle for the EB and EE recHits collections ...
-	iEvent.getByLabel(edm::InputTag("ecalRecHit:EcalRecHitsEB:stdRECO"), reducedEBRecHitsH);
-	iEvent.getByLabel(edm::InputTag("ecalRecHit:EcalRecHitsEE:stdRECO"), reducedEERecHitsH);
+	if(useReducedRecHitsCollns_){
+		iEvent.getByLabel(edm::InputTag("reducedEcalRecHitsEB::RECO"), reducedEBRecHitsH);
+		iEvent.getByLabel(edm::InputTag("reducedEcalRecHitsEE::RECO"), reducedEERecHitsH);
+	}
+	else{
+		iEvent.getByLabel(edm::InputTag("ecalRecHit:EcalRecHitsEB:RECO"), reducedEBRecHitsH);
+		iEvent.getByLabel(edm::InputTag("ecalRecHit:EcalRecHitsEE:RECO"), reducedEERecHitsH);
+	}
 	EcalRecHitMetaCollection* ecalBarrelHitsMeta = new EcalRecHitMetaCollection(*reducedEBRecHitsH);
 	EcalRecHitMetaCollection* ecalEndcapHitsMeta = new EcalRecHitMetaCollection(*reducedEERecHitsH);
 
@@ -745,35 +755,6 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 		}// End of for loop over MC particles
 
-		// Sorting out the values of the mcZboson variables in the case that am running over the signal datasets that were generated at the start 2011
-		if(is2010SignalDataset_){
-			mcZboson_pdgId_  = 0; // Int_t
-			mcZboson_status_ = -100; // Int_t
-			mcZboson_p4_     = mcZboson_daughterA_p4_ + mcZboson_daughterB_p4_;
-			mcZboson_numDaughters_ = 2;
-
-			TLorentzVector daughterA_p4 = ConvertToTLorentzVector( &mcZboson_daughterA_p4_ );
-			TLorentzVector daughterB_p4 = ConvertToTLorentzVector( &mcZboson_daughterB_p4_ );
-
-			mcZboson_daughters_dR_   = daughterA_p4.DeltaR(daughterB_p4);
-			mcZboson_daughters_dEta_ = daughterB_p4.Eta() - daughterA_p4.Eta();
-			mcZboson_daughters_dPhi_ = daughterB_p4.Phi() - daughterA_p4.Phi();
-			while( mcZboson_daughters_dPhi_<=-1.0*TMath::Pi() ){ mcZboson_daughters_dPhi_ = mcZboson_daughters_dPhi_+2.0*TMath::Pi(); }
-			while( mcZboson_daughters_dPhi_>=TMath::Pi()      ){ mcZboson_daughters_dPhi_ = mcZboson_daughters_dPhi_-2.0*TMath::Pi(); }
-			mcZboson_daughters_openingAngle_ = daughterA_p4.Angle(daughterB_p4.Vect());
-
-			//Printing to screen for debugging ...
-			if(vBool_){
-				std::cout << "   The MC Z boson variables have been determined from the electron and positron which each have two mothers - a u* and a u/ubar ... " << std::endl;
-				std::cout << "      => pdgId=" << mcZboson_pdgId_ << "; status=" << mcZboson_status_ << "; (pT,eta,phi) = (" << mcZboson_p4_.Pt() << ", " << mcZboson_p4_.Eta() << ", " << mcZboson_p4_.Phi() << ")" << std::endl;
-				std::cout << "      It has " << mcZboson_numDaughters_ << " daughters" << std::endl;
-				std::cout << "           Daughter A: (pT,eta,phi) = (" << mcZboson_daughterA_p4_.Pt() << "," << mcZboson_daughterA_p4_.Eta() << "," << mcZboson_daughterA_p4_.Phi() << ")" << std::endl;
-				std::cout << "           Daughter B: (pT,eta,phi) = (" << mcZboson_daughterB_p4_.Pt() << "," << mcZboson_daughterB_p4_.Eta() << "," << mcZboson_daughterB_p4_.Phi() << ")" << std::endl;
-				std::cout << "      Relative to each other:" << std::endl;
-				std::cout << "           dR=" << mcZboson_daughters_dR_ << "; dEta=" << mcZboson_daughters_dEta_ << "; dPhi=" << mcZboson_daughters_dPhi_ << "; opening angle=" << mcZboson_daughters_openingAngle_ << std::endl;
-			}
-		}
-
 		/*std::cout << " ->There are " << numZs_status2 << " Z bosons with status=2 in this event." << std::endl;
 		numZs_status2Hist->Fill(numZs_status2);
 		std::cout << "   There are " << numZs_status3 << " Z bosons with status=3 in this event." << std::endl;
@@ -829,6 +810,40 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		//Storing branches of information about the Z candidate ...
 		SetMCZcandidateVariables(vBool_);
 
+		// Sorting out the values of the mcZboson variables in the case that am running over the signal datasets that were generated at the start 2011
+		if(is2010SignalDataset_){
+			// Two new lines put in in 42X on 2011/08/31, since previous code that was used to find Z boson daughters by looking at mother PDG ID's doesn't seem to work anymore ...
+			mcZboson_daughterA_p4_ = mcEles_HighestEt_p4;
+			mcZboson_daughterB_p4_ = mcEles_2ndHighestEt_p4;
+
+			mcZboson_pdgId_  = 0; // Int_t
+			mcZboson_status_ = -100; // Int_t
+			mcZboson_p4_     = mcZboson_daughterA_p4_ + mcZboson_daughterB_p4_;
+			mcZboson_numDaughters_ = 2;
+
+			TLorentzVector daughterA_p4 = ConvertToTLorentzVector( &mcZboson_daughterA_p4_ );
+			TLorentzVector daughterB_p4 = ConvertToTLorentzVector( &mcZboson_daughterB_p4_ );
+
+			mcZboson_daughters_dR_   = daughterA_p4.DeltaR(daughterB_p4);
+			mcZboson_daughters_dEta_ = daughterB_p4.Eta() - daughterA_p4.Eta();
+			mcZboson_daughters_dPhi_ = daughterB_p4.Phi() - daughterA_p4.Phi();
+			while( mcZboson_daughters_dPhi_<=-1.0*TMath::Pi() ){ mcZboson_daughters_dPhi_ = mcZboson_daughters_dPhi_+2.0*TMath::Pi(); }
+			while( mcZboson_daughters_dPhi_>=TMath::Pi()      ){ mcZboson_daughters_dPhi_ = mcZboson_daughters_dPhi_-2.0*TMath::Pi(); }
+			mcZboson_daughters_openingAngle_ = daughterA_p4.Angle(daughterB_p4.Vect());
+
+			//Printing to screen for debugging ...
+			if(vBool_){
+				//std::cout << "   The MC Z boson variables have been determined from the electron and positron which each have two mothers - a u* and a u/ubar ... " << std::endl;
+				std::cout << "   The MC Z boson variables have been determined from the two highest Et e+- ... " << std::endl;
+				std::cout << "      => pdgId=" << mcZboson_pdgId_ << "; status=" << mcZboson_status_ << "; (pT,eta,phi) = (" << mcZboson_p4_.Pt() << ", " << mcZboson_p4_.Eta() << ", " << mcZboson_p4_.Phi() << ")" << std::endl;
+				std::cout << "      It has " << mcZboson_numDaughters_ << " daughters" << std::endl;
+				std::cout << "           Daughter A: (pT,eta,phi) = (" << mcZboson_daughterA_p4_.Pt() << "," << mcZboson_daughterA_p4_.Eta() << "," << mcZboson_daughterA_p4_.Phi() << ")" << std::endl;
+				std::cout << "           Daughter B: (pT,eta,phi) = (" << mcZboson_daughterB_p4_.Pt() << "," << mcZboson_daughterB_p4_.Eta() << "," << mcZboson_daughterB_p4_.Phi() << ")" << std::endl;
+				std::cout << "      Relative to each other:" << std::endl;
+				std::cout << "           dR=" << mcZboson_daughters_dR_ << "; dEta=" << mcZboson_daughters_dEta_ << "; dPhi=" << mcZboson_daughters_dPhi_ << "; opening angle=" << mcZboson_daughters_openingAngle_ << std::endl;
+			}
+		}
+
 		if(vBool_){std::cout << std::endl;}
 	}
 	
@@ -869,10 +884,30 @@ BstdZeeNTupler::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
   	bool changed; //This variable is not used by the init method of hltConfig_ and so does not need to be initialised with a value here
   	hltConfig_.init(run, iSetup, hltResultsTag_.process(), changed); //The value of changed now indicates whether the HLT configuration has changed with respect to the previous run or not.
 	printDatasetsAndTriggerNames();
-	
-  	hltPathIndex_ = hltConfig_.triggerIndex(hltPathA_);
+
+	// Run through all of the possible trigger names for the signal trigger (i.e. hltPathA) ...
+	std::cout << " * Looking through the supplied trigger names:" << std::endl;
+	for(unsigned int nameVecIdx = 0; nameVecIdx<hltPathA_possNames_.size(); nameVecIdx++){
+		std::string ithName = hltPathA_possNames_.at(nameVecIdx);
+		std::cout << " *   " << nameVecIdx << ": " << ithName << std::endl;;
+		hltPathIndex_ = hltConfig_.triggerIndex(ithName);
+		if(hltPathIndex_ < hltConfig_.size()){
+			hltPathA_ = ithName;
+			std::cout << " *     ->Have found this name in menu! Exiting for loop now ..." << std::endl;
+			break;
+		}
+		else
+			std::cout << " *     ->This name isn't in menu! Trying next one now ..." << std::endl;
+	}
 	std::cout << "******-----------**********" << std::endl;
 	std::cout << "The trigger " << hltPathA_ << " corresponds to index " << hltPathIndex_ << std::endl;
+	std::cout << "( There are " << hltConfig_.size() << " triggers in the menu. )" << std::endl;
+	if(hltPathIndex_>=hltConfig_.size()){
+		std::cout << std::endl << "  *** ERROR: Signal trigger (i.e. hltPathA) index >= Number of triggers in menu" << std::endl;
+		// Force runtime error in this case ...
+		std::vector<int> tmpVector; tmpVector.clear();
+		int tmpInt = tmpVector.at(1);
+	}
 	std::cout << "******-----------**********" << std::endl;
 
 }
@@ -1553,13 +1588,13 @@ BstdZeeNTupler::printDatasetsAndTriggerNames(){
 	std::cout << std::endl << "...or from triggerNames() method " << ", the names of the " << hltConfig_.triggerNames().size() << " triggers are:" << std::endl;
 	for(unsigned int idx = 0; idx < hltConfig_.triggerNames().size(); idx++)
 		std::cout << "     " << hltConfig_.triggerNames().at(idx) << std::endl;
-
-	// Now, printing out the names of the modules for the trigger ...
-	const std::vector<std::string> hltPathA_moduleNames = hltConfig_.moduleLabels(hltPathA_);
 	std::cout << std::endl;
-	std::cout << "The modules of the " << hltPathA_ << " trigger path are:" << std::endl;
-	for(unsigned int i = 0; i<hltPathA_moduleNames.size(); i++)
-		std::cout << "    " << hltPathA_moduleNames.at(i) << std::endl;
+
+//	// Now, printing out the names of the modules for the trigger ...
+//	const std::vector<std::string> hltPathA_moduleNames = hltConfig_.moduleLabels(hltPathA_);
+//	std::cout << "The modules of the " << hltPathA_ << " trigger path are:" << std::endl;
+//	for(unsigned int i = 0; i<hltPathA_moduleNames.size(); i++)
+//		std::cout << "    " << hltPathA_moduleNames.at(i) << std::endl;
 
 	std::cout << "****************" << std::endl;
 
@@ -1655,7 +1690,7 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		normHEEPEles_ptVtx_.push_back(    ithHEEPEle.ptVtx() );
 		normHEEPEles_ptCalo_.push_back(   ithHEEPEle.ptCalo() );
 		if(ithHEEPEle.gsfEle().closestCtfTrackRef().get()==0){
-			std::cout << std::endl << "    ***** closestCtfTrackRef is NULL *****" << std::endl << std::endl;
+			if(beVerbose){std::cout << std::endl << "    ***** closestCtfTrackRef is NULL *****" << std::endl << std::endl;}
 			normHEEPEles_closestCtfTrk_pt_.push_back( -999.9 );
 			normHEEPEles_closestCtfTrk_eta_.push_back( -999.9 );
 			normHEEPEles_closestCtfTrk_phi_.push_back( -999.9 );
@@ -1670,12 +1705,19 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 			normHEEPEles_closestCtfTrk_pt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->pt() );
 			normHEEPEles_closestCtfTrk_eta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->eta() );
 			normHEEPEles_closestCtfTrk_phi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->phi() );
-			normHEEPEles_closestCtfTrk_innerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Rho() );
-			normHEEPEles_closestCtfTrk_innerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Eta() );
-			normHEEPEles_closestCtfTrk_innerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Phi() );
-			normHEEPEles_closestCtfTrk_outerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPt() );
-			normHEEPEles_closestCtfTrk_outerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerEta() );
-			normHEEPEles_closestCtfTrk_outerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPhi() );
+//			normHEEPEles_closestCtfTrk_innerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Rho() );
+//			normHEEPEles_closestCtfTrk_innerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Eta() );
+//			normHEEPEles_closestCtfTrk_innerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->innerMomentum().Phi() );
+//			normHEEPEles_closestCtfTrk_outerPt_.push_back(  ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPt() );
+//			normHEEPEles_closestCtfTrk_outerEta_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerEta() );
+//			normHEEPEles_closestCtfTrk_outerPhi_.push_back( ithHEEPEle.gsfEle().closestCtfTrackRef().get()->outerPhi() );
+			// Had to switch to just using pt eta and phi methods of closest CTF track -  and filling other branches with dummy values for the moment - as am currently running over AOD
+			normHEEPEles_closestCtfTrk_innerPt_.push_back(  -999.9 );
+			normHEEPEles_closestCtfTrk_innerEta_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_innerPhi_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_outerPt_.push_back(  -999.9 );
+			normHEEPEles_closestCtfTrk_outerEta_.push_back( -999.9 );
+			normHEEPEles_closestCtfTrk_outerPhi_.push_back( -999.9 );
 		}
 
 		//Variables storing the heep::Ele method values ...
@@ -1743,8 +1785,10 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	   			recHit_tmpIt = recHitsMeta_EE->find(recHitDetId);
 	   			recHitEtMin = 0.1; recHitEnergyMin = 0.0; recHit_isFromEB = false;}
 	   		// ... then if still haven't been able to find this recHit, skip it and move onto the next one! (This is exactly what is done in calculating GSF electron isolation variables)
-	   		if(recHit_tmpIt==recHitsMeta_EE->end())
+	   		if(recHit_tmpIt==recHitsMeta_EE->end()){
 	   			continue;
+	   			std::cout << "  *** N.B: SC recHit not found in recHitsCollns ***" << std::endl;
+	   		}
 
 	   		// Now, add the (eta, phi) position, and the corresponding Et value for the recHit to the recHits vectors ...
 	   		const GlobalPoint recHitPosn = handle_caloGeom.product()->getPosition(recHitDetId);
