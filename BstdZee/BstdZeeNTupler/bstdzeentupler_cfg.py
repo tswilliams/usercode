@@ -19,9 +19,9 @@ process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
 process.GlobalTag.globaltag = 'START42_V13::All'
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(2) )
 
 
 ##### Signal MC file lists:
@@ -39,32 +39,8 @@ f_DatafileList.close()
 datafileLocations = map(DataFileLocationAdaptor,datafilesList)
 
 process.source = cms.Source("PoolSource",
-      fileNames = cms.untracked.vstring('/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_9_1_8Xq.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_8_1_WAc.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_7_1_Ysu.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_6_1_Cah.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_5_1_ym3.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_50_1_mVB.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_4_1_HEY.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_49_1_kmp.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_48_1_uBg.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_47_1_45m.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_46_1_gHK.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_45_1_Kg6.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_44_1_g0B.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_43_1_HsO.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_42_1_f6d.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_41_1_BsU.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_40_1_n6y.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_3_1_WSd.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_39_1_hGa.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_38_1_igl.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_37_1_ueX.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_36_1_pqo.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_35_1_Oov.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_34_1_Duw.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_33_1_SaQ.root',
-       '/store/user/tsw/Boosted_Quark_To_ee_2TeV/std42XRecon-HLTwL1rerun_2-00TeVu_v1b/8c01a0f969578bad7359cae7a66aa176/mcFile_GEN-SIM-RECO-HLT_32_1_7Tc.root')
+      fileNames = cms.untracked.vstring('/store/data/Run2011A/Photon/AOD/05Aug2011-v1/0000/C025161D-49C0-E011-8768-00259021A43E.root')
+#      fileNames = cms.untracked.vstring()
 ##########
 #    fileNames = cms.untracked.vstring('file:/opt/ppd/scratch/williams/TriggerStudies/CMSSW_4_1_4/src/hltResults/2011-05-05/hltCheck-GRunV21_2TeVu_2011-05-05.root')
 #    fileNames = cms.untracked.vstring('file:/opt/ppd/scratch/williams/TriggerStudies/CMSSW_4_1_4/src/hltResults/2011-05-05/hltCheck-GRunV21_1TeVu_2011-05-05.root')
@@ -73,7 +49,7 @@ process.source = cms.Source("PoolSource",
 )
 
 #Defining the output file to store the histograms/NTuples in...
-process.TFileService = cms.Service("TFileService", fileName=cms.string('testNTuple_2-00TeVu.root'))
+process.TFileService = cms.Service("TFileService", fileName=cms.string('dataNTuple-42X_v1d.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('/opt/ppd/newscratch/williams/Datafiles/NTuples/CMSSW_41X/bkgdMC_41X-Ntuple_DYJetsToLL_2530516Evts_2011-06-13.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('testNTuple_2-00TeVu.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('localWflowTest_Ntuple_Sig-100evts_2011-05-06.root'))
@@ -138,11 +114,24 @@ process.TFileService = cms.Service("TFileService", fileName=cms.string('testNTup
 
 process.demo = cms.EDAnalyzer('BstdZeeNTupler',
                               dyJetsToLL_EventType = cms.untracked.int32(0), #==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
-                              isMC = cms.untracked.bool(True),
+                              isMC = cms.untracked.bool(False),
                               printOutInfo = cms.untracked.bool(False),
                               readInNormReco = cms.untracked.bool(True),
                               readInBstdReco = cms.untracked.bool(False),
-                              is2010SignalDataset = cms.untracked.bool(True)
+                              is2010SignalDataset = cms.untracked.bool(False),
+                              useReducedRecHitsCollns = cms.untracked.bool(True),
+#                              hltPathA = cms.untracked.string("HLT_DoubleEle33_CaloIdL_v2")
+#                              hltPathA = cms.untracked.string("HLT_DoublePhoton33_v2"),
+                              hltPathA_possNames = cms.untracked.vstring("HLT_DoublePhoton33_v1",
+                                                                         "HLT_DoublePhoton33_v2",
+                                                                         "HLT_DoublePhoton33_v3",
+                                                                         "HLT_DoubleEle33_CaloIdL_v1",
+                                                                         "HLT_DoubleEle33_CaloIdL_v2",
+                                                                         "HLT_DoubleEle33_CaloIdL_v3",
+                                                                         "HLT_DoubleEle33_CaloIdL_v4",
+                                                                         "HLT_DoubleEle33_CaloIdL_v5",
+                                                                         "HLT_DoubleEle33_CaloIdL_v6")
+#                               hltPathA = cms.untracked.string("HLT_DoubleEle33_v4")
       )
 
 
