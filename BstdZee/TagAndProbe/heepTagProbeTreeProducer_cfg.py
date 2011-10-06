@@ -185,17 +185,17 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 ##  
 process.source = cms.Source("PoolSource", 
     fileNames = cms.untracked.vstring(
-           'file:/opt/ppd/scratch/williams/FEB5D990-917C-E011-A37F-003048D3C8D6.root'
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FEB5D990-917C-E011-A37F-003048D3C8D6.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FE6B9518-9D7C-E011-B606-003048D436F2.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FE0BF8DF-917C-E011-996D-002481E0DA60.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FE00E054-9A7C-E011-B016-0030487D5E81.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FCD68558-957C-E011-8C97-0030487D811F.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FCCA6184-8A7C-E011-BF91-003048CF632E.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FCBB1E8E-9B7C-E011-A1B9-003048C692FE.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FC5F2DAE-827C-E011-9685-003048D43944.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FC394557-977C-E011-A0E6-0030487D858D.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA898555-977C-E011-893F-0030487D5DBF.root',
+#           'file:/opt/ppd/scratch/williams/FEB5D990-917C-E011-A37F-003048D3C8D6.root'
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FEB5D990-917C-E011-A37F-003048D3C8D6.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FE6B9518-9D7C-E011-B606-003048D436F2.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FE0BF8DF-917C-E011-996D-002481E0DA60.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FE00E054-9A7C-E011-B016-0030487D5E81.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FCD68558-957C-E011-8C97-0030487D811F.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FCCA6184-8A7C-E011-BF91-003048CF632E.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FCBB1E8E-9B7C-E011-A1B9-003048C692FE.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FC5F2DAE-827C-E011-9685-003048D43944.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FC394557-977C-E011-A0E6-0030487D858D.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA898555-977C-E011-893F-0030487D5DBF.root',
 #           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA4B11B3-917C-E011-8256-003048D4399E.root',
 #           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA179724-8D7C-E011-B9E3-002481E0DDE8.root',
 #           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA132647-857C-E011-A29B-003048CF632E.root',
@@ -835,6 +835,198 @@ process.WP90ToHLT = cms.EDAnalyzer("TagProbeFitTreeProducer",
     allProbes     = cms.InputTag("PassingWP90")
 )
 
+################################################################################################################################################
+################################################################################################################################################
+################################################################################################################################################
+
+##    _   _        ___    _  
+##   | | | |      |_ _|__| | 
+##   | |_| |       | |/ _` | 
+##   |  _  |       | | (_| | 
+##   |_| |_|EEP   |___\__,_| efficiency section
+##
+
+gsfElectronCollection = "gsfElectrons"
+
+## Defining the strings for access to many HEEP variables ...
+#  (exact methods used to calculate these variables are same methods as used in UserCode/SHarper/HEEPAnalyzer/interface/HEEPEle.h HEAD version (=1.10) on 29/07/11)
+var_scEt   = "((superCluster.position.rho/superCluster.position.r)*caloEnergy)"
+var_scEta  = "(superCluster.eta)"
+var_scPhi  = "(superCluster.phi)"
+var_heepEt = "(caloEnergy*cos(p4.theta))"
+var_eta    = "(p4.eta)"
+var_phi    = "(p4.phi)"
+
+var_isEcalDriven = "ecalDrivenSeed"
+var_dEtaIn       = "deltaEtaSuperClusterTrackAtVtx"
+var_dPhiIn       = "deltaPhiSuperClusterTrackAtVtx"
+var_hOverE       = "hadronicOverEm"
+var_sigmaIEtaIEta= "sigmaIetaIeta"
+var_e2x5Over5x5  = "(? e5x5!=0 ? e1x5/e5x5 : 0.0)"
+var_e1x5Over5x5  = "(? e5x5!=0 ? e2x5Max/e5x5 : 0.0)"
+
+var_isolEmHadDepth1 = "(dr03EcalRecHitSumEt+dr03HcalDepth1TowerSumEt)"
+var_isolHadDepth2   = "dr03HcalDepth2TowerSumEt"
+var_isolPtTrks      = "dr03TkSumPt"
+
+var_epIn  = "eSuperClusterOverP"
+var_epOut = "eSeedClusterOverPout"
+
+##
+## Defining variables to be stored for tag ...
+varsToStore_heepTags = cms.PSet(
+    probe_scEt   = cms.string(var_scEt),
+    probe_scEta  = cms.string(var_scEta),
+    probe_scPhi  =cms.string(var_scPhi),
+    probe_heepEt =cms.string(var_heepEt),
+    probe_eta    =cms.string(var_eta),
+    probe_phi    =cms.string(var_phi),
+    #
+    probe_isEcalDriven  = cms.string(var_isEcalDriven),
+    probe_dEtaIn        = cms.string(var_dEtaIn),
+    probe_dPhiIn        = cms.string(var_dPhiIn),
+    probe_hOverE        = cms.string(var_hOverE),
+    probe_sigmaIEtaIEta = cms.string(var_sigmaIEtaIEta),
+    probe_e2x5Over5x5   = cms.string(var_e2x5Over5x5),
+    probe_e1x5Over5x5   = cms.string(var_e1x5Over5x5),
+    #
+    probe_isolEmHadDepth1= cms.string(var_isolEmHadDepth1),
+    probe_isolHadDepth2  = cms.string(var_isolHadDepth2),
+    probe_isolPtTrks     = cms.string(var_isolPtTrks),
+    probe_epIn  = cms.string(var_epIn),
+    probe_epOut = cms.string(var_epOut)
+)
+## Defining variables to be stored for probe ...
+varsToStore_heepProbes = varsToStore_heepTags
+
+## Defining variables to be stored for the T&P pair - i.e. the Z (candidate) ...
+varsToStore_heepTnPPair = cms.PSet(
+    gsfEta = cms.string("eta"),
+    gsfPt  = cms.string("pt"),
+    gsfPhi  = cms.string("phi"),
+    gsfEt  = cms.string("et"),
+    gsfE  = cms.string("energy"),
+    gsfP  = cms.string("p"),
+    gsfPx  = cms.string("px"),
+    gsfPy  = cms.string("py"),
+    gsfPz  = cms.string("pz"),
+    gsfTheta  = cms.string("theta"),    
+    gsfVx     = cms.string("vx"),
+    gsfVy     = cms.string("vy"),
+    gsfVz     = cms.string("vz"),
+    gsfRapidity  = cms.string("rapidity"),
+    gsfMass  = cms.string("mass"),
+    gsfMt  = cms.string("mt"),    
+)
+
+##
+## Defining PhysicsCutsParser strings for common cuts ...
+cut_scIsBarrel = "( abs("+var_scEta+")<1.442 )"
+cut_scIsEndcap = "( abs("+var_scEta+")>1.560 && abs("+var_scEta+")<2.5 )"
+
+cut_heepBarrel = ("(" + cut_scIsBarrel + 
+                           " && (" + var_heepEt       + ">35.0)" + 
+                           " && (" + var_isEcalDriven + "==1)" + 
+                           " && (abs(" + var_dEtaIn   + ")<0.005)" + 
+                           " && (abs(" + var_dPhiIn   + ")<0.09)" + 
+                           " && (" + var_hOverE       + "<0.05)" + 
+                           " && (("+ var_e2x5Over5x5  + ">0.94) || ("+var_e1x5Over5x5+">0.83))" + 
+                           " && (" + var_isolEmHadDepth1+ "<(2.0+0.03*"+var_heepEt+") )" + 
+                           " && (" + var_isolPtTrks   + "<7.5)" + 
+                           ")")
+cut_heepEndcap = ("(" + cut_scIsEndcap + 
+                           " && (" + var_heepEt       + ">40.0)" + 
+                           " && (" + var_isEcalDriven + "==1)" + 
+                           " && (abs(" + var_dEtaIn   + ")<0.007)" + 
+                           " && (abs(" + var_dPhiIn   + ")<0.09)" + 
+                           " && (" + var_hOverE       + "<0.05)" +
+                           " && (" + var_sigmaIEtaIEta+ "<0.03)" + 
+                           " && ( " + "(("+var_heepEt+"<50.0)&&("+var_isolEmHadDepth1+"<2.5)) || " + 
+                                      "(("+var_heepEt+">=50.0)&&("+var_isolEmHadDepth1+"< (2.5+0.03*("+var_heepEt+"-50.0)) ))" + " )" +
+                           #" && (? "+var_heepEt+"<50.0 ? " + var_isolEmHadDepth1 + "<2.5 : " + var_isolEmHadDepth1 + "<2.5)" +
+                           #                  var_isolEmHadDepth1+ "<(2.5+0.03*("+var_heepEt+"-50.0)) )" + 
+                           " && (" + var_isolHadDepth2+ "<0.5)" + 
+                           " && (" + var_isolPtTrks   + "<15.0)" + 
+                           ")")
+
+## Defining the probe electron collection ...
+heepProbeCuts = "(" + var_scEt + ">35.0)"
+process.heepProbeEles = cms.EDFilter("GsfElectronRefSelector",
+    src = cms.InputTag( gsfElectronCollection ),
+    cut = cms.string( heepProbeCuts )    
+)
+
+## Defining the AllHEEP 'passing' probe electron collection ...
+process.heepProbeElesPassingAllHEEP = cms.EDFilter("GsfElectronRefSelector",
+    src = cms.InputTag( gsfElectronCollection ),
+    cut = cms.string( heepProbeCuts + " && ( " + cut_heepBarrel + " || " + cut_heepEndcap + " )" )    
+#    cut = cms.string( heepProbeCuts + " && ( " + cut_heepBarrel + " )" )    
+)
+
+## Defining the tag electron collection ... (Barrel HEEP ele with e/p<1.5)
+heepTagCuts = ("( " + cut_heepBarrel +
+               " && (" + var_epIn + "<1.5)" + 
+               " )")
+process.heepTagEles = cms.EDFilter("GsfElectronRefSelector",
+    src = cms.InputTag( gsfElectronCollection ),
+    cut = cms.string( heepTagCuts )    
+)
+
+## Defining the T & P pairs ...
+process.heepTagProbePairs = cms.EDProducer("CandViewShallowCloneCombiner",
+    decay = cms.string("heepTagEles heepProbeEles"), # charge coniugate states are implied
+    checkCharge = cms.bool(False),                           
+    cut   = cms.string("60 < mass < 120"), ## TODO - Should change to HEEP definition of p4 for each electron in time,
+                                           ## but using non-HEEP definition at the moment is fine for the mass cut at the moment.
+)
+
+##
+## (FINALLY) Actually making the tag-probe tree ...
+process.heepTagProbeTreeProducer = cms.EDAnalyzer("TagProbeFitTreeProducer",
+    ## TODO -- Check that (as is done in official HEEP effi measurement), events with two tags are counted twice
+    # General flags
+    ignoreExceptions =  cms.bool (False),
+    addRunLumiInfo   =  cms.bool (True),
+    addEventVariablesInfo   =  cms.bool (True),
+    ## *** PROBE ELECTRON ***
+    # Define the probe electrons (a 'GsfElectronRefSelector' product)
+    allProbes     = cms.InputTag("heepProbeEles"),
+    # Define which probe variables should be stored
+    variables = cms.PSet(varsToStore_heepProbes), 
+    # Define probe electrons that pass cuts whose effi is being measured ('GsfElectronRefSelector' product) - sets up boolean branches in TnP tree
+    flags = cms.PSet(    
+        probe_passesAllHEEP = cms.InputTag("heepProbeElesPassingAllHEEP"),
+        #probe_passesHEEPNoIso = cms.InputTag("heepProbeElesPassingHEEPNoIso")        
+    ),
+    ## *** TAG ELECTRON ***
+    # Define which tag variables should be stored, and which cut-passing flags
+    tagVariables   =  cms.PSet(varsToStore_heepTags),
+    tagFlags     =  cms.PSet(
+        probe_passesAllHEEP = cms.InputTag("heepProbeElesPassingAllHEEP"),
+        #probe_passesHEEPNoIso = cms.InputTag("heepProbeElesPassingHEEPNoIso")
+    ),
+    ## *** TAG-PROBE PAIRS ***
+    # Define the tag-probe pairs            
+    tagProbePairs = cms.InputTag("heepTagProbePairs"),
+    # Define which tag-probe pair variables (and cut-passing flags) should be stored
+    pairVariables = cms.PSet(varsToStore_heepTnPPair),
+    pairFlags     = cms.PSet( mass60to120 = cms.string("60 < mass < 120") ),
+    # Define what happens when there are multiple TnP pairs for a given tag electron
+    arbitration   = cms.string("Random2"),  # TODO - Check what value Laurent uses for arbitration
+    #----------------------------------------------------
+    ## *** MC MATCHING ***
+    ## TODO - Check what Laurent does for MC matching. I will temporarily say that files aren't MC
+    isMC = cms.bool(False)
+    #probeMatches  = cms.InputTag("McMatchGsf"),
+    # Set up use of MC truth                  
+    #mcTruthCommonStuff
+)
+
+process.heepEffiPaths = cms.Sequence( process.heepProbeEles + process.heepProbeElesPassingAllHEEP + process.heepTagEles + process.heepTagProbePairs + process.heepTagProbeTreeProducer)
+
+#################################################################################################################################################
+#################################################################################################################################################
+
 ##    ____       _   _     
 ##   |  _ \ __ _| |_| |__  
 ##   | |_) / _` | __| '_ \ 
@@ -850,7 +1042,8 @@ if MC_flag:
         process.ext_ToNearestJet_sequence + 
         process.allTagsAndProbes +
         process.mc_sequence + 
-        process.tree_sequence
+        process.tree_sequence + 
+        process.heepEffiPaths
         )
 else:
     process.tagAndProbe = cms.Path(
