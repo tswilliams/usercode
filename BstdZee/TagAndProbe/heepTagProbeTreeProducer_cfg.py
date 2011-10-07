@@ -196,40 +196,40 @@ process.source = cms.Source("PoolSource",
            '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FC5F2DAE-827C-E011-9685-003048D43944.root',
            '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FC394557-977C-E011-A0E6-0030487D858D.root',
            '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA898555-977C-E011-893F-0030487D5DBF.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA4B11B3-917C-E011-8256-003048D4399E.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA179724-8D7C-E011-B9E3-002481E0DDE8.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA132647-857C-E011-A29B-003048CF632E.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F8660A71-857C-E011-9A8A-003048D4DCDE.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F859835C-977C-E011-BA6A-0030487D70FD.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F4F4FFF7-977C-E011-8351-0030487D5E81.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F49781FE-8F7C-E011-B41D-00266CF32EAC.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F45CA4DD-917C-E011-9556-003048F0E82C.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F284B8A4-867C-E011-A5EA-0025901D4D6E.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F2716D75-877C-E011-B6E6-003048D3C7DC.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F209EEF7-8C7C-E011-8098-003048D479C0.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F0ECFEB7-8F7C-E011-9402-0030487D5D91.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F07FE8C2-857C-E011-8DC8-003048C693B8.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F04BF73D-807C-E011-A66B-0030487D864B.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EEB6CBBE-8A7C-E011-BEE7-003048D479C0.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/ECB5137A-997C-E011-9463-003048D462BE.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EC745015-947C-E011-9347-0025901D4D6E.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EC5FA7AA-8A7C-E011-B646-002481E0DA96.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EC04A9F5-937C-E011-AF45-003048F0E18A.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EAFD192F-7A7C-E011-AC6A-00266CF33208.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EAF84CEE-917C-E011-BB93-003048D3C886.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EAD02203-897C-E011-94AE-003048D462DC.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EA8BB1E7-917C-E011-9566-003048D436F2.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E8EF5CEB-857C-E011-BA2B-003048C662B8.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E8D0483C-957C-E011-B920-00266CF33054.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E8A02CBD-977C-E011-9323-003048C693FA.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E893E26A-917C-E011-B334-002481E0E450.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E877525D-917C-E011-8B61-0030487D5D7B.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E85C6BDA-7F7C-E011-B45B-003048C692F2.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E6CD8A6C-877C-E011-B99E-003048C692F2.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E66AFC4F-957C-E011-B4CC-00215AEDFC8E.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E4E61F79-977C-E011-84EA-003048D4DEBC.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E4AB6B2B-9D7C-E011-9DA3-002481E107A8.root',
-#           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E49C95AF-857C-E011-9EF8-003048D43642.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA4B11B3-917C-E011-8256-003048D4399E.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA179724-8D7C-E011-B9E3-002481E0DDE8.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/FA132647-857C-E011-A29B-003048CF632E.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F8660A71-857C-E011-9A8A-003048D4DCDE.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F859835C-977C-E011-BA6A-0030487D70FD.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F4F4FFF7-977C-E011-8351-0030487D5E81.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F49781FE-8F7C-E011-B41D-00266CF32EAC.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F45CA4DD-917C-E011-9556-003048F0E82C.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F284B8A4-867C-E011-A5EA-0025901D4D6E.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F2716D75-877C-E011-B6E6-003048D3C7DC.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F209EEF7-8C7C-E011-8098-003048D479C0.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F0ECFEB7-8F7C-E011-9402-0030487D5D91.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F07FE8C2-857C-E011-8DC8-003048C693B8.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/F04BF73D-807C-E011-A66B-0030487D864B.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EEB6CBBE-8A7C-E011-BEE7-003048D479C0.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/ECB5137A-997C-E011-9463-003048D462BE.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EC745015-947C-E011-9347-0025901D4D6E.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EC5FA7AA-8A7C-E011-B646-002481E0DA96.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EC04A9F5-937C-E011-AF45-003048F0E18A.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EAFD192F-7A7C-E011-AC6A-00266CF33208.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EAF84CEE-917C-E011-BB93-003048D3C886.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EAD02203-897C-E011-94AE-003048D462DC.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/EA8BB1E7-917C-E011-9566-003048D436F2.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E8EF5CEB-857C-E011-BA2B-003048C662B8.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E8D0483C-957C-E011-B920-00266CF33054.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E8A02CBD-977C-E011-9323-003048C693FA.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E893E26A-917C-E011-B334-002481E0E450.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E877525D-917C-E011-8B61-0030487D5D7B.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E85C6BDA-7F7C-E011-B45B-003048C692F2.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E6CD8A6C-877C-E011-B99E-003048C692F2.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E66AFC4F-957C-E011-B4CC-00215AEDFC8E.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E4E61F79-977C-E011-84EA-003048D4DEBC.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E4AB6B2B-9D7C-E011-9DA3-002481E107A8.root',
+           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E49C95AF-857C-E011-9EF8-003048D43642.root',
 #           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E47A0080-997C-E011-BDB9-003048C693FA.root',
 #           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E4684D61-917C-E011-AAB8-0030487D5E81.root',
 #           '/store/mc/Summer11/DYToEE_M-20_TuneZ2_7TeV-pythia6/AODSIM/PU_S3_START42_V11-v2/0000/E2A695A8-8E7C-E011-B61C-003048F0E5AA.root',
@@ -371,7 +371,7 @@ process.source = cms.Source("PoolSource",
 
         )
 )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(20000) )    
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100000) )    
 process.source.inputCommands = cms.untracked.vstring("keep *","drop *_MEtoEDMConverter_*_*")
 
 ##   ____                         ____ _           _            
@@ -849,11 +849,11 @@ process.WP90ToHLT = cms.EDAnalyzer("TagProbeFitTreeProducer",
 gsfElectronCollection = "gsfElectrons"
 
 ## Defining the strings for access to many HEEP variables ...
-#  (exact methods used to calculate these variables are same methods as used in UserCode/SHarper/HEEPAnalyzer/interface/HEEPEle.h HEAD version (=1.10) on 29/07/11)
+#  (exact methods used to calculate these variables are same methods as used in UserCode/SHarper/HEEPAnalyzer/interface/HEEPEle.h HEAD (revision 1.10) on 29/07/11)
 var_scEt   = "((superCluster.position.rho/superCluster.position.r)*caloEnergy)"
 var_scEta  = "(superCluster.eta)"
 var_scPhi  = "(superCluster.phi)"
-var_heepEt = "(caloEnergy*cos(p4.theta))"
+var_heepEt = "((p4.Et)*(caloEnergy/energy))"
 var_eta    = "(p4.eta)"
 var_phi    = "(p4.phi)"
 
@@ -862,14 +862,14 @@ var_dEtaIn       = "deltaEtaSuperClusterTrackAtVtx"
 var_dPhiIn       = "deltaPhiSuperClusterTrackAtVtx"
 var_hOverE       = "hadronicOverEm"
 var_sigmaIEtaIEta= "sigmaIetaIeta"
-var_e2x5Over5x5  = "(? e5x5!=0 ? e1x5/e5x5 : 0.0)"
-var_e1x5Over5x5  = "(? e5x5!=0 ? e2x5Max/e5x5 : 0.0)"
+var_e2x5Over5x5  = "(? e5x5!=0 ? e2x5Max/e5x5 : 0.0)"
+var_e1x5Over5x5  = "(? e5x5!=0 ? e1x5/e5x5 : 0.0)"
 
 var_isolEmHadDepth1 = "(dr03EcalRecHitSumEt+dr03HcalDepth1TowerSumEt)"
 var_isolHadDepth2   = "dr03HcalDepth2TowerSumEt"
 var_isolPtTrks      = "dr03TkSumPt"
 
-var_epIn  = "eSuperClusterOverP"
+var_epIn  = "eSuperClusterOverP" ## This is the method that Laurent says he uses for tag's E/p [See email on 07/10/11]
 var_epOut = "eSeedClusterOverPout"
 
 ##
@@ -924,65 +924,91 @@ varsToStore_heepTnPPair = cms.PSet(
 cut_scIsBarrel = "( abs("+var_scEta+")<1.442 )"
 cut_scIsEndcap = "( abs("+var_scEta+")>1.560 && abs("+var_scEta+")<2.5 )"
 
-cut_heepBarrel = ("(" + cut_scIsBarrel + 
-                           " && (" + var_heepEt       + ">35.0)" + 
-                           " && (" + var_isEcalDriven + "==1)" + 
-                           " && (abs(" + var_dEtaIn   + ")<0.005)" + 
-                           " && (abs(" + var_dPhiIn   + ")<0.09)" + 
-                           " && (" + var_hOverE       + "<0.05)" + 
-                           " && (("+ var_e2x5Over5x5  + ">0.94) || ("+var_e1x5Over5x5+">0.83))" + 
-                           " && (" + var_isolEmHadDepth1+ "<(2.0+0.03*"+var_heepEt+") )" + 
-                           " && (" + var_isolPtTrks   + "<7.5)" + 
-                           ")")
-cut_heepEndcap = ("(" + cut_scIsEndcap + 
-                           " && (" + var_heepEt       + ">40.0)" + 
-                           " && (" + var_isEcalDriven + "==1)" + 
-                           " && (abs(" + var_dEtaIn   + ")<0.007)" + 
-                           " && (abs(" + var_dPhiIn   + ")<0.09)" + 
-                           " && (" + var_hOverE       + "<0.05)" +
-                           " && (" + var_sigmaIEtaIEta+ "<0.03)" + 
-                           " && ( " + "(("+var_heepEt+"<50.0)&&("+var_isolEmHadDepth1+"<2.5)) || " + 
-                                      "(("+var_heepEt+">=50.0)&&("+var_isolEmHadDepth1+"< (2.5+0.03*("+var_heepEt+"-50.0)) ))" + " )" +
+cut_heepEB_Et = "(" + var_heepEt       + ">35.0)"
+cut_heepEB_isEcalDriven = "(" + var_isEcalDriven + "==1)"
+cut_heepEB_dEtaIn = "(abs(" + var_dEtaIn   + ")<0.005)"
+cut_heepEB_dPhiIn = "(abs(" + var_dPhiIn   + ")<0.09)"
+cut_heepEB_hOverE = "(" + var_hOverE       + "<0.05)"
+cut_heepEB_e2x5Over5x5 = "(("+ var_e2x5Over5x5  + ">0.94) || ("+var_e1x5Over5x5+">0.83))"
+cut_heepEB_isolEmHad1 = "( " + var_isolEmHadDepth1+ "<(2.0+0.03*"+var_heepEt+") )"
+cut_heepEB_isolTrk = "(" + var_isolPtTrks   + "<7.5)"
+
+cut_heepEE_Et = "(" + var_heepEt + ">40.0)"
+cut_heepEE_isEcalDriven = cut_heepEB_isEcalDriven
+cut_heepEE_dEtaIn = "(abs(" + var_dEtaIn + ")<0.007)"
+cut_heepEE_dPhiIn = "(abs(" + var_dPhiIn + ")<0.09)"
+cut_heepEE_hOverE = "(" + var_hOverE + "<0.05)"
+cut_heepEE_sIEtaIEta = "(" + var_sigmaIEtaIEta+ "<0.03)"
+cut_heepEE_isolEmHad1 = ("( " + "(("+var_heepEt+"<50.0)&&("+var_isolEmHadDepth1+"<2.5)) || " + 
+                                      "(("+var_heepEt+">=50.0)&&("+var_isolEmHadDepth1+"< (2.5+0.03*("+var_heepEt+"-50.0)) ))" + " )")
                            #" && (? "+var_heepEt+"<50.0 ? " + var_isolEmHadDepth1 + "<2.5 : " + var_isolEmHadDepth1 + "<2.5)" +
                            #                  var_isolEmHadDepth1+ "<(2.5+0.03*("+var_heepEt+"-50.0)) )" + 
-                           " && (" + var_isolHadDepth2+ "<0.5)" + 
-                           " && (" + var_isolPtTrks   + "<15.0)" + 
+cut_heepEE_isolHad2 = "(" + var_isolHadDepth2+ "<0.5)"
+cut_heepEE_isolTrk  = "(" + var_isolPtTrks   + "<15.0)"
+
+cut_heepBarrel = ("(" + cut_scIsBarrel + 
+                           " && " + cut_heepEB_Et +
+                           " && " + cut_heepEB_isEcalDriven +
+                           " && " + cut_heepEB_dEtaIn +
+                           " && " + cut_heepEB_dPhiIn + 
+                           " && " + cut_heepEB_hOverE +
+                           " && " + cut_heepEB_e2x5Over5x5 + 
+                           " && " + cut_heepEB_isolEmHad1 + 
+                           " && " + cut_heepEB_isolTrk +
+                           ")")
+cut_heepEndcap = ("(" + cut_scIsEndcap + 
+                           " && " + cut_heepEE_Et +
+                           " && " + cut_heepEE_isEcalDriven +
+                           " && " + cut_heepEE_dEtaIn +
+                           " && " + cut_heepEE_dPhiIn +
+                           " && " + cut_heepEE_hOverE +
+                           " && " + cut_heepEE_sIEtaIEta +
+                           " && " + cut_heepEE_isolEmHad1 +
+                           " && " + cut_heepEE_isolHad2 +
+                           " && " + cut_heepEE_isolTrk +
                            ")")
 
 ## Defining the probe electron collection ...
 heepProbeCuts = "(" + var_scEt + ">35.0)"
+heepProbeCuts = "( " + heepProbeCuts + " && ( ("+cut_scIsBarrel+"&&"+cut_heepEB_Et+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_Et+") ) )"
+
 process.heepProbeEles = cms.EDFilter("GsfElectronRefSelector",
     src = cms.InputTag( gsfElectronCollection ),
     cut = cms.string( heepProbeCuts )    
 )
 
 ## Defining the AllHEEP 'passing' probe electron collection ...
-process.heepProbeElesPassingAllHEEP = cms.EDFilter("GsfElectronRefSelector",
-    src = cms.InputTag( gsfElectronCollection ),
-    cut = cms.string( heepProbeCuts + " && ( " + cut_heepBarrel + " || " + cut_heepEndcap + " )" )    
-#    cut = cms.string( heepProbeCuts + " && ( " + cut_heepBarrel + " )" )    
-)
+process.heepProbeElesPassingAllHEEP = process.heepProbeEles.clone()
+process.heepProbeElesPassingAllHEEP.cut = cms.string( heepProbeCuts + " && ( " + cut_heepBarrel + " || " + cut_heepEndcap + " )" )    
+#process.heepProbeElesPassingAllHEEP = cms.EDFilter("GsfElectronRefSelector",
+#    src = cms.InputTag( gsfElectronCollection ),
+#    cut = cms.string( heepProbeCuts + " && ( " + cut_heepBarrel + " || " + cut_heepEndcap + " )" )    
+#)
 
 ## Defining the tag electron collection ... (Barrel HEEP ele with e/p<1.5)
+## N.B: Laurent => He uses the method eSuperClusterOverP for this 'tag' E/p cut
+process.heepTagEles = process.heepProbeEles.clone() 
 heepTagCuts = ("( " + cut_heepBarrel +
-               " && (" + var_epIn + "<1.5)" + 
+               " && (" + var_scEt + ">35.0)" +
+               " && (" + var_epOut + "<1.5)" +
                " )")
-process.heepTagEles = cms.EDFilter("GsfElectronRefSelector",
-    src = cms.InputTag( gsfElectronCollection ),
-    cut = cms.string( heepTagCuts )    
-)
+process.heepTagEles.cut = cms.string( heepTagCuts )  
+#process.heepTagEles = cms.EDFilter("GsfElectronRefSelector",
+#    src = cms.InputTag( gsfElectronCollection ),
+#    cut = cms.string( heepTagCuts )    
+#)
 
 ## Defining the T & P pairs ...
 process.heepTagProbePairs = cms.EDProducer("CandViewShallowCloneCombiner",
     decay = cms.string("heepTagEles heepProbeEles"), # charge coniugate states are implied
     checkCharge = cms.bool(False),                           
     cut   = cms.string("60 < mass < 120"), ## TODO - Should change to HEEP definition of p4 for each electron in time,
-                                           ## but using non-HEEP definition at the moment is fine for the mass cut at the moment.
+                                           ## but using non-HEEP definition is fine for the mass cut at the moment.
 )
 
 ##
 ## (FINALLY) Actually making the tag-probe tree ...
-process.heepTagProbeTreeProducer = cms.EDAnalyzer("TagProbeFitTreeProducer",
+process.heepTagProbeTree = cms.EDAnalyzer("TagProbeFitTreeProducer",
     ## TODO -- Check that (as is done in official HEEP effi measurement), events with two tags are counted twice
     # General flags
     ignoreExceptions =  cms.bool (False),
@@ -996,14 +1022,25 @@ process.heepTagProbeTreeProducer = cms.EDAnalyzer("TagProbeFitTreeProducer",
     # Define probe electrons that pass cuts whose effi is being measured ('GsfElectronRefSelector' product) - sets up boolean branches in TnP tree
     flags = cms.PSet(    
         probe_passesAllHEEP = cms.InputTag("heepProbeElesPassingAllHEEP"),
+        probe_passesHEEP_Et = cms.string("( (" +cut_scIsBarrel+"&&"+cut_heepEB_Et+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_Et+") )"),
+        probe_passesHEEP_scEta = cms.string("( (" +cut_scIsBarrel+") || ("+cut_scIsEndcap+") )"),
+        probe_passesHEEP_isEcalDriven = cms.string("( (" +cut_scIsBarrel+"&&"+cut_heepEB_isEcalDriven+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_isEcalDriven+") )"),
+        probe_passesHEEP_dEtaIn       = cms.string("( (" +cut_scIsBarrel+"&&"+cut_heepEB_dEtaIn+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_dEtaIn+") )"),
+        probe_passesHEEP_dPhiIn       = cms.string("( (" +cut_scIsBarrel+"&&"+cut_heepEB_dPhiIn+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_dPhiIn+") )"),
+        probe_passesHEEP_hOverE       = cms.string("( (" +cut_scIsBarrel+"&&"+cut_heepEB_hOverE+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_hOverE+") )"),
+        probe_passesHEEP_sIetaIeta    = cms.string("( (" +cut_scIsBarrel+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_sIEtaIEta+") )"),
+        probe_passesHEEP_e2x5Over5x5  = cms.string("( (" +cut_scIsBarrel+"&&"+cut_heepEB_e2x5Over5x5+") || ("+cut_scIsEndcap+") )"),
+        probe_passesHEEP_isolEmHad1   = cms.string("( (" +cut_scIsBarrel+"&&"+cut_heepEB_isolEmHad1+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_isolEmHad1+") )"),
+        probe_passesHEEP_isolHad2     = cms.string("( (" +cut_scIsBarrel+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_isolHad2+") )"),
+        probe_passesHEEP_isolTrk      = cms.string("( (" +cut_scIsBarrel+"&&"+cut_heepEB_isolTrk+") || ("+cut_scIsEndcap+"&&"+cut_heepEE_isolTrk+") )")
         #probe_passesHEEPNoIso = cms.InputTag("heepProbeElesPassingHEEPNoIso")        
     ),
     ## *** TAG ELECTRON ***
     # Define which tag variables should be stored, and which cut-passing flags
     tagVariables   =  cms.PSet(varsToStore_heepTags),
     tagFlags     =  cms.PSet(
-        probe_passesAllHEEP = cms.InputTag("heepProbeElesPassingAllHEEP"),
-        #probe_passesHEEPNoIso = cms.InputTag("heepProbeElesPassingHEEPNoIso")
+        tag_passesAllHEEP = cms.InputTag("heepProbeElesPassingAllHEEP"),
+        #tag_passesHEEPNoIso = cms.InputTag("heepProbeElesPassingHEEPNoIso")
     ),
     ## *** TAG-PROBE PAIRS ***
     # Define the tag-probe pairs            
@@ -1012,7 +1049,11 @@ process.heepTagProbeTreeProducer = cms.EDAnalyzer("TagProbeFitTreeProducer",
     pairVariables = cms.PSet(varsToStore_heepTnPPair),
     pairFlags     = cms.PSet( mass60to120 = cms.string("60 < mass < 120") ),
     # Define what happens when there are multiple TnP pairs for a given tag electron
-    arbitration   = cms.string("Random2"),  # TODO - Check what value Laurent uses for arbitration
+    # Laurent => He uses the highest pT electron in the case of multiple probes, but this choice doesn't exist in ...
+    # ... this standard T&P tool => I will use "BestMass" option, as this is the only one that will at least result ...
+    # ... in same no. of T&P pairs
+    arbitration   = cms.string("BestMass"),
+    massForArbitration = cms.double(91.2),
     #----------------------------------------------------
     ## *** MC MATCHING ***
     ## TODO - Check what Laurent does for MC matching. I will temporarily say that files aren't MC
@@ -1022,7 +1063,7 @@ process.heepTagProbeTreeProducer = cms.EDAnalyzer("TagProbeFitTreeProducer",
     #mcTruthCommonStuff
 )
 
-process.heepEffiPaths = cms.Sequence( process.heepProbeEles + process.heepProbeElesPassingAllHEEP + process.heepTagEles + process.heepTagProbePairs + process.heepTagProbeTreeProducer)
+process.heepEffiPaths = cms.Sequence( process.heepProbeEles + process.heepProbeElesPassingAllHEEP + process.heepTagEles + process.heepTagProbePairs + process.heepTagProbeTree)
 
 #################################################################################################################################################
 #################################################################################################################################################

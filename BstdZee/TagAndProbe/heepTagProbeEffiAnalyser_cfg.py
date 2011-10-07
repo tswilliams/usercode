@@ -178,10 +178,82 @@ process.WP90ToHLT = process.WP95ToHLT.clone()
 process.WP90ToHLT.InputDirectoryName = cms.string("WP90ToHLT")
 process.WP90ToHLT.OutputFileName = cms.string(OutputFilePrefix+"WP90ToHLT.root")
 
+
+###########################################################################################
+##---------------------------------------------------------------------------------------##
+##                              GSF -> HEEP efficiency                                   ##
+##---------------------------------------------------------------------------------------##
+###########################################################################################
+
+heepInputFName = "testTandPEffiTree.root"
+heepInputFDir = "heepTagProbeTree"
+
+process.Effi_GsfToHEEP = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
+    # *** I/O PARAMETERS
+    InputFileNames = cms.vstring(heepInputFName),
+    InputDirectoryName = cms.string(heepInputFDir),
+    InputTreeName = cms.string("fitter_tree"),
+    OutputFileName = cms.string(OutputFilePrefix + heepInputFDir + ".root"),
+                                        
+    ## *** BRANCHES USED IN EFFICIENCY CALC'N *** 
+    # ... real variables intended for use in the efficiencies
+    Variables = cms.PSet(
+        mass = cms.vstring("Tag-Probe Mass", "60.0", "120.0", "GeV/c^{2}"),
+        probe_heepEt  = cms.vstring("Probe E_{T}^{HEEP}","0.0","1000.0","GeV"),
+        probe_eta = cms.vstring("Probe #eta","-2.5","2.5",""),
+        probe_scEta = cms.vstring("Probe #eta_{SC}", "-2.5", "2.5", ""),                
+    ),
+    # ... discrete variables intended for use in the efficiency calculations
+    Categories = cms.PSet(
+        #mcTrue = cms.vstring("MC true", "dummy[true=1,false=0]"),
+        probe_passesAllHEEP = cms.vstring("probe_passesAllHEEP", "dummy[pass=1,fail=0]")
+    ),
+                                        
+    ## *** EFFICIENCY SPECIFICATIONS ***
+    # Define the binning, and cut-flag, used for each efficiency calculation
+    # # N.B: Fitting-based efficiency calc'n is disabled by 
+    Efficiencies = cms.PSet( #mcTruthModules,
+       AllHEEP_unbinned = cms.PSet( 
+          #Specify the 'category' which contains the probe pass/fail result
+          EfficiencyCategoryAndState = cms.vstring("probe_passesAllHEEP","pass"), 
+          #specifies what unbinned variables to include in the dataset, the mass is needed for the fit
+          UnbinnedVariables = cms.vstring("mass"),
+          # Specify binning of parameters
+          BinnedVariables = cms.PSet( probe_scEta = cms.vdouble(-2.5, -1.56, -1.442, 1.442, 1.56, 2.5) )
+          # BinToPDFmap NOT SPECIFIED so that only counting efficiency calculated
+          #BinToPDFmap = cms.vstring(PDFName),
+       )
+    ),
+                                        
+    ## *** FITING PARAMETERS***
+    # Number of CPUs to use for fitting
+    NumCPU = cms.uint32(1),
+    # specifies wether to save the RooWorkspace containing the data for each bin and
+    # the pdf object with the initial and final state snapshots
+    SaveWorkspace = cms.bool(True),
+    floatShapeParameters = cms.bool(True),
+    #fixVars = cms.vstring("mean"),
+    # defines all the PDFs that will be available for the efficiency calculations; uses RooFit's "factory" syntax;
+    # each pdf needs to define "signal", "backgroundPass", "backgroundFail" pdfs, "efficiency[0.9,0,1]" and "signalFractionInPassing[0.9]" are used for initial values  
+    PDFs = cms.PSet(
+        pdfSignalPlusBackground = cms.vstring("CBExGaussShape::signalResPass(mass, meanP[0.], sigmaP[8.5695e-04, 0., 3.],alphaP[3.8296e-04], nP[6.7489e+00], sigmaP_2[2.5849e+00], fracP[6.5704e-01])",  ### signal resolution for "pass" sample
+           "CBExGaussShape::signalResFail(mass, meanF[2.0946e-01, -5., 5.], sigmaF[8.5695e-04, 0., 5.],alphaF[3.8296e-04], nF[6.7489e+00], sigmaF_2[2.5849e+00], fracF[6.5704e-01])",  ### signal resolution for "fail" sample     
+           "ZGeneratorLineShape::signalPhy(mass)", ### NLO line shape
+           "RooCMSShape::backgroundPass(mass, alphaPass[60.,50.,70.], betaPass[0.001, 0.,0.1], betaPass, peakPass[90.0])",
+           "RooCMSShape::backgroundFail(mass, alphaFail[60.,50.,70.], betaFail[0.001, 0.,0.1], betaFail, peakFail[90.0])",
+           "FCONV::signalPass(mass, signalPhy, signalResPass)",
+           "FCONV::signalFail(mass, signalPhy, signalResFail)",     
+           "efficiency[0.9,0,1]",
+           "signalFractionInPassing[1.0]"),
+    )
+)
+
+
+
 ###################################################################
 ###################################################################
 ###### CMS Path
 ###################################################################
 ###################################################################
 
-process.fit = cms.Path( process.GsfElectronToId )
+process.fit = cms.Path( process.Effi_GsfToHEEP )
