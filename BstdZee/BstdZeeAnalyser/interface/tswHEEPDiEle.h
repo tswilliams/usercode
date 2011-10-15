@@ -59,13 +59,18 @@ namespace tsw{
 					return false;
 			}
 
-			//Methods for applying the modified track isolation HEEP cut ...
+			//Methods for applying the modified track isolation HEEP cut - w/ modification occuring using innerIsoConeTrks information
+			float eleA_modTrkIso(){ return eleA_.modTrkIso(&eleB_); }
+			float eleB_modTrkIso(){ return eleB_.modTrkIso(&eleA_); }
+			bool ApplyDiEleTrkIsolCut();
+
+			// The old (simpler) methods for applying the modified track isolation HEEP cut.
 			float dR_gsfEleToCtfTrk(tsw::HEEPEle*, float, float);
 			float dR_gsfAToCtfB();
 			float dR_gsfBToCtfA();
-			float eleA_modTrkIso();
-			float eleB_modTrkIso();
-			bool ApplyDiEleTrkIsolCut();
+			float eleA_modTrkIso_v0();
+			float eleB_modTrkIso_v0();
+			bool ApplyDiEleTrkIsolCut_v0();
 
 		private:
 			// Member variables for the caching of the modified electron isolation values ...
@@ -164,6 +169,47 @@ namespace tsw{
 
 	//-------------------------------------------------------------------***
 	//Methods for applying the modified track isolation HEEP cut ...
+	bool HEEPDiEle::ApplyDiEleTrkIsolCut()
+	{
+		const bool coutDebugTxt = false;
+		if(coutDebugTxt){
+			std::cout << "      **Applying the di-electron modified HEEP tracker isolation cut ...:" << std::endl;
+			std::cout << "      ** isolPtTrks..." << std::endl;
+			std::cout << "      **     Standard values...  eleA: " << eleA().isolPtTrks() << ", eleB: " << eleB().isolPtTrks() << std::endl;
+			std::cout << "      **     Ele A calc'n ..." << std::endl;
+		}
+
+		float eleA_isolPtTrks = eleA_modTrkIso();
+		if(coutDebugTxt){std::cout << "      **     Ele B calc'n ..." << std::endl;}
+		float eleB_isolPtTrks = eleB_modTrkIso();
+		if(coutDebugTxt){std::cout << "      **     Modified values... eleA: " << eleA_isolPtTrks << ", eleB: " << eleB_isolPtTrks << std::endl;}
+
+		// Now, apply the HEEP track pT isolation cuts to the modified isolPtTrks values ...
+		bool eleA_cutFlag = false;
+		bool eleB_cutFlag = false;
+
+		if( eleA().isHEEPEB() && (eleA_isolPtTrks<7.5) )
+			eleA_cutFlag = true;
+		else if( eleA().isHEEPEE() && (eleA_isolPtTrks<15.0) )
+			eleA_cutFlag = true;
+		else
+			eleA_cutFlag = false;
+		if(coutDebugTxt){std::cout << "      ** Applying HEEP cut to electron A => " << eleA_cutFlag << std::endl;}
+
+		if( eleB().isHEEPEB() && (eleB_isolPtTrks<7.5) )
+			eleB_cutFlag = true;
+		else if( eleB().isHEEPEE() && (eleB_isolPtTrks<15.0) )
+			eleB_cutFlag = true;
+		else
+			eleB_cutFlag = false;
+		if(coutDebugTxt){std::cout << "      ** Applying HEEP cut to electron B => " << eleB_cutFlag << std::endl;}
+
+		if(coutDebugTxt){std::cout << "      ** Value returned = " << (eleA_cutFlag && eleB_cutFlag) << std::endl;}
+		return (eleA_cutFlag && eleB_cutFlag);
+	}
+
+	//-------------------------------------------------------------------***
+	// OLD Methods for applying the modified track isolation HEEP cut ...
 	float HEEPDiEle::dR_gsfEleToCtfTrk(tsw::HEEPEle* theGsfEle, float ctfTrk_eta, float ctfTrk_phi){
 		// Calculate deltaEta ...
 		float dEta = theGsfEle->eta() - ctfTrk_eta;
@@ -187,7 +233,11 @@ namespace tsw{
 		// Calculating dR using the gsfTrk of eleB and the CTF track of eleA ...
 		return dR_gsfEleToCtfTrk(&eleB_, eleA_.closestCtfTrk_eta(), eleA_.closestCtfTrk_phi());
 	}
-	float HEEPDiEle::eleA_modTrkIso(){
+
+
+
+	float HEEPDiEle::eleA_modTrkIso_v0()
+	{
 		bool coutDebugTxt = false;
 		double eleA_isolPtTrks = eleA().isolPtTrks();
 		// If deltaR for the di-electron is < 0.3, then the two electrons lie in each other's isolation cone, ...
@@ -198,7 +248,8 @@ namespace tsw{
 		}
 		return eleA_isolPtTrks;
 	}
-	float HEEPDiEle::eleB_modTrkIso(){
+	float HEEPDiEle::eleB_modTrkIso_v0()
+	{
 		bool coutDebugTxt = false;
 		double eleB_isolPtTrks = eleB().isolPtTrks();
 		// If deltaR for the di-electron is < 0.3, then the two electrons lie in each other's isolation cone, ...
@@ -211,7 +262,8 @@ namespace tsw{
 
 	}
 
-	bool HEEPDiEle::ApplyDiEleTrkIsolCut(){
+	bool HEEPDiEle::ApplyDiEleTrkIsolCut_v0()
+	{
 		bool coutDebugTxt = false;
 		if(coutDebugTxt){std::cout << "      **Applying the di-electron modified HEEP tracker isolation cut ...:" << std::endl;}
 		double eleA_isolPtTrks = eleA().isolPtTrks();
@@ -224,8 +276,8 @@ namespace tsw{
 			std::cout << "      **     Initial values...  eleA: " << eleA_isolPtTrks << ", eleB: " << eleB_isolPtTrks << std::endl;}
 		// If deltaR for the di-electron is < 0.3, then the two electrons lie in each other's isolation cone, ...
 		// and so remove the other electron's track pT from that electron ...
-		eleA_isolPtTrks = eleA_modTrkIso(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
-		eleB_isolPtTrks = eleB_modTrkIso(); //eleB_isolPtTrks -= eleA().gsfP4().Pt();
+		eleA_isolPtTrks = eleA_modTrkIso_v0(); //eleA_isolPtTrks -= eleB().gsfP4().Pt();
+		eleB_isolPtTrks = eleB_modTrkIso_v0(); //eleB_isolPtTrks -= eleA().gsfP4().Pt();
 		if(coutDebugTxt){std::cout << "      **     Modified values... eleA: " << eleA_isolPtTrks << ", eleB: " << eleB_isolPtTrks << std::endl;}
 
 		// Now, apply the HEEP track pT isolation cuts to the modified isolPtTrks values ...
@@ -292,10 +344,12 @@ namespace tsw{
 		std::cout << "          p4,E=" << eleA_.p4().E() << "; p4,p=(" << eleA_.p4().Px() << ", " << eleA_.p4().Py() << ", " << eleA_.p4().Pz() << std::endl;
 		std::cout << "          et=" << eleA_.et() << "; scEt=" << eleA_.scEt() << "; energy=" << eleA_.energy() << "; eta=" << eleA_.eta() << "; phi=" << eleA_.phi() << "; sc(eta,phi) = (" << eleA_.scEta() << ", " << eleA_.scPhi() << ")" << std::endl;
 		std::cout << "          ptVtx=" << eleA_.ptVtx() << "; ptCalo=" << eleA_.ptCalo() << "; closestCtfTrk... (pT,eta,phi)=(" << eleA_.closestCtfTrk_pt() << ", " << eleA_.closestCtfTrk_eta() << ", " << eleA_.closestCtfTrk_phi() << ")" << std::endl;
+		std::cout << "          gsfTrk... (eta, phi) = (" << eleA_.gsfTrk_eta() << ", " << eleA_.gsfTrk_phi() << "), vz=" << eleA_.gsfTrk_vz() << std::endl;
 		std::cout << "        EleB:" << std::endl;
 		std::cout << "          p4,E=" << eleB_.p4().E() << "; p4,p=(" << eleB_.p4().Px() << ", " << eleB_.p4().Py() << ", " << eleB_.p4().Pz() << std::endl;
 		std::cout << "          et=" << eleB_.et() << "; scEt=" << eleB_.scEt() << "; energy=" << eleB_.energy() << "; eta=" << eleB_.eta() << "; phi=" << eleB_.phi() << "; sc(eta,phi) = (" << eleB_.scEta() << ", " << eleB_.scPhi() << ")" << std::endl;
 		std::cout << "          ptVtx=" << eleB_.ptVtx() << "; ptCalo=" << eleB_.ptCalo() << "; closestCtfTrk... (pT,eta,phi)=(" << eleB_.closestCtfTrk_pt() << ", " << eleB_.closestCtfTrk_eta() << ", " << eleB_.closestCtfTrk_phi() << ")" << std::endl;
+		std::cout << "          gsfTrk... (eta, phi) = (" << eleB_.gsfTrk_eta() << ", " << eleB_.gsfTrk_phi() << "), vz=" << eleB_.gsfTrk_vz() << std::endl;
 
 	}
 
