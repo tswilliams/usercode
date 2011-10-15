@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.2 2011/07/15 17:04:19 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.6 2011/09/01 14:05:59 tsw Exp $
 //
 //
 
@@ -33,6 +33,8 @@ sjlkd
 
 #include "FWCore/Framework/interface/ESHandle.h"
 
+#include "FWCore/Utilities/interface/Exception.h"
+
 //To use the GenParticle MC-truth collection...
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
@@ -46,6 +48,9 @@ sjlkd
 // ... for using the recHits collections and information ...
 #include "RecoCaloTools/MetaCollections/interface/CaloRecHitMetaCollections.h"
 #include "DataFormats/Common/interface/SortedCollection.h"
+
+// ... for the general tracks collection
+#include "DataFormats/TrackReco/interface/Track.h"
 
 //...in order to use the heep::Ele class ...
 #include "SHarper/HEEPAnalyzer/interface/HEEPEle.h"
@@ -117,6 +122,8 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
       virtual void endJob() ;
 
       virtual void beginRun(const edm::Run&, const edm::EventSetup&);
+      std::pair<std::string, unsigned int> beginRun_getTriggerNameAndIdx(const std::vector<std::string>& vecOfPossNames, std::string triggerId_debug);
+
       //virtual void endRun(edm::Run const&, edm::EventSetup const&);
       //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
@@ -139,7 +146,7 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		void ReadInEvtInfo(bool, const edm::Event&);
 
 		//For reading the electron information into the member variables...
-		void ReadInNormGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&, edm::ESHandle<CaloGeometry>&, EcalRecHitMetaCollection*, EcalRecHitMetaCollection*);
+		void ReadInNormGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&, edm::ESHandle<CaloGeometry>&, EcalRecHitMetaCollection*, EcalRecHitMetaCollection*, edm::Handle<reco::TrackCollection>&);
 		void ReadInBstdGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&);
 
 		//For reading in the muon information, and dumping it into tsw::Event class ...
@@ -212,6 +219,8 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		Int_t mcZboson_status_; // Int_t
 		ROOT::Math::XYZTVector* mcZboson_p4_ptr_; // ROOT::Math::XYZTLorentzVector*
 		ROOT::Math::XYZTVector mcZboson_p4_;
+		ROOT::Math::XYZTVector* mcZboson_status2_p4_ptr_; // ROOT::Math::XYZTLorentzVector*
+		ROOT::Math::XYZTVector mcZboson_status2_p4_;
 		Int_t mcZboson_numDaughters_;
 		Double_t mcZboson_daughters_dR_;
 		Double_t mcZboson_daughters_dEta_;
@@ -222,12 +231,10 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		ROOT::Math::XYZTVector  mcZboson_daughterB_p4_;
 		ROOT::Math::XYZTVector* mcZboson_daughterB_p4_ptr_;
 
-		//std::vector<Bool_t>      trg_TrigPathDecisions_;
-		//std::vector<std::string> trg_TrigPathNames_;
+		// Trigger member variables
 		Bool_t      trg_PathA_decision_;
 		std::string trg_PathA_name_;
 		
-		//Trigger member variables
 		edm::InputTag hltResultsTag_;
 		edm::InputTag hltEventTag_;
 		std::string hltPathA_;
@@ -243,6 +250,10 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		//Trigger member variables - HLT config helper
 		HLTConfigProvider hltConfig_;
   		unsigned hltPathIndex_;
+		 // Trigger member variables - emu cross trigger
+		const std::vector<std::string> trg_emuPath_possNames_;
+		std::string trg_emuPath_name_;
+		unsigned int trg_emuPath_idx_;
 
 		//Event information variables...
 		unsigned int evt_runNum_;
@@ -353,6 +364,14 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		std::vector< std::vector<float> > normHEEPEles_SC_recHits_eta_;
 		std::vector< std::vector<float> > normHEEPEles_SC_recHits_phi_;
 		std::vector< std::vector<bool> >  normHEEPEles_SC_recHits_isFromEB_;
+
+		std::vector<float> normHEEPEles_gsfTrk_eta_;
+		std::vector<float> normHEEPEles_gsfTrk_phi_;
+		std::vector<float> normHEEPEles_gsfTrk_vz_;
+		std::vector< std::vector<float> > normHEEPEles_innerIsoConeTrks_pt_;
+		std::vector< std::vector<float> > normHEEPEles_innerIsoConeTrks_eta_;
+		std::vector< std::vector<float> > normHEEPEles_innerIsoConeTrks_phi_;
+		std::vector< std::vector<float> > normHEEPEles_innerIsoConeTrks_vz_;
 
 		//std::vector<tsw::HEEPEle>  normGsfEles_tswHEEPEle_;
 		//std::vector<tsw::HEEPEle>* normGsfEles_tswHEEPElePtr_;
@@ -481,7 +500,10 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
   	hltPathA_possNames_(iConfig.getUntrackedParameter< std::vector<std::string> >("hltPathA_possNames")),
 	hltPathADecision_(false),
   	hltPathA_nameOfLastFilter_(iConfig.getUntrackedParameter<std::string>("hltPathA_nameOfLastFilter",std::string("hltEle45CaloIdVTTrkIdTDphiFilter"))),
-  	hltPathA_highestTrigObjEt_(-999.9)
+  	hltPathA_highestTrigObjEt_(-999.9),
+	trg_emuPath_possNames_( iConfig.getUntrackedParameter< std::vector<std::string> >("trg_emuPath_possNames") ),
+	trg_emuPath_name_("*** DEFAULT TRIGGER NAME ***"),
+	trg_emuPath_idx_(999999)
 
 {
    //now do what ever initialization is needed
@@ -566,6 +588,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	edm::Handle<reco::GsfElectronCollection> normGsfElesH, bstdGsfElesH;
 	edm::ESHandle<CaloGeometry> caloGeomH;
 	edm::Handle<EcalRecHitCollection> reducedEBRecHitsH, reducedEERecHitsH;
+	edm::Handle< reco::TrackCollection > ctfTrackCollectionH;
 
 	if(mcFlag_)
 		iEvent.getByLabel("genParticles", genParticles);
@@ -592,6 +615,9 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	EcalRecHitMetaCollection* ecalBarrelHitsMeta = new EcalRecHitMetaCollection(*reducedEBRecHitsH);
 	EcalRecHitMetaCollection* ecalEndcapHitsMeta = new EcalRecHitMetaCollection(*reducedEERecHitsH);
 
+	// Setting the handle for the general CTF track collection ...
+	iEvent.getByLabel(edm::InputTag("generalTracks::RECO"), ctfTrackCollectionH);
+
 	//Reading in the event information...
 	ReadInEvtInfo(vBool_, iEvent);
 	
@@ -614,7 +640,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	//Reading in the kin variables for the standard and special reco'n GSF electrons... 
 	if(readInNormReco_)
-		ReadInNormGsfEles(vBool_, normGsfElesH, caloGeomH, ecalBarrelHitsMeta, ecalEndcapHitsMeta);
+		ReadInNormGsfEles(vBool_, normGsfElesH, caloGeomH, ecalBarrelHitsMeta, ecalEndcapHitsMeta, ctfTrackCollectionH);
 	if(readInBstdReco_)
 		ReadInBstdGsfEles(vBool_, bstdGsfElesH);
 
@@ -656,6 +682,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				//For Z bosons with status=2 (i.e. that are decaying)
 				if(particleStatus==2){
 					mc_numZs_status2_++;
+					mcZboson_status2_p4_ = particle4mom;
 				}
 				//For Z bosons with status=3 (i.e. that are in the 'hard part' of the interaction - i.e. used in the matrix element caLculation)
 				else if(particleStatus==3){
@@ -904,17 +931,74 @@ BstdZeeNTupler::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
 	std::cout << "( There are " << hltConfig_.size() << " triggers in the menu. )" << std::endl;
 	if(hltPathIndex_>=hltConfig_.size()){
 		std::cout << std::endl << "  *** ERROR: Signal trigger (i.e. hltPathA) index >= Number of triggers in menu" << std::endl;
-		// Force runtime error in this case ...
+		// Throw an exception ...
+		cms::Exception ex("readingTrigerInfo");
+		ex << " [In BstdZeeNTupler::beginRun ...]" << std::endl;
+		ex << "      None of the supplied possible names for hltPathA were found in the trigger menu "<< std::endl;
+		ex << "      (See FILE: '" << __FILE__ << "'; LINE NO. " << __LINE__ << ")" << std::endl;
+		throw ex;
+		// Just in case exception throw doesn't work. ... Force runtime error ...
 		std::vector<int> tmpVector; tmpVector.clear();
 		int tmpInt = tmpVector.at(1);
 	}
 	std::cout << "******-----------**********" << std::endl;
 
+	// Now, retrieve the e-mu trigger name and index ...
+	std::pair<std::string, unsigned int> eMuTrigger_nameIdxPair = beginRun_getTriggerNameAndIdx(trg_emuPath_possNames_, "e-mu trigger");
+	trg_emuPath_name_ = eMuTrigger_nameIdxPair.first;
+	trg_emuPath_idx_ = eMuTrigger_nameIdxPair.second;
+}
+
+
+std::pair<std::string, unsigned int> BstdZeeNTupler::beginRun_getTriggerNameAndIdx(const std::vector<std::string>& vecOfPossNames, std::string triggerId_debug)
+{ // N.B: Must be called AFTER hltConfig_.init() ....
+	unsigned int pathIdx = 999999;
+	std::string pathName = " *** DEFAULT TRIGGER NAME *** ";
+	// TODO ---- Adapt this so that it return index for arg vecOfPossNames, rather than for trigger from hltPathA_possNames_
+
+	// Run through all of the possible trigger names for this trigger ...
+	std::cout << std::endl << " *****************************************************" << std::endl;
+	std::cout << " * Looking through the supplied trigger names:" << std::endl;
+	for(unsigned int nameVecIdx = 0; nameVecIdx<vecOfPossNames.size(); nameVecIdx++){
+		std::string ithName = vecOfPossNames.at(nameVecIdx);
+		std::cout << " *   " << nameVecIdx << ": " << ithName << std::endl;;
+		pathIdx = hltConfig_.triggerIndex(ithName);
+		if(pathIdx < hltConfig_.size()){
+			pathName = ithName;
+			std::cout << " *     ->Have found this name in menu! Exiting for loop now ..." << std::endl;
+			break;
+		}
+		else
+			std::cout << " *     ->This name isn't in menu! Trying next one now ..." << std::endl;
+	}
+
+	// Output to screen the results of this operation
+	std::cout << "******-----------**********" << std::endl;
+	std::cout << "The trigger " << pathName << " corresponds to index " << pathIdx << std::endl;
+	std::cout << "( There are " << hltConfig_.size() << " triggers in the menu. )" << std::endl;
+
+	// If none fo the trigger names provided could be found in the menu ...
+	if(pathIdx>=hltConfig_.size()){
+		std::cout << std::endl << "  *** ERROR: Trigger index >= Number of triggers in menu" << std::endl;
+		//Throw an exception ...
+		cms::Exception ex("readingTrigerInfo");
+		ex << " [In BstdZeeNTupler::beginRun_getTriggerNameAndIdx ...]" << std::endl;
+		ex << "      None of the supplied possible names for trigger '" << triggerId_debug << "' were found in the trigger menu "<< std::endl;
+		ex << "      (See FILE: '" << __FILE__ << "'; LINE NO. " << __LINE__ << ")" << std::endl;
+		throw ex;
+		// Just in case exception throw doesn't work. ... Force runtime error ...
+		std::vector<int> tmpVector; tmpVector.clear();
+		int tmpInt = tmpVector.at(1);
+	}
+	std::cout << "******-----------**********" << std::endl;
+
+	return std::pair<std::string, unsigned int>(pathName,pathIdx);
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void 
-BstdZeeNTupler::endJob(){
+void BstdZeeNTupler::endJob()
+{
 	int totalNumHighestEtEles = numEvts;
 	double dbl_totalNumHighestEtEles = static_cast<double>(totalNumHighestEtEles); 
 	double dbl_numHighestEtElesAboveThreshold = -999.9;
@@ -1040,6 +1124,8 @@ void BstdZeeNTupler::SetupMCBranches(){
 	EventDataTree->Branch("mcZboson_status", &mcZboson_status_, "mcZboson_status/I"); // Int_t
 	EventDataTree->Branch("mcZboson_p4", "ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >", &mcZboson_p4_ptr_); // ROOT::Math::XYZTLorentzVector
 	mcZboson_p4_ptr_ = &mcZboson_p4_;
+	EventDataTree->Branch("mcZboson_status2_p4", "ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >", &mcZboson_status2_p4_ptr_); // ROOT::Math::XYZTLorentzVector
+	mcZboson_status2_p4_ptr_ = &mcZboson_status2_p4_;
 	EventDataTree->Branch("mcZboson_numDaughters",           &mcZboson_numDaughters_,           "mcZboson_numDaughters/I");
 	EventDataTree->Branch("mcZboson_daughters_dR",           &mcZboson_daughters_dR_,           "mcZboson_daughters_dR/D");
 	EventDataTree->Branch("mcZboson_daughters_dEta",         &mcZboson_daughters_dEta_,         "mcZboson_daughters_dEta/D");
@@ -1171,10 +1257,20 @@ void BstdZeeNTupler::SetupStdEleBranches(){
 	EventDataTree->Branch("normHEEPEles_isolPtTrks",        &normHEEPEles_isolPtTrks_);
 	EventDataTree->Branch("normHEEPEles_isolEmHadDepth1",   &normHEEPEles_isolEmHadDepth1_);
 
+	// SC recHits information - for correcting calo-based iso variables
 	EventDataTree->Branch("normHEEPEles_SC_recHits_Et",  &normHEEPEles_SC_recHits_Et_);
 	EventDataTree->Branch("normHEEPEles_SC_recHits_eta", &normHEEPEles_SC_recHits_eta_);
 	EventDataTree->Branch("normHEEPEles_SC_recHits_phi", &normHEEPEles_SC_recHits_phi_);
 	EventDataTree->Branch("normHEEPEles_SC_recHits_isFromEB", &normHEEPEles_SC_recHits_isFromEB_);
+
+	// Track information for correcting tracker isolation variable
+	EventDataTree->Branch("normHEEPEles_gsfTrk_eta", &normHEEPEles_gsfTrk_eta_);
+	EventDataTree->Branch("normHEEPEles_gsfTrk_phi", &normHEEPEles_gsfTrk_phi_);
+	EventDataTree->Branch("normHEEPEles_gsfTrk_vz", &normHEEPEles_gsfTrk_vz_);
+	EventDataTree->Branch("normHEEPEles_innerIsoConeTrks_pt", &normHEEPEles_innerIsoConeTrks_pt_);
+	EventDataTree->Branch("normHEEPEles_innerIsoConeTrks_eta", &normHEEPEles_innerIsoConeTrks_eta_);
+	EventDataTree->Branch("normHEEPEles_innerIsoConeTrks_phi", &normHEEPEles_innerIsoConeTrks_phi_);
+	EventDataTree->Branch("normHEEPEles_innerIsoConeTrks_vz", &normHEEPEles_innerIsoConeTrks_vz_);
 }
 
 void BstdZeeNTupler::SetupBstdEleBranches(){
@@ -1302,6 +1398,7 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 	mcZboson_pdgId_  = -999; // Int_t
 	mcZboson_status_ = -999; // Int_t
 	mcZboson_p4_.SetPxPyPzE(99999.9,0.0,0.0,99999.9);
+	mcZboson_status2_p4_.SetPxPyPzE(99999.9,0.0,0.0,99999.9);
 	mcZboson_numDaughters_ = -999;
 	mcZboson_daughters_dR_   = -999.9;
 	mcZboson_daughters_dEta_ = -999.9;
@@ -1414,6 +1511,14 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 	normHEEPEles_SC_recHits_phi_.clear();
 	normHEEPEles_SC_recHits_isFromEB_.clear();
 
+	normHEEPEles_gsfTrk_eta_.clear();
+	normHEEPEles_gsfTrk_phi_.clear();
+	normHEEPEles_gsfTrk_vz_.clear();
+	normHEEPEles_innerIsoConeTrks_pt_.clear();
+	normHEEPEles_innerIsoConeTrks_eta_.clear();
+	normHEEPEles_innerIsoConeTrks_phi_.clear();
+	normHEEPEles_innerIsoConeTrks_vz_.clear();
+
 	///////////////////////////////////////////////////////
 	//Clearing contents of standard GSF electron vectors...
 	bstdGsfEles_number_ = 0;
@@ -1519,9 +1624,26 @@ BstdZeeNTupler::accessTriggerInfo(const edm::Event& iEvent, const edm::EventSetu
     	if (hltPathIndex_ < HLTR->size())
 			hltBit = HLTR->accept(hltPathIndex_); 
   	}
-	
 	hltPathADecision_ = hltBit;
 
+	// Get the e-mu trigger information, and put it in event object
+	bool trg_emuPath_decision = false;
+  	if (HLTR.isValid()) {
+   	// triggerIndex must be less than the size of HLTR or you get a CMSException: _M_range_check
+    	if (trg_emuPath_idx_ < HLTR->size())
+    		trg_emuPath_decision = HLTR->accept(trg_emuPath_idx_);
+  	}
+  	event_->SetEMuTriggerInfo(trg_emuPath_name_, trg_emuPath_decision);
+
+  	if(vBool_){
+		if(trg_emuPath_decision)
+			std::cout << " ->Event passed e-mu trigger (i.e. " << trg_emuPath_name_ << "=" << hltConfig_.triggerName(trg_emuPath_idx_) << "?)" << std::endl;
+		else
+			std::cout << " ->Event did *NOT* pass e-mu trigger (i.e. " << trg_emuPath_name_ << "=" << hltConfig_.triggerName(trg_emuPath_idx_) << "?)" << std::endl;
+	}
+
+	//----------------------------------------------
+	//-- Now, looking at trigger object info.
   	// Getting a handle to the TriggerEvent object ...
   	edm::Handle<trigger::TriggerEvent> hltEventH;
   	iEvent.getByLabel(hltEventTag_, hltEventH);
@@ -1616,7 +1738,7 @@ void BstdZeeNTupler::ReadInEvtInfo(bool beVerbose, const edm::Event& edmEventObj
 }
 
 //------------ method for reading in the values of the standard GSF electron variables ---------------
-void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::GsfElectronCollection>& handle_normGsfEles, edm::ESHandle<CaloGeometry>& handle_caloGeom, EcalRecHitMetaCollection* recHitsMeta_EB, EcalRecHitMetaCollection* recHitsMeta_EE){
+void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::GsfElectronCollection>& handle_normGsfEles, edm::ESHandle<CaloGeometry>& handle_caloGeom, EcalRecHitMetaCollection* recHitsMeta_EB, EcalRecHitMetaCollection* recHitsMeta_EE, edm::Handle<reco::TrackCollection>& handle_ctfTracks){
 	
 	reco::GsfElectron ithGsfEle;
 	heep::Ele ithHEEPEle(ithGsfEle);
@@ -1808,6 +1930,58 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	   normHEEPEles_SC_recHits_eta_.push_back( recHits_etaValues );
 	   normHEEPEles_SC_recHits_phi_.push_back( recHits_phiValues );
 	   normHEEPEles_SC_recHits_isFromEB_.push_back( recHits_isFromEBFlags );
+
+	   // Variable storing eta, phi & vz values for GSF track associated with electron ...
+	   const float ithEle_gsfTrk_eta = ithHEEPEle.gsfEle().gsfTrack()->eta();
+	   normHEEPEles_gsfTrk_eta_.push_back( ithEle_gsfTrk_eta );
+	   const float ithEle_gsfTrk_phi = ithHEEPEle.gsfEle().gsfTrack()->phi();
+	   normHEEPEles_gsfTrk_phi_.push_back( ithEle_gsfTrk_phi );
+	   normHEEPEles_gsfTrk_vz_.push_back( ithHEEPEle.gsfEle().gsfTrack()->vz() );
+
+	   // Getting values of variable storing pt, eta, phi and vz values for each CTF track with pT>0.7GeV,
+	   // within the electron's inner isolation cone.
+	   std::vector<float> innerIsoConeTrks_pt;
+	   std::vector<float> innerIsoConeTrks_eta;
+	   std::vector<float> innerIsoConeTrks_phi;
+	   std::vector<float> innerIsoConeTrks_vz;
+
+	   for(reco::TrackCollection::const_iterator itrTrk = handle_ctfTracks.product()->begin();
+	   		itrTrk != handle_ctfTracks.product()->end(); itrTrk++){
+	   	// Get pT of track, and skip track if pT<0.07GeV
+	   	float ithTrk_pt = (*itrTrk).pt();
+	   	if(ithTrk_pt<0.7)
+	   		continue;
+
+	   	// Get eta, phi and vz values for track
+	   	float ithTrk_eta = (*itrTrk).eta();
+	   	float ithTrk_phi = (*itrTrk).phi();
+	   	float ithTrk_vz  = (*itrTrk).vz();
+
+	   	// Skip track if it is not in this electron's inner track isolation 'area' - i.e. if it is outside of the ...
+	   	// ... inner strip and outside of the inner cone, OR if it is NOT within the outer track isol cone
+	   	float dEta = ithTrk_eta - ithEle_gsfTrk_eta;
+	   	float dPhi = ithTrk_phi - ithEle_gsfTrk_phi;
+			while( dPhi<=-1.0*TMath::Pi() ){ dPhi = dPhi+2.0*TMath::Pi(); }
+			while( dPhi>TMath::Pi()      ){ dPhi = dPhi-2.0*TMath::Pi(); }
+			float dR_ithTrk = sqrt(dEta*dEta+dPhi*dPhi);
+	   	if(fabs(dEta)>0.015 && dR_ithTrk>0.015)
+	   		continue;
+	   	if(dR_ithTrk>0.3)
+	   		continue;
+
+	   	// If have got this far, then the track has high enough pT to be included in isolation variable, and ...
+	   	// ... it is within this electron's inner isolation 'area' => store its information in branch
+	   	innerIsoConeTrks_pt.push_back(  ithTrk_pt  );
+	   	innerIsoConeTrks_eta.push_back( ithTrk_eta );
+	   	innerIsoConeTrks_phi.push_back( ithTrk_phi );
+	   	innerIsoConeTrks_vz.push_back(  ithTrk_vz  );
+	   }
+
+	   normHEEPEles_innerIsoConeTrks_pt_.push_back(  innerIsoConeTrks_pt  );
+	   normHEEPEles_innerIsoConeTrks_eta_.push_back( innerIsoConeTrks_eta );
+	   normHEEPEles_innerIsoConeTrks_phi_.push_back( innerIsoConeTrks_phi );
+	   normHEEPEles_innerIsoConeTrks_vz_.push_back(  innerIsoConeTrks_vz  );
+
 	}
 	
 	//Printing these values to screen...
@@ -1917,6 +2091,21 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		   for(unsigned int recHitIdx=0; recHitIdx<normHEEPEles_SC_recHits_Et_.at(iEle).size(); recHitIdx++){
 		   	std::cout << "          #" << recHitIdx << ": (Et, eta, phi; isFromEB)=(" << normHEEPEles_SC_recHits_Et_.at(iEle).at(recHitIdx) << ", " << normHEEPEles_SC_recHits_eta_.at(iEle).at(recHitIdx) << ", " << normHEEPEles_SC_recHits_phi_.at(iEle).at(recHitIdx) << "; " << normHEEPEles_SC_recHits_isFromEB_.at(iEle).at(recHitIdx) << ")" << std::endl;
 		   }
+
+		   // Variables storing eta, phi & vz values for GSF track associated with electron ...
+		   std::cout << "         -=-=-" << std::endl;
+		   std::cout << "       gsfTrack... (eta, phi) = (" << normHEEPEles_gsfTrk_eta_.at(iEle) << ", " << normHEEPEles_gsfTrk_phi_.at(iEle) << "), vz=" <<	normHEEPEles_gsfTrk_vz_.at( iEle ) << std::endl;
+
+			// Getting values of variable storing pt, eta, phi and vz values for each CTF track with pT>0.7GeV,
+			// within the electron's inner isolation cone.
+		   std::cout << "         -=-=-" << std::endl;
+		   const std::vector<float> innerIsoConeTrks_pt = normHEEPEles_innerIsoConeTrks_pt_.at(iEle);
+		   const std::vector<float> innerIsoConeTrks_eta = normHEEPEles_innerIsoConeTrks_eta_.at(iEle);
+		   const std::vector<float> innerIsoConeTrks_phi = normHEEPEles_innerIsoConeTrks_phi_.at(iEle);
+		   const std::vector<float> innerIsoConeTrks_vz = normHEEPEles_innerIsoConeTrks_vz_.at(iEle);
+		   std::cout << "       CTF tracks w/i inner isol area (" << innerIsoConeTrks_pt.size() << "=" << innerIsoConeTrks_eta.size() << "=" << innerIsoConeTrks_phi.size() << "=" << innerIsoConeTrks_vz.size() << " of them)... " << std::endl;
+		   for(unsigned int trkIdx=0; trkIdx<innerIsoConeTrks_pt.size(); trkIdx++)
+		   	std::cout << "          #" << trkIdx << ": (pT, eta, phi) = (" << innerIsoConeTrks_pt.at(trkIdx) << ", " << innerIsoConeTrks_eta.at(trkIdx) << ", " << innerIsoConeTrks_phi.at(trkIdx) << "); vz=" << innerIsoConeTrks_vz.at(trkIdx) << std::endl;
 		}
 	}
 	
