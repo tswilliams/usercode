@@ -12,7 +12,13 @@ namespace tsw{
 			//CTORs and DTOR ...
 			EventHelper() : theEvent_(0) {}
 			EventHelper(tsw::Event* ptr_event) : theEvent_(ptr_event){}
+
 			// Methods for getting information out of tsw::Event ...
+			std::string GetTrigInfo_eMuPath_name(){
+				return theEvent_->trg_emuPath_name_; }
+			bool GetTrigInfo_eMuPath_decision(){
+				return theEvent_->trg_emuPath_decision_; }
+
 			tsw::MuonCollection GetNormMuons();
 	};
 
