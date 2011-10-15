@@ -120,7 +120,26 @@ namespace tsw{
 			float recHits_phi(int recHitIdx){return eleStr_.SC_recHits_phi_.at(recHitIdx);}
 			bool recHits_isFromEB(int recHitIdx){return eleStr_.SC_recHits_isFromEB_.at(recHitIdx);}
 
+			// Access to GSF track variables
+			float gsfTrk_eta(){return eleStr_.gsfTrk_eta_;}
+			float gsfTrk_phi(){return eleStr_.gsfTrk_phi_;}
+			float gsfTrk_vz(){return eleStr_.gsfTrk_vz_;}
+
+			// Accesss to information about CTF tracks that are within this electron's inner isol. cone.
+			unsigned int numInnerIsoConeTrks(){return eleStr_.innerIsoConeTrks_pt_.size();}
+			float innerIsoConeTrks_pt(const int trkIdx)
+					{return eleStr_.innerIsoConeTrks_pt_.at(trkIdx);}
+			float innerIsoConeTrks_eta(const int trkIdx)
+					{return eleStr_.innerIsoConeTrks_eta_.at(trkIdx);}
+			float innerIsoConeTrks_phi(const int trkIdx)
+					{return eleStr_.innerIsoConeTrks_phi_.at(trkIdx);}
+			float innerIsoConeTrks_vz(const int trkIdx)
+					{return eleStr_.innerIsoConeTrks_vz_.at(trkIdx);}
+
 			/////////////////////////////////////////////////////
+
+			// Method that modifies the standard tracker isolation value
+			float modTrkIso(tsw::HEEPEle* theOtherEle);
 
 			//Methods used in applying the modified EmHad1 isolation HEEP cut ...
 			float dR_SCs(tsw::HEEPEle* theOtherEle){
@@ -250,6 +269,14 @@ namespace tsw{
 		std::cout << "       recHits (This ele is made up from " << numRecHits() << " of them)" << std::endl;
 		for(unsigned int recHitIdx=0; recHitIdx<numRecHits(); recHitIdx++)
 			std::cout << "          #" << recHitIdx << ": (Et, eta, phi, isFromEB)=(" << recHits_Et(recHitIdx) << ", " << recHits_eta(recHitIdx) << ", " << recHits_phi(recHitIdx) << "; " << recHits_isFromEB(recHitIdx) << ")" << std::endl;
+
+		std::cout << "         -=-=-" << std::endl;
+		std::cout << "       gsfTrk: (eta, phi) = (" << gsfTrk_eta() << ", " << gsfTrk_phi() << "); vz=" << gsfTrk_vz() << std::endl;
+
+		std::cout << "         -=-=-" << std::endl;
+		std::cout << "       innerIsoCone CTF tracks (There are " << numInnerIsoConeTrks() << " of them) ..." << std::endl;
+		for(unsigned int trkIdx=0; trkIdx<numInnerIsoConeTrks(); trkIdx++)
+			std::cout << "          #" << trkIdx << ": (pT, eta, phi) = (" << innerIsoConeTrks_pt(trkIdx) << ", " << innerIsoConeTrks_eta(trkIdx) << ", " << innerIsoConeTrks_phi(trkIdx) << "); vz=" << innerIsoConeTrks_vz(trkIdx) << std::endl;
 	}
 
 	bool HEEPEle::ApplySimpleCuts(){
@@ -414,6 +441,57 @@ namespace tsw{
 		//Placeholder
 	}*/
 
+}
+
+float tsw::HEEPEle::modTrkIso(tsw::HEEPEle* theOtherEle)
+{
+	const bool coutDebugTxt = false;
+	float isolPtTrkValue = this->isolPtTrks();
+	const float thisEle_gsfEta = this->gsfTrk_eta();
+	const float thisEle_gsfPhi = this->gsfTrk_phi();
+	const float thisEle_gsfVz  = this->gsfTrk_vz();
+
+	const float theOtherEle_gsfEta = theOtherEle->gsfTrk_eta();
+	const float theOtherEle_gsfPhi = theOtherEle->gsfTrk_phi();
+
+	// Now running over the CTF tracks that are within the other electron's inner isolation area
+	for(unsigned int trkIdx=0; trkIdx<theOtherEle->numInnerIsoConeTrks(); trkIdx++){
+		const float trk_pt  = theOtherEle->innerIsoConeTrks_pt(trkIdx);
+		const float trk_eta = theOtherEle->innerIsoConeTrks_eta(trkIdx);
+		const float trk_phi = theOtherEle->innerIsoConeTrks_phi(trkIdx);
+		const float trk_vz  = theOtherEle->innerIsoConeTrks_vz(trkIdx);
+		if(coutDebugTxt){std::cout << "                 innerIsoConeTrk: (pT, eta, phi) = (" << trk_pt << ", " << trk_eta << ", " << trk_phi << "); vz=" << trk_vz << std::endl;}
+
+		// Double-check that this track is within the other electron's inner isolation area (skip track if its not)
+		const float dEta_vsOtherEle = trk_eta - theOtherEle_gsfEta;
+		const float dPhi_vsOtherEle = tsw::deltaPhi(trk_phi, theOtherEle_gsfPhi);
+		const float dR_vsOtherEle   = sqrt(dEta_vsOtherEle*dEta_vsOtherEle + dPhi_vsOtherEle*dPhi_vsOtherEle);
+		if(coutDebugTxt){std::cout << "                      rel to other ele: d(eta, phi) = (" << dEta_vsOtherEle << ", " << dPhi_vsOtherEle << "); dR=" << dR_vsOtherEle << std::endl;}
+		if(fabs(dEta_vsOtherEle)>0.015 && dR_vsOtherEle>0.015)
+			continue;
+		if(dR_vsOtherEle>0.3)
+			continue;
+
+		// Check that this track was included in the tracker isolation sum for this electron (skip track if it wasn't)
+		const float dEta_vsThisEle = trk_eta - thisEle_gsfEta;
+		const float dPhi_vsThisEle = tsw::deltaPhi(trk_phi, thisEle_gsfPhi);
+		const float dR_vsThisEle   = sqrt(dEta_vsThisEle*dEta_vsThisEle + dPhi_vsThisEle*dPhi_vsThisEle);
+		const float dVz_vsThisEle  = trk_vz - thisEle_gsfVz;
+		if(coutDebugTxt){std::cout << "                      rel to this ele: d(eta, phi) = (" << dEta_vsThisEle << ", " << dPhi_vsThisEle << "); dR=" << dR_vsThisEle << "; dVz=" << dVz_vsThisEle << std::endl;}
+		if(trk_pt<0.7) // pT threshold
+			continue;
+		if(dVz_vsThisEle>0.2) //dz cut
+			continue;
+		if(fabs(dEta_vsThisEle)>0.015 && (dR_vsThisEle>0.015 && dR_vsThisEle<0.3) ){
+			// A track that reaches here is within the other electron's inner isolation area, but was included in the isolation sum for this electron
+			//  => Take it's pT away from this electron's tracker isolation variable
+			isolPtTrkValue -= trk_pt;
+			if(coutDebugTxt){std::cout << "                        *** Trk is in other ele's inner isol area, and in this ele's trk isol sum ***" << std::endl;
+				std::cout << "                                     => isolPtTrkValue modified to " << isolPtTrkValue << std::endl;}
+		}
+	}
+
+	return isolPtTrkValue;
 }
 
 float tsw::HEEPEle::modEmIso(tsw::HEEPEle* theOtherEle){
