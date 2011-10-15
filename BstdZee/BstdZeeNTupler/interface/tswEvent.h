@@ -18,14 +18,21 @@ namespace tsw{
 
 			//Methods to set information ...
 			void SetBasicEventInformation(unsigned int runNumber, unsigned int lumiSection, unsigned int eventNumber);
-			void PrintBasicEventInformation();
+			void SetEMuTriggerInfo(const std::string eMuPathName, const bool eMuPathDecision);
 			void AddNormMuon(tsw::MuStruct* theMuon);
+
+			/// Prints out basic event information to screen
+			void PrintBasicEventInformation();
 
 		private:
 			//General event information ...
 			unsigned int runNum_;
 			unsigned int lumiSec_;
 			unsigned int evtNum_;
+
+			// Information about e-mu trigger ...
+			std::string trg_emuPath_name_;
+			bool trg_emuPath_decision_;
 
 			//Information about the standard muons ...
 			std::vector<ROOT::Math::XYZTVector> normMuons_p4_;
@@ -59,7 +66,7 @@ namespace tsw{
 			std::vector<Double_t> normMuons_outTrk_phi_;
 			std::vector<Int_t>    normMuons_outTrk_charge_;
 
-			ClassDef(tsw::Event,5);
+			ClassDef(tsw::Event,6);
 	};
 }
 
