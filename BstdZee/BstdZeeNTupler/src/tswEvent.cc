@@ -24,6 +24,12 @@ namespace tsw{
 		std::cout << "Run " << runNum_ << ", LumiSec " << lumiSec_ << ", event " << evtNum_ << std::endl;
 	}
 
+	void Event::SetEMuTriggerInfo(const std::string eMuPathName, const bool eMuPathDecision)
+	{
+		trg_emuPath_name_ = eMuPathName;
+		trg_emuPath_decision_ = eMuPathDecision;
+	}
+
 	void Event::AddNormMuon(tsw::MuStruct* theMuon){
 		normMuons_p4_                .push_back(theMuon->p4);
 		normMuons_charge_            .push_back(theMuon->charge);
