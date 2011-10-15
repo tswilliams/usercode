@@ -21,7 +21,7 @@ process.GlobalTag.globaltag = 'START42_V13::All'
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(2) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 
 
 ##### Signal MC file lists:
@@ -39,8 +39,7 @@ f_DatafileList.close()
 datafileLocations = map(DataFileLocationAdaptor,datafilesList)
 
 process.source = cms.Source("PoolSource",
-      fileNames = cms.untracked.vstring('/store/data/Run2011A/Photon/AOD/05Aug2011-v1/0000/C025161D-49C0-E011-8768-00259021A43E.root')
-#      fileNames = cms.untracked.vstring()
+      fileNames = cms.untracked.vstring('/store/mc/Summer11/TTJets_TuneZ2_7TeV-madgraph-tauola/AODSIM/PU_S4_START42_V11-v2/0000/00FA42AB-D1A9-E011-B6A2-003048678FD6.root')
 ##########
 #    fileNames = cms.untracked.vstring('file:/opt/ppd/scratch/williams/TriggerStudies/CMSSW_4_1_4/src/hltResults/2011-05-05/hltCheck-GRunV21_2TeVu_2011-05-05.root')
 #    fileNames = cms.untracked.vstring('file:/opt/ppd/scratch/williams/TriggerStudies/CMSSW_4_1_4/src/hltResults/2011-05-05/hltCheck-GRunV21_1TeVu_2011-05-05.root')
@@ -49,7 +48,7 @@ process.source = cms.Source("PoolSource",
 )
 
 #Defining the output file to store the histograms/NTuples in...
-process.TFileService = cms.Service("TFileService", fileName=cms.string('dataNTuple-42X_v1d.root'))
+process.TFileService = cms.Service("TFileService", fileName=cms.string('mcNTuple-42X_v1e-Summer11.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('/opt/ppd/newscratch/williams/Datafiles/NTuples/CMSSW_41X/bkgdMC_41X-Ntuple_DYJetsToLL_2530516Evts_2011-06-13.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('testNTuple_2-00TeVu.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('localWflowTest_Ntuple_Sig-100evts_2011-05-06.root'))
@@ -113,25 +112,38 @@ process.TFileService = cms.Service("TFileService", fileName=cms.string('dataNTup
 #)
 
 process.demo = cms.EDAnalyzer('BstdZeeNTupler',
-                              dyJetsToLL_EventType = cms.untracked.int32(0), #==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
-                              isMC = cms.untracked.bool(False),
+                              dyJetsToLL_EventType = cms.untracked.int32(15), #==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
+                              isMC = cms.untracked.bool(True),
                               printOutInfo = cms.untracked.bool(False),
                               readInNormReco = cms.untracked.bool(True),
                               readInBstdReco = cms.untracked.bool(False),
                               is2010SignalDataset = cms.untracked.bool(False),
                               useReducedRecHitsCollns = cms.untracked.bool(True),
-#                              hltPathA = cms.untracked.string("HLT_DoubleEle33_CaloIdL_v2")
-#                              hltPathA = cms.untracked.string("HLT_DoublePhoton33_v2"),
                               hltPathA_possNames = cms.untracked.vstring("HLT_DoublePhoton33_v1",
                                                                          "HLT_DoublePhoton33_v2",
                                                                          "HLT_DoublePhoton33_v3",
+                                                                         "HLT_DoubleEle33_CaloIdT_v1",
+                                                                         "HLT_DoubleEle33_CaloIdT_v2",
                                                                          "HLT_DoubleEle33_CaloIdL_v1",
                                                                          "HLT_DoubleEle33_CaloIdL_v2",
                                                                          "HLT_DoubleEle33_CaloIdL_v3",
                                                                          "HLT_DoubleEle33_CaloIdL_v4",
-                                                                         "HLT_DoubleEle33_CaloIdL_v5",
-                                                                         "HLT_DoubleEle33_CaloIdL_v6")
-#                               hltPathA = cms.untracked.string("HLT_DoubleEle33_v4")
+                                                                         "HLT_DoubleEle33_CaloIdL_v5" # - run 177878 (3e33, v4.0) # (5e33, v1.4)
+                                                                         ),
+                              trg_emuPath_possNames = cms.untracked.vstring("HLT_Mu15_Photon20_CaloIdL_v1",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v2",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v3",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v4",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v5",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v6",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v7",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v8",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v9",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v10",# - run 177878 (3e33, v4.0)
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v11",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v12",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v13" # (5e33, v1.4)
+                                                                            )
       )
 
 
