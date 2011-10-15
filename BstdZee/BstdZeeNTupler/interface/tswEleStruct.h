@@ -13,7 +13,9 @@ namespace tsw {
    	   	hOverE_(-999.9),  dEtaIn_(-999.9), dPhiIn_(-999.9), dPhiOut_(-999.9), epIn_(-999.9), epOut_(-999.9), fbrem_(-999.9), bremFrac_(-999.9), invEOverInvP_(-999.9),
    	   	sigmaEtaEta_(-999.9), sigmaEtaEtaUnCorr_(-999.9), sigmaIEtaIEta_(-999.9), e1x5_(-999.9), e2x5Max_(-999.9), e5x5_(-999.9), e1x5Over5x5_(-999.9), e2x5MaxOver5x5_(-999.9),
    	   	isolEm_(-999.9), isolHad_(-999.9), isolHadDepth1_(-999.9), isolHadDepth2_(-999.9), isolPtTrks_(-999.9), isolEmHadDepth1_(-999.9),
-   	   	SC_recHits_Et_(), SC_recHits_eta_(), SC_recHits_phi_(), SC_recHits_isFromEB_()
+   	   	SC_recHits_Et_(), SC_recHits_eta_(), SC_recHits_phi_(), SC_recHits_isFromEB_(),
+   	   	gsfTrk_eta_(-999.9), gsfTrk_phi_(-999.9), gsfTrk_vz_(-999.9),
+   	   	innerIsoConeTrks_pt_(), innerIsoConeTrks_eta_(), innerIsoConeTrks_phi_(), innerIsoConeTrks_vz_()
    		  	{}
 	   // Kinematic and geometric variables
    	float et_;
@@ -91,6 +93,17 @@ namespace tsw {
 	  	std::vector<float> SC_recHits_eta_;
 	  	std::vector<float> SC_recHits_phi_;
 	  	std::vector<bool>  SC_recHits_isFromEB_;
+
+	  	// Electron's GSF track eta, phi and vz values
+	  	float gsfTrk_eta_;
+	  	float gsfTrk_phi_;
+	  	float gsfTrk_vz_;
+
+	  	// Information about CTF tracks which fall into the inner isolation cone area of this electron
+	  	std::vector<float> innerIsoConeTrks_pt_;
+	  	std::vector<float> innerIsoConeTrks_eta_;
+	  	std::vector<float> innerIsoConeTrks_phi_;
+	  	std::vector<float> innerIsoConeTrks_vz_;
    };
 
    void SetDefaultValuesInEleStruct(tsw::EleStruct& eleStruct){
