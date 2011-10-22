@@ -13,6 +13,7 @@ namespace tsw {
    	   	hOverE_(-999.9),  dEtaIn_(-999.9), dPhiIn_(-999.9), dPhiOut_(-999.9), epIn_(-999.9), epOut_(-999.9), fbrem_(-999.9), bremFrac_(-999.9), invEOverInvP_(-999.9),
    	   	sigmaEtaEta_(-999.9), sigmaEtaEtaUnCorr_(-999.9), sigmaIEtaIEta_(-999.9), e1x5_(-999.9), e2x5Max_(-999.9), e5x5_(-999.9), e1x5Over5x5_(-999.9), e2x5MaxOver5x5_(-999.9),
    	   	isolEm_(-999.9), isolHad_(-999.9), isolHadDepth1_(-999.9), isolHadDepth2_(-999.9), isolPtTrks_(-999.9), isolEmHadDepth1_(-999.9),
+   	   	numMissInnerHits_(9999),
    	   	SC_recHits_Et_(), SC_recHits_eta_(), SC_recHits_phi_(), SC_recHits_isFromEB_(),
    	   	gsfTrk_eta_(-999.9), gsfTrk_phi_(-999.9), gsfTrk_vz_(-999.9),
    	   	innerIsoConeTrks_pt_(), innerIsoConeTrks_eta_(), innerIsoConeTrks_phi_(), innerIsoConeTrks_vz_()
@@ -87,6 +88,9 @@ namespace tsw {
 	  	float isolHadDepth2_;
 	  	float isolPtTrks_;
 	  	float isolEmHadDepth1_;
+
+	  	// Number of missing hits
+	  	unsigned int numMissInnerHits_;
 
 	  	// Information about recHits that make up this electron's SC ...
 	  	std::vector<float> SC_recHits_Et_;
