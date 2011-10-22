@@ -21,7 +21,7 @@ process.GlobalTag.globaltag = 'START42_V13::All'
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 
 
 ##### Signal MC file lists:
@@ -39,7 +39,7 @@ f_DatafileList.close()
 datafileLocations = map(DataFileLocationAdaptor,datafilesList)
 
 process.source = cms.Source("PoolSource",
-      fileNames = cms.untracked.vstring('/store/mc/Summer11/TTJets_TuneZ2_7TeV-madgraph-tauola/AODSIM/PU_S4_START42_V11-v2/0000/00FA42AB-D1A9-E011-B6A2-003048678FD6.root')
+      fileNames = cms.untracked.vstring('/store/data/Run2011B/Photon/AOD/PromptReco-v1/000/178/677/6A2CC1BD-2CF9-E011-B5D5-003048D2BC30.root')
 ##########
 #    fileNames = cms.untracked.vstring('file:/opt/ppd/scratch/williams/TriggerStudies/CMSSW_4_1_4/src/hltResults/2011-05-05/hltCheck-GRunV21_2TeVu_2011-05-05.root')
 #    fileNames = cms.untracked.vstring('file:/opt/ppd/scratch/williams/TriggerStudies/CMSSW_4_1_4/src/hltResults/2011-05-05/hltCheck-GRunV21_1TeVu_2011-05-05.root')
@@ -48,7 +48,7 @@ process.source = cms.Source("PoolSource",
 )
 
 #Defining the output file to store the histograms/NTuples in...
-process.TFileService = cms.Service("TFileService", fileName=cms.string('mcNTuple-42X_v1e-Summer11.root'))
+process.TFileService = cms.Service("TFileService", fileName=cms.string('dataNTuple-42X_v1f.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('/opt/ppd/newscratch/williams/Datafiles/NTuples/CMSSW_41X/bkgdMC_41X-Ntuple_DYJetsToLL_2530516Evts_2011-06-13.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('testNTuple_2-00TeVu.root'))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string('localWflowTest_Ntuple_Sig-100evts_2011-05-06.root'))
@@ -112,23 +112,22 @@ process.TFileService = cms.Service("TFileService", fileName=cms.string('mcNTuple
 #)
 
 process.demo = cms.EDAnalyzer('BstdZeeNTupler',
-                              dyJetsToLL_EventType = cms.untracked.int32(15), #==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
-                              isMC = cms.untracked.bool(True),
+                              dyJetsToLL_EventType = cms.untracked.int32(0), #==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
+                              isMC = cms.untracked.bool(False),
                               printOutInfo = cms.untracked.bool(False),
                               readInNormReco = cms.untracked.bool(True),
                               readInBstdReco = cms.untracked.bool(False),
                               is2010SignalDataset = cms.untracked.bool(False),
                               useReducedRecHitsCollns = cms.untracked.bool(True),
-                              hltPathA_possNames = cms.untracked.vstring("HLT_DoublePhoton33_v1",
-                                                                         "HLT_DoublePhoton33_v2",
-                                                                         "HLT_DoublePhoton33_v3",
-                                                                         "HLT_DoubleEle33_CaloIdT_v1",
-                                                                         "HLT_DoubleEle33_CaloIdT_v2",
-                                                                         "HLT_DoubleEle33_CaloIdL_v1",
+                              hltPathA_possNames = cms.untracked.vstring("HLT_DoubleEle33_CaloIdL_v1",
                                                                          "HLT_DoubleEle33_CaloIdL_v2",
                                                                          "HLT_DoubleEle33_CaloIdL_v3",
                                                                          "HLT_DoubleEle33_CaloIdL_v4",
-                                                                         "HLT_DoubleEle33_CaloIdL_v5" # - run 177878 (3e33, v4.0) # (5e33, v1.4)
+                                                                         "HLT_DoubleEle33_CaloIdL_v5",# - run 177878 (3e33, v4.0) # (5e33, v1.4)
+                                                                         "HLT_DoubleEle33_CaloIdL_v6",
+                                                                         "HLT_DoublePhoton33_v1",
+                                                                         "HLT_DoublePhoton33_v2",
+                                                                         "HLT_DoublePhoton33_v3"
                                                                          ),
                               trg_emuPath_possNames = cms.untracked.vstring("HLT_Mu15_Photon20_CaloIdL_v1",
                                                                             "HLT_Mu15_Photon20_CaloIdL_v2",
@@ -139,10 +138,10 @@ process.demo = cms.EDAnalyzer('BstdZeeNTupler',
                                                                             "HLT_Mu15_Photon20_CaloIdL_v7",
                                                                             "HLT_Mu15_Photon20_CaloIdL_v8",
                                                                             "HLT_Mu15_Photon20_CaloIdL_v9",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v10",# - run 177878 (3e33, v4.0)
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v10",# - run 177878 (3e33, v4.0) -- p'ed some of the time
                                                                             "HLT_Mu15_Photon20_CaloIdL_v11",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v12",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v13" # (5e33, v1.4)
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v12",# -- p'ed
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v13" # (5e33, v1.4) --- p'ed (by 20)
                                                                             )
       )
 
