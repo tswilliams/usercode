@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.6 2011/09/01 14:05:59 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.7 2011/10/15 14:44:57 tsw Exp $
 //
 //
 
@@ -359,6 +359,8 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		std::vector<float> normHEEPEles_isolHadDepth2_;
 		std::vector<float> normHEEPEles_isolPtTrks_;
 		std::vector<float> normHEEPEles_isolEmHadDepth1_;
+
+		std::vector<UInt_t> normHEEPEles_numMissInnerHits_;
 
 		std::vector< std::vector<float> > normHEEPEles_SC_recHits_Et_;
 		std::vector< std::vector<float> > normHEEPEles_SC_recHits_eta_;
@@ -1257,6 +1259,9 @@ void BstdZeeNTupler::SetupStdEleBranches(){
 	EventDataTree->Branch("normHEEPEles_isolPtTrks",        &normHEEPEles_isolPtTrks_);
 	EventDataTree->Branch("normHEEPEles_isolEmHadDepth1",   &normHEEPEles_isolEmHadDepth1_);
 
+	// Number of missing inner hits
+	EventDataTree->Branch("normHEEPEles_numMissInnerHits", &normHEEPEles_numMissInnerHits_);
+
 	// SC recHits information - for correcting calo-based iso variables
 	EventDataTree->Branch("normHEEPEles_SC_recHits_Et",  &normHEEPEles_SC_recHits_Et_);
 	EventDataTree->Branch("normHEEPEles_SC_recHits_eta", &normHEEPEles_SC_recHits_eta_);
@@ -1505,6 +1510,8 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 	normHEEPEles_isolHadDepth2_.clear();
 	normHEEPEles_isolPtTrks_.clear();
 	normHEEPEles_isolEmHadDepth1_.clear();
+
+	normHEEPEles_numMissInnerHits_.clear();
 
 	normHEEPEles_SC_recHits_Et_.clear();
 	normHEEPEles_SC_recHits_eta_.clear();
@@ -1871,6 +1878,8 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	   normHEEPEles_isolPtTrks_.push_back(     ithHEEPEle.isolPtTrks() );
 	   normHEEPEles_isolEmHadDepth1_.push_back(ithHEEPEle.isolEmHadDepth1() );
 
+	   normHEEPEles_numMissInnerHits_.push_back( ithHEEPEle.gsfEle().gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() );
+
 	   ithtswHEEPEle = tsw::EleStruct(ithtswEleStruct);
 		//normGsfEles_tswHEEPEle_.push_back(ithtswHEEPEle);
 
@@ -2085,6 +2094,8 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		   std::cout << "; isolHadDepth2=" << normHEEPEles_isolHadDepth2_.at(iEle) << std::endl;
 		   std::cout << "       isolPtTrks=" << normHEEPEles_isolPtTrks_.at(iEle);
 		   std::cout << "; isolEmHadDepth1=" << normHEEPEles_isolEmHadDepth1_.at(iEle) << std::endl;
+
+		   std::cout << "       numMissInnerHits = " << normHEEPEles_numMissInnerHits_.at(iEle) << std::endl;
 
 		   std::cout << "         -=-=-" << std::endl;
 		   std::cout << "       recHits... (This ele is made up from " << normHEEPEles_SC_recHits_Et_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_eta_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_phi_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_isFromEB_.at(iEle).size() << "?? of them)" << std::endl;
