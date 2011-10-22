@@ -24,6 +24,8 @@ namespace tsw{
 			void PrintOutVariables();
 
 			bool ApplySimpleCuts();
+			bool isFiducialAndEcalDriven();
+			bool isFidEcalDrAndPassesFRPre();
 			bool isHEEPEB();
 			bool isHEEPEE();
 			bool ApplyHEEPCutsNoIso();
@@ -112,6 +114,8 @@ namespace tsw{
 			float isolHadDepth2(){return eleStr_.isolHadDepth2_;}
 			float isolPtTrks(){return eleStr_.isolPtTrks_;}
 			float isolEmHadDepth1(){return eleStr_.isolEmHadDepth1_;}
+
+			unsigned int numMissInnerHits(){ return eleStr_.numMissInnerHits_; }
 
 			//SC recHits information ...
 			unsigned int numRecHits(){return eleStr_.SC_recHits_Et_.size();}
@@ -264,6 +268,7 @@ namespace tsw{
 		std::cout << "; isolHadDepth2=" << isolHadDepth2() << std::endl;
 		std::cout << "       isolPtTrks=" << isolPtTrks();
 		std::cout << "; isolEmHadDepth1=" << isolEmHadDepth1() << std::endl;
+		std::cout << "       numMissInnerHits = " << numMissInnerHits() << std::endl;
 
 		std::cout << "         -=-=-" << std::endl;
 		std::cout << "       recHits (This ele is made up from " << numRecHits() << " of them)" << std::endl;
@@ -287,6 +292,39 @@ namespace tsw{
 		else{ tmpCutsFlag = false; }
 
 		tmpCutsFlag = tmpCutsFlag && ( et()>12.0 );
+
+		return tmpCutsFlag;
+	}
+
+	bool HEEPEle::isFiducialAndEcalDriven()
+	{
+		bool tmpCutsFlag = false;
+		// First apply fiducial cuts (i.e. HEEP eta and Et requirements)
+		if( isHEEPEB() )
+			tmpCutsFlag = ( et()>35.0 );
+		else if( isHEEPEE() )
+			tmpCutsFlag = ( et()>40.0 );
+		// Then make sure that electron is ECAL-driven
+		tmpCutsFlag = tmpCutsFlag && isEcalDriven();
+
+		return tmpCutsFlag;
+	}
+
+	bool HEEPEle::isFidEcalDrAndPassesFRPre()
+	{
+		// First apply the fiducial and ECAL-driven requirements ...
+		bool tmpCutsFlag = isFiducialAndEcalDriven();
+		// Then apply fake rate pre-selection from v6 of AN2011/159 (mentioned in trigger selection section, and detailed in table 10) ...
+		if( isHEEPEB() ){
+			tmpCutsFlag = tmpCutsFlag && ( sigmaIEtaIEta()<0.013 );
+			tmpCutsFlag = tmpCutsFlag && ( hOverE()<0.15 );
+		}
+		else if ( isHEEPEE() ){
+			tmpCutsFlag = tmpCutsFlag && ( sigmaIEtaIEta()<0.034 );
+			tmpCutsFlag = tmpCutsFlag && ( hOverE()<0.10 );
+		}
+		else
+			tmpCutsFlag = false;
 
 		return tmpCutsFlag;
 	}
