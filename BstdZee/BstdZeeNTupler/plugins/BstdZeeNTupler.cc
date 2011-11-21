@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.7 2011/10/15 14:44:57 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.8 2011/10/22 13:57:10 tsw Exp $
 //
 //
 
@@ -294,6 +294,7 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		std::vector<float> normHEEPEles_energy_;
 		std::vector<float> normHEEPEles_gsfEnergy_;
 		std::vector<float> normHEEPEles_caloEnergy_;
+		std::vector<float> normHEEPEles_ecalEnergyError_;
 		std::vector<float> normHEEPEles_eta_;
 		std::vector<float> normHEEPEles_scEta_;
 		std::vector<float> normHEEPEles_detEta_;
@@ -362,10 +363,15 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 
 		std::vector<UInt_t> normHEEPEles_numMissInnerHits_;
 
+		std::vector<float> normHEEPEles_SCposn_eta_;
+		std::vector<float> normHEEPEles_SCposn_phi_;
+		std::vector<float> normHEEPEles_SC_rawEnergy_;
 		std::vector< std::vector<float> > normHEEPEles_SC_recHits_Et_;
 		std::vector< std::vector<float> > normHEEPEles_SC_recHits_eta_;
 		std::vector< std::vector<float> > normHEEPEles_SC_recHits_phi_;
 		std::vector< std::vector<bool> >  normHEEPEles_SC_recHits_isFromEB_;
+		std::vector<float> normHEEPEles_SC_totEnergyRecHits_;
+		std::vector<unsigned int> normHEEPEles_SC_totNumRecHits_;
 
 		std::vector<float> normHEEPEles_gsfTrk_eta_;
 		std::vector<float> normHEEPEles_gsfTrk_phi_;
@@ -1193,6 +1199,7 @@ void BstdZeeNTupler::SetupStdEleBranches(){
 	EventDataTree->Branch("normHEEPEles_energy",     &normHEEPEles_energy_);
 	EventDataTree->Branch("normHEEPEles_gsfEnergy",  &normHEEPEles_gsfEnergy_);
 	EventDataTree->Branch("normHEEPEles_caloEnergy", &normHEEPEles_caloEnergy_);
+	EventDataTree->Branch("normHEEPEles_ecalEnergyError", &normHEEPEles_ecalEnergyError_);
 	EventDataTree->Branch("normHEEPEles_eta",        &normHEEPEles_eta_);
 	EventDataTree->Branch("normHEEPEles_scEta",      &normHEEPEles_scEta_);
 	EventDataTree->Branch("normHEEPEles_detEta",     &normHEEPEles_detEta_);
@@ -1263,10 +1270,15 @@ void BstdZeeNTupler::SetupStdEleBranches(){
 	EventDataTree->Branch("normHEEPEles_numMissInnerHits", &normHEEPEles_numMissInnerHits_);
 
 	// SC recHits information - for correcting calo-based iso variables
+	EventDataTree->Branch("normHEEPEles_SCposn_eta", &normHEEPEles_SCposn_eta_);
+	EventDataTree->Branch("normHEEPEles_SCposn_phi", &normHEEPEles_SCposn_phi_);
+	EventDataTree->Branch("normHEEPEles_SC_rawEnergy", &normHEEPEles_SC_rawEnergy_);
 	EventDataTree->Branch("normHEEPEles_SC_recHits_Et",  &normHEEPEles_SC_recHits_Et_);
 	EventDataTree->Branch("normHEEPEles_SC_recHits_eta", &normHEEPEles_SC_recHits_eta_);
 	EventDataTree->Branch("normHEEPEles_SC_recHits_phi", &normHEEPEles_SC_recHits_phi_);
 	EventDataTree->Branch("normHEEPEles_SC_recHits_isFromEB", &normHEEPEles_SC_recHits_isFromEB_);
+	EventDataTree->Branch("normHEEPEles_SC_totEnergyRecHits", &normHEEPEles_SC_totEnergyRecHits_);
+	EventDataTree->Branch("normHEEPEles_SC_totNumRecHits", &normHEEPEles_SC_totNumRecHits_);
 
 	// Track information for correcting tracker isolation variable
 	EventDataTree->Branch("normHEEPEles_gsfTrk_eta", &normHEEPEles_gsfTrk_eta_);
@@ -1447,6 +1459,7 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 	normHEEPEles_energy_.clear();
 	normHEEPEles_gsfEnergy_.clear();
 	normHEEPEles_caloEnergy_.clear();
+	normHEEPEles_ecalEnergyError_.clear();
 	normHEEPEles_eta_.clear();
 	normHEEPEles_scEta_.clear();
 	normHEEPEles_detEta_.clear();
@@ -1513,10 +1526,15 @@ BstdZeeNTupler::ResetEventByEventVariables(){
 
 	normHEEPEles_numMissInnerHits_.clear();
 
+	normHEEPEles_SCposn_eta_.clear();
+	normHEEPEles_SCposn_phi_.clear();
+	normHEEPEles_SC_rawEnergy_.clear();
 	normHEEPEles_SC_recHits_Et_.clear();
 	normHEEPEles_SC_recHits_eta_.clear();
 	normHEEPEles_SC_recHits_phi_.clear();
 	normHEEPEles_SC_recHits_isFromEB_.clear();
+	normHEEPEles_SC_totEnergyRecHits_.clear();
+	normHEEPEles_SC_totNumRecHits_.clear();
 
 	normHEEPEles_gsfTrk_eta_.clear();
 	normHEEPEles_gsfTrk_phi_.clear();
@@ -1793,6 +1811,7 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		normHEEPEles_energy_.push_back(    ithHEEPEle.energy() );
 		normHEEPEles_gsfEnergy_.push_back( ithHEEPEle.gsfEnergy() );
 		normHEEPEles_caloEnergy_.push_back(ithHEEPEle.caloEnergy() );
+		normHEEPEles_ecalEnergyError_.push_back(ithHEEPEle.gsfEle().ecalEnergyError() );
 		normHEEPEles_eta_.push_back(       ithHEEPEle.eta() );
 		normHEEPEles_scEta_.push_back(     ithHEEPEle.scEta() );
 		normHEEPEles_detEta_.push_back(    ithHEEPEle.detEta() );
@@ -1878,7 +1897,7 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	   normHEEPEles_isolPtTrks_.push_back(     ithHEEPEle.isolPtTrks() );
 	   normHEEPEles_isolEmHadDepth1_.push_back(ithHEEPEle.isolEmHadDepth1() );
 
-	   normHEEPEles_numMissInnerHits_.push_back( ithHEEPEle.gsfEle().gsfTrack()->trackerExpectedHitsInner().numberOfLostHits() );
+	   normHEEPEles_numMissInnerHits_.push_back( ithHEEPEle.nrMissHits() );
 
 	   ithtswHEEPEle = tsw::EleStruct(ithtswEleStruct);
 		//normGsfEles_tswHEEPEle_.push_back(ithtswHEEPEle);
@@ -1894,11 +1913,11 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 //	   std::cout << "       SC INFORMATION ..." << std::endl;
 	   reco::SuperClusterRef eleSC = ithGsfEle.superCluster();
 	   GlobalPoint scPosition( eleSC->position().x(), eleSC->position().y(), eleSC->position().z());
-//	   float eleSC_eta = scPosition.eta();
-//	   float eleSC_phi = scPosition.phi();
-//	   float eleSC_rawEnergy = eleSC->rawEnergy();
-//	   std::cout << "         rawEnergy=" << eleSC_rawEnergy << "; eta=" << eleSC_eta << "; phi=" << eleSC_phi << std::endl;
-//	   std::cout << "         Made of " << eleSC->clustersSize() << " basic clusters..." << std::endl;
+	   float eleSC_eta = scPosition.eta();
+	   float eleSC_phi = scPosition.phi();
+	   float eleSC_rawEnergy = eleSC->rawEnergy();
+	   float recHits_totEnergy = 0.0;
+	   unsigned int recHits_totNum = 0;
 	   for(reco::CaloCluster_iterator eleBCIt=eleSC->clustersBegin(); eleBCIt != eleSC->clustersEnd(); ++eleBCIt) {
 //	   	std::cout << "            ->BasicCluster:" << std::endl;
 	   	std::vector< std::pair<DetId,float> > eleBC_hitsAndFracs = (*eleBCIt)->hitsAndFractions();
@@ -1924,6 +1943,7 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	   		// Now, add the (eta, phi) position, and the corresponding Et value for the recHit to the recHits vectors ...
 	   		const GlobalPoint recHitPosn = handle_caloGeom.product()->getPosition(recHitDetId);
 	   		float recHit_energy = recHit_tmpIt->energy();
+	   		recHits_totEnergy += recHit_energy; recHits_totNum += 1;
 	   		float recHit_Et = recHit_energy*recHitPosn.perp()/recHitPosn.mag();
 //	   		std::cout << "                recHit #" << recHitIdx << ": (energy=" << recHit_energy << "; et=" << recHit_Et << "; eta=" << recHitPosn.eta() << "; phi=" << recHitPosn.phi() << ")" << std::endl;
 	   		if(fabs(recHit_energy)>recHitEnergyMin && fabs(recHit_Et)>recHitEtMin){
@@ -1935,10 +1955,15 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	   	}// end of recHits for loop
 	   }// end of BCs for loop
 
+	   normHEEPEles_SCposn_eta_.push_back( eleSC_eta );
+	   normHEEPEles_SCposn_phi_.push_back( eleSC_phi );
+	   normHEEPEles_SC_rawEnergy_.push_back( eleSC_rawEnergy );
 	   normHEEPEles_SC_recHits_Et_.push_back(  recHits_EtValues  );
 	   normHEEPEles_SC_recHits_eta_.push_back( recHits_etaValues );
 	   normHEEPEles_SC_recHits_phi_.push_back( recHits_phiValues );
 	   normHEEPEles_SC_recHits_isFromEB_.push_back( recHits_isFromEBFlags );
+	   normHEEPEles_SC_totEnergyRecHits_.push_back( recHits_totEnergy );
+	   normHEEPEles_SC_totNumRecHits_.push_back( recHits_totNum );
 
 	   // Variable storing eta, phi & vz values for GSF track associated with electron ...
 	   const float ithEle_gsfTrk_eta = ithHEEPEle.gsfEle().gsfTrack()->eta();
@@ -2031,7 +2056,8 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 			std::cout << "; scEt=" << normHEEPEles_scEt_.at(iEle) << std::endl;
 			std::cout << "       energy=" << normHEEPEles_energy_.at(iEle);
 			std::cout << "; gsfEnergy=" << normHEEPEles_gsfEnergy_.at(iEle);
-			std::cout << "; caloEnergy=" << normHEEPEles_caloEnergy_.at(iEle) << std::endl;
+			std::cout << "; caloEnergy=" << normHEEPEles_caloEnergy_.at(iEle);
+			std::cout << "; ecalEnergyError=" << normHEEPEles_ecalEnergyError_.at(iEle) << std::endl;
 			std::cout << "       eta=" << normHEEPEles_eta_.at(iEle);
 			std::cout << "; scEta=" << normHEEPEles_scEta_.at(iEle);
 			std::cout << "; detEta=" << normHEEPEles_detEta_.at(iEle);
@@ -2098,7 +2124,8 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		   std::cout << "       numMissInnerHits = " << normHEEPEles_numMissInnerHits_.at(iEle) << std::endl;
 
 		   std::cout << "         -=-=-" << std::endl;
-		   std::cout << "       recHits... (This ele is made up from " << normHEEPEles_SC_recHits_Et_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_eta_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_phi_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_isFromEB_.at(iEle).size() << "?? of them)" << std::endl;
+		   std::cout << "       recHits... (tot num =" << normHEEPEles_SC_totNumRecHits_.at(iEle) << ", totEnergy=" << normHEEPEles_SC_totEnergyRecHits_.at(iEle) << "; num stored=" << normHEEPEles_SC_recHits_Et_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_eta_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_phi_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_isFromEB_.at(iEle).size() << "?? of them)" << std::endl;
+		   std::cout << "           GlobalPoint pos'n: (eta,phi) = (" << normHEEPEles_SCposn_eta_.at(iEle) << "," << normHEEPEles_SCposn_phi_.at(iEle) << "); rawEnergy=" << normHEEPEles_SC_rawEnergy_.at(iEle) << std::endl;
 		   for(unsigned int recHitIdx=0; recHitIdx<normHEEPEles_SC_recHits_Et_.at(iEle).size(); recHitIdx++){
 		   	std::cout << "          #" << recHitIdx << ": (Et, eta, phi; isFromEB)=(" << normHEEPEles_SC_recHits_Et_.at(iEle).at(recHitIdx) << ", " << normHEEPEles_SC_recHits_eta_.at(iEle).at(recHitIdx) << ", " << normHEEPEles_SC_recHits_phi_.at(iEle).at(recHitIdx) << "; " << normHEEPEles_SC_recHits_isFromEB_.at(iEle).at(recHitIdx) << ")" << std::endl;
 		   }
