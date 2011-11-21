@@ -44,6 +44,7 @@ namespace tsw{
 			float energy(){return eleStr_.energy_;}
 //			float gsfEnergy(){return eleStr_.gsfEnergy_;}
 			float caloEnergy(){return eleStr_.caloEnergy_;}
+			float ecalEnergyError(){return eleStr_.ecalEnergyError_;}
 			float eta(){return eleStr_.eta_;}
 			float scEta(){return eleStr_.scEta_;}
 //			float detEta(){return eleStr_.detEta_;}
@@ -117,12 +118,18 @@ namespace tsw{
 
 			unsigned int numMissInnerHits(){ return eleStr_.numMissInnerHits_; }
 
-			//SC recHits information ...
-			unsigned int numRecHits(){return eleStr_.SC_recHits_Et_.size();}
+			//SC information (incl. individual recHits) ...
+			float SC_eta(){ return eleStr_.SC_posn_eta_; }
+			float SC_phi(){ return eleStr_.SC_posn_phi_; }
+			float SC_rawEnergy(){ return eleStr_.SC_rawEnergy_; }
+			unsigned int numStoredRecHits(){return eleStr_.SC_recHits_Et_.size();}
 			float recHits_Et(int recHitIdx){return eleStr_.SC_recHits_Et_.at(recHitIdx);}
 			float recHits_eta(int recHitIdx){return eleStr_.SC_recHits_eta_.at(recHitIdx);}
 			float recHits_phi(int recHitIdx){return eleStr_.SC_recHits_phi_.at(recHitIdx);}
 			bool recHits_isFromEB(int recHitIdx){return eleStr_.SC_recHits_isFromEB_.at(recHitIdx);}
+			float SC_totEnergyRecHits(){ return eleStr_.SC_totEnergyRecHits_; }
+			float ratio_CaloToRecHitEnergy(){ return this->caloEnergy()/this->SC_totEnergyRecHits(); }
+			unsigned int SC_totNumRecHits(){ return eleStr_.SC_totNumRecHits_; }
 
 			// Access to GSF track variables
 			float gsfTrk_eta(){return eleStr_.gsfTrk_eta_;}
@@ -203,7 +210,8 @@ namespace tsw{
 		std::cout << "; scEt=" << scEt() << std::endl;
 		std::cout << "       energy=" << energy();
 //		std::cout << "; gsfEnergy=" << gsfEnergy();
-		std::cout << "; caloEnergy=" << caloEnergy() << std::endl;
+		std::cout << "; caloEnergy=" << caloEnergy();
+		std::cout << "; ecalEnergyError=" << ecalEnergyError() << std::endl;
 		std::cout << "       eta=" << eta();
 		std::cout << "; scEta=" << scEta();
 //		std::cout << "; detEta=" << detEta();
@@ -270,9 +278,11 @@ namespace tsw{
 		std::cout << "; isolEmHadDepth1=" << isolEmHadDepth1() << std::endl;
 		std::cout << "       numMissInnerHits = " << numMissInnerHits() << std::endl;
 
+		// SC information ...
 		std::cout << "         -=-=-" << std::endl;
-		std::cout << "       recHits (This ele is made up from " << numRecHits() << " of them)" << std::endl;
-		for(unsigned int recHitIdx=0; recHitIdx<numRecHits(); recHitIdx++)
+		std::cout << "       SC: (eta,phi) = (" << SC_eta() << "," << SC_phi() << "); rawEnergy=" << SC_rawEnergy() << std::endl;
+		std::cout << "       SC recHits (" << SC_totNumRecHits() << " of them, total energy = " << SC_totEnergyRecHits() << "; " << numStoredRecHits() << " of them stored in NTuple)" << std::endl;
+		for(unsigned int recHitIdx=0; recHitIdx<numStoredRecHits(); recHitIdx++)
 			std::cout << "          #" << recHitIdx << ": (Et, eta, phi, isFromEB)=(" << recHits_Et(recHitIdx) << ", " << recHits_eta(recHitIdx) << ", " << recHits_phi(recHitIdx) << "; " << recHits_isFromEB(recHitIdx) << ")" << std::endl;
 
 		std::cout << "         -=-=-" << std::endl;
@@ -347,7 +357,7 @@ namespace tsw{
 			// dEtaIn cut ...
 			tmpCutsFlag = tmpCutsFlag && ( fabs(dEtaIn())<0.005 );
 			// dPhiIn cut ...
-			tmpCutsFlag = tmpCutsFlag && ( fabs(dPhiIn())<0.09 );
+			tmpCutsFlag = tmpCutsFlag && ( fabs(dPhiIn())<0.06 );
 			// H/E cut ...
 			tmpCutsFlag = tmpCutsFlag && ( hOverE()<0.05 );
 			// sigmaIEtaIEta cut ...
@@ -363,7 +373,7 @@ namespace tsw{
 			// dEtaIn cut ...
 			tmpCutsFlag = tmpCutsFlag && ( fabs(dEtaIn())<0.007 );
 			// dPhiIn cut ...
-			tmpCutsFlag = tmpCutsFlag && ( fabs(dPhiIn())<0.09 );
+			tmpCutsFlag = tmpCutsFlag && ( fabs(dPhiIn())<0.06 );
 			// H/E cut ...
 			tmpCutsFlag = tmpCutsFlag && ( hOverE()<0.05 );
 			// sigmaIEtaIEta cut ...
@@ -536,8 +546,14 @@ float tsw::HEEPEle::modEmIso(tsw::HEEPEle* theOtherEle){
 	bool coutDebugTxt = false;
 	double isolEm = this->isolEm();
 
+	float otherEle_CaloToRecHitEnergyRatio = theOtherEle->ratio_CaloToRecHitEnergy();
+//	float otherEle_CaloToRecHitEnergyRatio = 1.005;
+	if (otherEle_CaloToRecHitEnergyRatio<1.0)
+		otherEle_CaloToRecHitEnergyRatio = 1.0;
+	const float otherEle_leakedEt = ( theOtherEle->caloEnergy() - theOtherEle->SC_totEnergyRecHits() )*( theOtherEle->et()/theOtherEle->caloEnergy() );
+	bool otherEle_isClose = false;
 	// Now running over the recHits from 'the other electron' ...
-	for(unsigned int recHitIdx=0; recHitIdx<theOtherEle->numRecHits(); recHitIdx++){
+	for(unsigned int recHitIdx=0; recHitIdx<theOtherEle->numStoredRecHits(); recHitIdx++){
 		double recHit_Et = theOtherEle->recHits_Et(recHitIdx);
 		double recHit_eta = theOtherEle->recHits_eta(recHitIdx);
 		double recHit_phi = theOtherEle->recHits_phi(recHitIdx);
@@ -554,7 +570,11 @@ float tsw::HEEPEle::modEmIso(tsw::HEEPEle* theOtherEle){
 
 		// Skip to the next recHit if this one is not in electron's isolation cone ...
 		double etaStripHalfWidth = 1.5; double isoCone_intRadius = 3.0;
-		if( recHitSC_dR>0.3 ) continue;
+		if( (  ( (recHitSC_dR>0.3 && recHitSC_dR<0.3) || (recHitSC_dR<0.0174*isoCone_intRadius && recHitSC_dR>0.0174*(isoCone_intRadius-2.0)) ) || (recHitSC_dR<0.3 && recHitSC_dR>0.0174*isoCone_intRadius && fabs(etaDiff)<0.0174*etaStripHalfWidth) ) && otherEle_CaloToRecHitEnergyRatio>1.0){
+//			isolEm -= (otherEle_CaloToRecHitEnergyRatio-1.0)*recHit_Et; /// <--- MODFICATION HERE!!!
+			otherEle_isClose = true;
+		}
+		if( recHitSC_dR>(0.3+0.0070) ) continue;
 		if( fabs(scEta())<1.479 ){ //EB: Crystal width = 0.0174 in eta & phi
 			if( fabs(etaDiff)<0.0174*etaStripHalfWidth ) continue;
 			if(recHitSC_dR<isoCone_intRadius*0.0174) continue;
@@ -574,10 +594,13 @@ float tsw::HEEPEle::modEmIso(tsw::HEEPEle* theOtherEle){
 			thrEt_recHit = 0.1; thrEnergy_recHit = 0.0;}
 		//if( (fabs(recHit_Et)>thrEt_recHit) && (fabs(recHit_energy)>thrEnergy_recHit) ){
 		if( (recHit_Et>thrEt_recHit) && (recHit_energy>thrEnergy_recHit) ){
-			isolEm -= recHit_Et;
+			isolEm -= recHit_Et; /// <--- MODFICATION HERE!!!
+			otherEle_isClose = true;
 			if(coutDebugTxt){std::cout << "                       << isolEm value has been modified!! (to " << isolEm << ") >>" << std::endl;}
 		}
 	}// End of for loop over recHits
+//	if(otherEle_isClose && otherEle_leakedEt>0.0)
+//		isolEm -= otherEle_leakedEt;
 
 	return isolEm;
 }
@@ -587,7 +610,7 @@ float tsw::HEEPEle::modHad1Iso(tsw::HEEPEle* theOtherEle){
 	double isolHad1 = this->isolHadDepth1();
 
 	// Now running over the recHits from 'the other electron' ...
-	for(unsigned int recHitIdx=0; recHitIdx<theOtherEle->numRecHits(); recHitIdx++){
+	for(unsigned int recHitIdx=0; recHitIdx<theOtherEle->numStoredRecHits(); recHitIdx++){
 		double recHit_Et = theOtherEle->recHits_Et(recHitIdx);
 		double recHit_eta = theOtherEle->recHits_eta(recHitIdx);
 		double recHit_phi = theOtherEle->recHits_phi(recHitIdx);
@@ -617,7 +640,7 @@ float tsw::HEEPEle::modHad1Iso(tsw::HEEPEle* theOtherEle){
 			thrEt_recHit = 0.1; thrEnergy_recHit = 0.0;}
 		//if( (fabs(recHit_Et)>thrEt_recHit) && (fabs(recHit_energy)>thrEnergy_recHit) ){
 		if( (recHit_Et>thrEt_recHit) && (recHit_energy>thrEnergy_recHit) ){
-			isolHad1 -= (theOtherEle->hOverE())*recHit_Et;
+			isolHad1 -= 1.00*(theOtherEle->hOverE())*recHit_Et; /// <--- MODFICATION HERE!!!
 			if(coutDebugTxt){std::cout << "                       << isolHadDepth1 value has been modified!! (to " << isolHad1 << ") >>" << std::endl;}
 		}
 	}// End of for loop over recHits
@@ -630,7 +653,7 @@ float tsw::HEEPEle::modEmHad1Iso_v1(tsw::HEEPEle* theOtherEle){
 	double isolEmHad1 = this->isolEmHadDepth1();
 
 	// Now running over the recHits from 'the other electron' ...
-	for(unsigned int recHitIdx=0; recHitIdx<theOtherEle->numRecHits(); recHitIdx++){
+	for(unsigned int recHitIdx=0; recHitIdx<theOtherEle->numStoredRecHits(); recHitIdx++){
 		double recHit_Et = theOtherEle->recHits_Et(recHitIdx);
 		double recHit_eta = theOtherEle->recHits_eta(recHitIdx);
 		double recHit_phi = theOtherEle->recHits_phi(recHitIdx);
