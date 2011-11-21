@@ -6,7 +6,7 @@
 
 namespace tsw {
    struct EleStruct {
-   	EleStruct() : et_(-999.9), gsfEt_(-999.9), scEt_(-999.9), energy_(-999.9), gsfEnergy_(-999.9), caloEnergy_(-999.9), eta_(-999.9), scEta_(-999.9), detEta_(-999.9), detEtaAbs_(-999.9), phi_(-999.9), scPhi_(-999.9), detPhi_(-999.9), zVtx_(-999.9), p4_(ROOT::Math::XYZTVector(0.0,0.0,0.0,0.0)), gsfP4_(ROOT::Math::XYZTVector(0.0,0.0,0.0,0.0)),
+   	EleStruct() : et_(-999.9), gsfEt_(-999.9), scEt_(-999.9), energy_(-999.9), gsfEnergy_(-999.9), caloEnergy_(-999.9), ecalEnergyError_(-999.9), eta_(-999.9), scEta_(-999.9), detEta_(-999.9), detEtaAbs_(-999.9), phi_(-999.9), scPhi_(-999.9), detPhi_(-999.9), zVtx_(-999.9), p4_(ROOT::Math::XYZTVector(0.0,0.0,0.0,0.0)), gsfP4_(ROOT::Math::XYZTVector(0.0,0.0,0.0,0.0)),
    			classification_(false), isEcalDriven_(false), isTrackerDriven_(false), isEB_(false), isEE_(false),
    	   	charge_(0), trkCharge_(0), pVtx_(-999.9), pCalo_(-999.9), ptVtx_(-999.9), ptCalo_(-999.9),
    	   	closestCtfTrk_pt_(-999.9), closestCtfTrk_eta_(-999.9), closestCtfTrk_phi_(-999.9), closestCtfTrk_innerPt_(-999.9), closestCtfTrk_innerEta_(-999.9), closestCtfTrk_innerPhi_(-999.9), closestCtfTrk_outerPt_(-999.9), closestCtfTrk_outerEta_(-999.9), closestCtfTrk_outerPhi_(-999.9),
@@ -14,7 +14,7 @@ namespace tsw {
    	   	sigmaEtaEta_(-999.9), sigmaEtaEtaUnCorr_(-999.9), sigmaIEtaIEta_(-999.9), e1x5_(-999.9), e2x5Max_(-999.9), e5x5_(-999.9), e1x5Over5x5_(-999.9), e2x5MaxOver5x5_(-999.9),
    	   	isolEm_(-999.9), isolHad_(-999.9), isolHadDepth1_(-999.9), isolHadDepth2_(-999.9), isolPtTrks_(-999.9), isolEmHadDepth1_(-999.9),
    	   	numMissInnerHits_(9999),
-   	   	SC_recHits_Et_(), SC_recHits_eta_(), SC_recHits_phi_(), SC_recHits_isFromEB_(),
+   	   	SC_posn_eta_(-999.9), SC_posn_phi_(-999.9), SC_rawEnergy_(-999.9), SC_recHits_Et_(), SC_recHits_eta_(), SC_recHits_phi_(), SC_recHits_isFromEB_(), SC_totEnergyRecHits_(-999.9), SC_totNumRecHits_(0),
    	   	gsfTrk_eta_(-999.9), gsfTrk_phi_(-999.9), gsfTrk_vz_(-999.9),
    	   	innerIsoConeTrks_pt_(), innerIsoConeTrks_eta_(), innerIsoConeTrks_phi_(), innerIsoConeTrks_vz_()
    		  	{}
@@ -25,6 +25,7 @@ namespace tsw {
    	float energy_;
    	float gsfEnergy_;
    	float caloEnergy_;
+   	float ecalEnergyError_;
    	float eta_;
    	float scEta_;
    	float detEta_;
@@ -38,8 +39,7 @@ namespace tsw {
 
    	// 'Classification'
    	int classification_;
-   	bool isEcalDriven_;
-   	bool isTrackerDriven_;
+   	bool isEcalDriven_;   	bool isTrackerDriven_;
    	bool isEB_;
    	bool isEE_;
 
@@ -92,11 +92,16 @@ namespace tsw {
 	  	// Number of missing hits
 	  	unsigned int numMissInnerHits_;
 
-	  	// Information about recHits that make up this electron's SC ...
+	  	// Information about this ele's SC, and it's recHits ...
+	  	float SC_posn_eta_;
+	  	float SC_posn_phi_;
+	  	float SC_rawEnergy_;
 	  	std::vector<float> SC_recHits_Et_;
 	  	std::vector<float> SC_recHits_eta_;
 	  	std::vector<float> SC_recHits_phi_;
 	  	std::vector<bool>  SC_recHits_isFromEB_;
+	  	float SC_totEnergyRecHits_;
+	  	unsigned int SC_totNumRecHits_;
 
 	  	// Electron's GSF track eta, phi and vz values
 	  	float gsfTrk_eta_;
