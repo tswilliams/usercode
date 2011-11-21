@@ -570,11 +570,11 @@ float tsw::HEEPEle::modEmIso(tsw::HEEPEle* theOtherEle){
 
 		// Skip to the next recHit if this one is not in electron's isolation cone ...
 		double etaStripHalfWidth = 1.5; double isoCone_intRadius = 3.0;
-		if( (  ( (recHitSC_dR>0.3 && recHitSC_dR<0.3) || (recHitSC_dR<0.0174*isoCone_intRadius && recHitSC_dR>0.0174*(isoCone_intRadius-2.0)) ) || (recHitSC_dR<0.3 && recHitSC_dR>0.0174*isoCone_intRadius && fabs(etaDiff)<0.0174*etaStripHalfWidth) ) && otherEle_CaloToRecHitEnergyRatio>1.0){
+		if( (  ( (recHitSC_dR>0.3 && recHitSC_dR<(0.3+0.035)) || (recHitSC_dR<0.0174*isoCone_intRadius && recHitSC_dR>0.0174*(isoCone_intRadius-2.0)) ) || (recHitSC_dR<0.3 && recHitSC_dR>0.0174*isoCone_intRadius && fabs(etaDiff)<0.0174*etaStripHalfWidth) ) ){
 //			isolEm -= (otherEle_CaloToRecHitEnergyRatio-1.0)*recHit_Et; /// <--- MODFICATION HERE!!!
 			otherEle_isClose = true;
 		}
-		if( recHitSC_dR>(0.3+0.0070) ) continue;
+		if( recHitSC_dR>0.3 ) continue;
 		if( fabs(scEta())<1.479 ){ //EB: Crystal width = 0.0174 in eta & phi
 			if( fabs(etaDiff)<0.0174*etaStripHalfWidth ) continue;
 			if(recHitSC_dR<isoCone_intRadius*0.0174) continue;
