@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#set -o verbose
+set -o verbose
 
 echo "Starting job on " `date`
 echo "Running on " `uname -a`
 echo "System release " `cat /etc/redhat-release`
 
-export cardsPrefix=zjets_smzerobmass_ZpT_1100GeV
+export cardsPrefix=zjets_smzerobmass
 export cardsHome=/opt/ppd/newscratch/williams/Summer11MG/Summer11_LHE/DYJetsToLL_Cards/
-export name=DYJetsLLTest2 
+export name=DYJetsToLL_incl
 
 # system specific settings, for instance:
 # export USE_LSF_STARTER=no
@@ -26,8 +26,8 @@ source $CMS_PATH/cmsset_default.sh
 
 # location of the madgraph tarball and of the output main storage directory
 
-export SOURCE=${PRODHOME}/MG5v1.1.tar.gz
-
+export SOURCE=${PRODHOME}/MG5v1.1_RALbatch.tar.gz
+cd ${PRODHOME}
 
 scram project -n ${name}_gridpack CMSSW ${RELEASE} ; cd ${name}_gridpack ; mkdir -p work ; cd work
 eval `scram runtime -sh`
@@ -38,7 +38,7 @@ ln -s `which gfortran` f77
 ln -s `which gfortran` g77
 export PATH=`pwd`:${PATH}
 
-cp ${SOURCE} . ; tar xzf ${SOURCE} ; rm -f `basename ${SOURCE}` ; mv MG5v1.1 ${name}_gridpack ; cd ${name}_gridpack
+cp ${SOURCE} . ; tar xzf ${SOURCE} ; rm -f `basename ${SOURCE}` ; mv MG5v1.1_RALbatch ${name}_gridpack ; cd ${name}_gridpack
 
 # set the run cards with the appropriate initial seed
 
@@ -67,10 +67,10 @@ echo "Running the production stage ..."
 export PATH=`pwd`/bin:${PATH}
 
 # batch run
-#./bin/generate_events 1 gridpack_${name} gridpack_${name}
+./bin/generate_events 1 gridpack_${name} gridpack_${name}
 
 # multicore run   
-./bin/generate_events 2 8 gridpack_${name}
+#./bin/generate_events 2 12 gridpack_${name}
 
 echo "End of job on " `date`
 echo "Will now copy gridpack to local dir"
