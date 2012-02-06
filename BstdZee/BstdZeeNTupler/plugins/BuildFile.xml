@@ -15,6 +15,10 @@
 <use name="CommonTools/UtilAlgos"/>
 <use name="PhysicsTools/UtilAlgos"/>
 <use name="SHarper/HEEPAnalyzer"/>
+<use name="DataFormats/VertexReco"/>
+<use name="SimDataFormats/PileupSummaryInfo"/>
+<use name="PhysicsTools/Utilities"/>
+<use name="SimDataFormats/GeneratorProducts"/>
 <use name="boost"/>
 <use name="root"/>
 <use name="rootcore"/>
