@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.9 2011/11/21 15:55:48 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.10 2012/02/06 17:56:41 tsw Exp $
 //
 //
 
@@ -190,6 +190,7 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		bool vBool_;
 		const bool readInNormReco_;
 		const bool readInBstdReco_;
+		const bool readInTrigInfo_;
 		const bool is2010SignalDataset_;
 		const bool useReducedRecHitsCollns_;
 		edm::InputTag vertexSrc_;
@@ -517,6 +518,7 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 	vBool_(iConfig.getUntrackedParameter<bool>("printOutInfo",0)),
 	readInNormReco_(iConfig.getUntrackedParameter<bool>("readInNormReco",0)),
 	readInBstdReco_(iConfig.getUntrackedParameter<bool>("readInBstdReco",0)),
+	readInTrigInfo_(iConfig.getUntrackedParameter<bool>("readInTrigInfo",0)),
 	is2010SignalDataset_(iConfig.getUntrackedParameter<bool>("is2010SignalDataset",0)),
 	useReducedRecHitsCollns_(iConfig.getUntrackedParameter<bool>("useReducedRecHitsCollns",0)),
 	vertexSrc_(iConfig.getUntrackedParameter<edm::InputTag>("vertexSrc")),
@@ -657,7 +659,8 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		ReadInGenInfo(vBool_, iEvent);
 
 	//Getting the trigger information for the event...	
-	accessTriggerInfo(iEvent,iSetup, vBool_); //This sets the variable hltPathADecision_ as the event pass/fail decision for the HLT path hltPathA_ in the trigger product specified by HLTResultsTag_
+	if(readInTrigInfo_)
+		accessTriggerInfo(iEvent,iSetup, vBool_); //This sets the variable hltPathADecision_ as the event pass/fail decision for the HLT path hltPathA_ in the trigger product specified by HLTResultsTag_
 	//Storing branches of trigger information...
 	trg_PathA_decision_ = hltPathADecision_;
 	trg_PathA_name_ = hltPathA_;
@@ -696,9 +699,9 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 			particleStatus = mcParticle.status();
 			particle4mom = mcParticle.p4();
 			numDaughters = mcParticle.numberOfDaughters();
-			if(particlePDGid==23 && particleStatus==3){ // i.e. if it is a 'decaying' Z boson
+			if(particlePDGid==23 && particleStatus==3 && numDaughters!=0){ // i.e. if it is a 'decaying' Z boson
 				//Get the first Z boson daughter ...
-				const reco::Candidate * mcDaughter =mcParticle.daughter(0);
+				const reco::Candidate* mcDaughter = mcParticle.daughter(0);
 				zBosonDaughter_PDGid = mcDaughter->pdgId();
 			}
 			//Finding the Z bosons, and counting up numbers with various statuses...
@@ -942,46 +945,50 @@ BstdZeeNTupler::beginJob()
 // ------------ method called when starting to processes a run  ------------
 void 
 BstdZeeNTupler::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
-	// HLT setup
-  	bool changed; //This variable is not used by the init method of hltConfig_ and so does not need to be initialised with a value here
-  	hltConfig_.init(run, iSetup, hltResultsTag_.process(), changed); //The value of changed now indicates whether the HLT configuration has changed with respect to the previous run or not.
-	//printDatasetsAndTriggerNames();
 
-	// Run through all of the possible trigger names for the signal trigger (i.e. hltPathA) ...
-	std::cout << " * Looking through the supplied trigger names:" << std::endl;
-	for(unsigned int nameVecIdx = 0; nameVecIdx<hltPathA_possNames_.size(); nameVecIdx++){
-		std::string ithName = hltPathA_possNames_.at(nameVecIdx);
-		std::cout << " *   " << nameVecIdx << ": " << ithName << std::endl;;
-		hltPathIndex_ = hltConfig_.triggerIndex(ithName);
-		if(hltPathIndex_ < hltConfig_.size()){
-			hltPathA_ = ithName;
-			std::cout << " *     ->Have found this name in menu! Exiting for loop now ..." << std::endl;
-			break;
+	if(readInTrigInfo_){
+		// HLT setup
+		bool changed; //This variable is not used by the init method of hltConfig_ and so does not need to be initialised with a value here
+		hltConfig_.init(run, iSetup, hltResultsTag_.process(), changed); //The value of changed now indicates whether the HLT configuration has changed with respect to the previous run or not.
+		//printDatasetsAndTriggerNames();
+
+		// Run through all of the possible trigger names for the signal trigger (i.e. hltPathA) ...
+		std::cout << " * Looking through the supplied trigger names:" << std::endl;
+		for(unsigned int nameVecIdx = 0; nameVecIdx<hltPathA_possNames_.size(); nameVecIdx++){
+			std::string ithName = hltPathA_possNames_.at(nameVecIdx);
+			std::cout << " *   " << nameVecIdx << ": " << ithName << std::endl;;
+			hltPathIndex_ = hltConfig_.triggerIndex(ithName);
+			if(hltPathIndex_ < hltConfig_.size()){
+				hltPathA_ = ithName;
+				std::cout << " *     ->Have found this name in menu! Exiting for loop now ..." << std::endl;
+				break;
+			}
+			else
+				std::cout << " *     ->This name isn't in menu! Trying next one now ..." << std::endl;
 		}
-		else
-			std::cout << " *     ->This name isn't in menu! Trying next one now ..." << std::endl;
-	}
-	std::cout << "******-----------**********" << std::endl;
-	std::cout << "The trigger " << hltPathA_ << " corresponds to index " << hltPathIndex_ << std::endl;
-	std::cout << "( There are " << hltConfig_.size() << " triggers in the menu. )" << std::endl;
-	if(hltPathIndex_>=hltConfig_.size()){
-		std::cout << std::endl << "  *** ERROR: Signal trigger (i.e. hltPathA) index >= Number of triggers in menu" << std::endl;
-		// Throw an exception ...
-		cms::Exception ex("readingTrigerInfo");
-		ex << " [In BstdZeeNTupler::beginRun ...]" << std::endl;
-		ex << "      None of the supplied possible names for hltPathA were found in the trigger menu "<< std::endl;
-		ex << "      (See FILE: '" << __FILE__ << "'; LINE NO. " << __LINE__ << ")" << std::endl;
-		throw ex;
-		// Just in case exception throw doesn't work. ... Force runtime error ...
-		std::vector<int> tmpVector; tmpVector.clear();
-		int tmpInt = tmpVector.at(1);
-	}
-	std::cout << "******-----------**********" << std::endl;
+		std::cout << "******-----------**********" << std::endl;
+		std::cout << "The trigger " << hltPathA_ << " corresponds to index " << hltPathIndex_ << std::endl;
+		std::cout << "( There are " << hltConfig_.size() << " triggers in the menu. )" << std::endl;
+		if(hltPathIndex_>=hltConfig_.size()){
+			std::cout << std::endl << "  *** ERROR: Signal trigger (i.e. hltPathA) index >= Number of triggers in menu" << std::endl;
+			// Throw an exception ...
+			cms::Exception ex("readingTrigerInfo");
+			ex << " [In BstdZeeNTupler::beginRun ...]" << std::endl;
+			ex << "      None of the supplied possible names for hltPathA were found in the trigger menu "<< std::endl;
+			ex << "      (See FILE: '" << __FILE__ << "'; LINE NO. " << __LINE__ << ")" << std::endl;
+			throw ex;
+			// Just in case exception throw doesn't work. ... Force runtime error ...
+			std::vector<int> tmpVector; tmpVector.clear();
+			int tmpInt = tmpVector.at(1);
+		}
+		std::cout << "******-----------**********" << std::endl;
 
-	// Now, retrieve the e-mu trigger name and index ...
-	std::pair<std::string, unsigned int> eMuTrigger_nameIdxPair = beginRun_getTriggerNameAndIdx(trg_emuPath_possNames_, "e-mu trigger");
-	trg_emuPath_name_ = eMuTrigger_nameIdxPair.first;
-	trg_emuPath_idx_ = eMuTrigger_nameIdxPair.second;
+		// Now, retrieve the e-mu trigger name and index ...
+		std::pair<std::string, unsigned int> eMuTrigger_nameIdxPair = beginRun_getTriggerNameAndIdx(trg_emuPath_possNames_, "e-mu trigger");
+		trg_emuPath_name_ = eMuTrigger_nameIdxPair.first;
+		trg_emuPath_idx_ = eMuTrigger_nameIdxPair.second;
+	}
+
 }
 
 
