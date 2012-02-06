@@ -9,6 +9,9 @@ echo argument 6 is ${6}
 echo argument 7 is ${7}
 echo argument 8 is ${8}
 echo argument 9 is ${9}
+echo argument 10 is ${10}
+echo argument 11 is ${11}
+targetDir=${11}
 
 #Wrapper/script needed for the post-processing of MG5 files for CMS MC production
 #Written by Alexis Kalogeropoulos on 3/3/2011
@@ -42,6 +45,10 @@ if [ ${1} == help ] ;then
 	return
 fi
 
+workingDir=${10}/postProcessing_`date "+%y%m%d_%H%M%S"`
+mkdir -v -p ${workingDir}
+cd ${workingDir}
+
 mkdir mgPostv2
 mkdir ProcessedFiles_${9}
 name=${3}
@@ -60,17 +67,17 @@ file2=7TeV_${name}_run${i}_unweighted_events
 	if [[ ! -f mgPostv2/Uploaded_${9}/${file2}_qcut${4}_mgPostv2.lhe  && ! -f mgPostv2/${file2}_qcut${4}_mgPostv2.lhe  ]]; then
 
 ############### UNCOMMENT THIS IF YOU HAVE FILES STORED IN LOCAL SE
-storageDir=/opt/ppd/newscratch/williams/Summer11MG/centralGridPack_DYJetsToLL_incl/batchTests/2011-12-21a/resultsDir/
-if [ -f ${storageDir}/${name}/7TeV_${name}_run${i}_unweighted_events.lhe.gz  ]; then
+storageDir=${10}
+echo Looking for file ${storageDir}/7TeV_${name}_run${i}_unweighted_events.lhe
+if [ -f ${storageDir}/7TeV_${name}_run${i}_unweighted_events.lhe  ]; then
 echo Copying file 7TeV_${name}_run${i}_unweighted_events....
-dccp ${storageDir}/${name}/7TeV_${name}_run${i}_unweighted_events.lhe.gz .
+dccp ${storageDir}/7TeV_${name}_run${i}_unweighted_events.lhe .
 
-
-if [ -f 7TeV_${name}_run${i}_unweighted_events.lhe.gz ] ; then
-
-gzip -d 7TeV_${name}_run${i}_unweighted_events.lhe.gz
-
-fi
+#if [ -f 7TeV_${name}_run${i}_unweighted_events.lhe.gz ] ; then
+#
+#gzip -d 7TeV_${name}_run${i}_unweighted_events.lhe.gz
+#
+#fi
 
 file=${3}_${i}_results.tar.gz
 file2=7TeV_${name}_run${i}_unweighted_events
@@ -99,7 +106,7 @@ if [ "$8" == true ] ; then
 	done
 	#rm ../events_in.lhe
 	mv ../events.lhe ../../${file2}_in.lhe
-	cd ../../									
+	cd ../../								
 fi
 
 
@@ -121,7 +128,7 @@ mv ${file2}.lhe ${file2}_in.lhe
 
 if [[ ${7} == wjets || ${7} == zjets ]] ; then
 	echo V+jets -- WILL fix w/z particle in events history and fix lepton masses mgPostProcv2.py -o $file2.lhe -m -w -j ${6} -q ${4} -e 5 -s ${file2}_in.lhe
-python ./mgPostProcv2.py -o ${file2}_qcut${4}_mgPostv2.lhe -m -w -j ${6} -q ${4} -e 5 -s ${file2}_in.lhe
+python /opt/ppd/newscratch/williams/Summer11MG/Summer11_LHE/mgScripts/mgPostProcv2.py -o ${file2}_qcut${4}_mgPostv2.lhe -m -w -j ${6} -q ${4} -e 5 -s ${file2}_in.lhe
 fi
 
 if [ ${7} == qcd ] ; then
@@ -135,8 +142,8 @@ if [ ${7} == ttbar ] ; then
 python ./mgPostProcv2.py -o ${file2}_qcut${4}_mgPostv2.lhe  -m -w -t -j ${6} -q ${4} -e 5 -s ${file2}_in.lhe
 fi
 
-mv ${file2}_qcut${4}_mgPostv2.lhe mgPostv2/
-mv ${file2}_in.lhe ProcessedFiles_${9}/${file2}.lhe
+mv ${file2}_qcut${4}_mgPostv2.lhe ${targetDir}/
+mv ${file2}_in.lhe ${targetDir}/ProcessedFiles/${file2}.lhe
 
 #rm ${file2}_in.lhe
 fi
@@ -146,4 +153,3 @@ fi
 fi
 
 done
-
