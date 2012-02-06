@@ -4,8 +4,14 @@ set -o verbose
 
 echo "Starting job on " `date`
 
-#LHEtoGENSIM_inFile=/opt/ppd/newscratch/williams/Summer11MG/centralGridPack_DYJetsToLL_incl/batchTests/CMSSW_4_1_7_patch1/src/events_zjets_smzerobmass_nevt5000_seed1_qcut10_mgPostv2.lhe
-#LHEtoGENSIM_outFile=/opt/ppd/newscratch/williams/Summer11MG/centralGridPack_DYJetsToLL_incl/batchTests/CMSSW_4_1_7_patch1/src/events_zjets_smzerobmass_nevt5000_seed1_qcut10_mgPostv2_batch2.root
+echo
+echo Env vars passed into this job are:
+echo "    LHEtoGENSIM_inFile      = " $LHEtoGENSIM_inFile
+echo "    LHEtoGENSIM_outFile     = " $LHEtoGENSIM_outFile
+echo "    LHEtoGENSIM_runNum      = " $LHEtoGENSIM_runNum
+echo "    LHEtoGENSIM_numEvtsSkip = " $LHEtoGENSIM_numEvtsSkip
+echo "    LHEtoGENSIM_numEvtsProc = " $LHEtoGENSIM_numEvtsProc
+echo 
 
 ###################################################################
 # 1) Setting up the environment on the node ...
@@ -29,7 +35,10 @@ scramv1 b --j 4
 ###################################################################
 # 2) Copying over input LHE files, and doing LHE -> GEN conversion
 cp ${LHEtoGENSIM_inFile} inputLHEfile.lhe
-cmsDriver.py MCDBtoEDM --conditions START311_V2::All -s NONE --eventcontent RAWSIM --datatier GEN --filein=file:inputLHEfile.lhe -n -1 >& logFile_LHEtoGEN.txt
+cmsDriver.py MCDBtoEDM --conditions START311_V2::All -s NONE --eventcontent RAWSIM --datatier GEN --filein=file:inputLHEfile.lhe -n -1 --no_exec --python_filename=orig_LHEtoGEN_cfg.py
+sed 's/"LHESource",/"LHESource", firstRun=cms.untracked.uint32\('${LHEtoGENSIM_runNum}'\), /g' orig_LHEtoGEN_cfg.py > LHEtoGEN_cfg.py
+grep "LHESource" LHEtoGEN_cfg.py
+cmsRun LHEtoGEN_cfg.py >& logFile_LHEtoGEN.txt
 
 ###################################################################
 # 3) Now doing GEN -> GEN-SIM conversion (i.e. PYTHIA hadronisation + SIM)
@@ -40,8 +49,11 @@ cmsDriver.py Configuration/GenProduction/python/Hadronizer_MgmMatchTuneZ2_7TeV_m
   --datamix NODATAMIXER \
   --eventcontent RAWSIM \
   --datatier GEN-SIM \
-  --filein=file:MCDBtoEDM_NONE.root --fileout=outputGENSIM.root -n -1 >& logFile_GENtoGENSIM.txt
+  --filein=file:MCDBtoEDM_NONE.root --fileout=outputGENSIM.root -n ${LHEtoGENSIM_numEvtsProc} --no_exec --python_filename=orig_GENtoGENSIM_cfg.py
 
+sed 's/"PoolSource",/"PoolSource", skipEvents=cms.untracked.uint32\('${LHEtoGENSIM_numEvtsSkip}'\), /g' orig_GENtoGENSIM_cfg.py > GENtoGENSIM_cfg.py
+grep "PoolSource" GENtoGENSIM_cfg.py
+cmsRun GENtoGENSIM_cfg.py >& logFile_GENtoGENSIM.txt
 ####################################################################
 # And finally copy output files & clean up
 mv outputGENSIM.root ${LHEtoGENSIM_outFile}
