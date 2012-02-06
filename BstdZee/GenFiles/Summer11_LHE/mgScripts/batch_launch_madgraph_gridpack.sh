@@ -16,13 +16,15 @@ echo "System release " `cat /etc/redhat-release`
 unset PBS_O_WORKDIR
 echo " name = " ${name}
 echo " rnum = " ${rnum}
+echo " nevt = " ${nevt}
+echo " STOREHOME = " ${STOREHOME}
 
 #export name=${1} #Put the name corresponding to the needed gridpack in the official repository (without _grid.tar.gz)
 #export rnum=$2
 #export name=W4jets
 export RELEASE=CMSSW_4_1_6
-export STOREHOME=/opt/ppd/newscratch/williams/Summer11MG/centralGridPack_DYJetsToLL_incl/batchTests/2012-01-05/${name}
-export nevt=10000
+#export STOREHOME=/opt/ppd/newscratch/williams/Summer11MG/centralGridPack_DYJetsToLL_incl/batchTests/2012-01-05/${name}
+#export nevt=10000
 
 #define the random number generator seed from lumi section for this run
 #rnum=`grep 'JobID="'${jobid}'"' $RUNTIME_AREA/arguments.xml | awk -F "\"" '{print $4}' | head -1 `
@@ -37,7 +39,7 @@ mkdir $JOB_SCRATCH_DIR
 ####################################
 # 1. Retrieve the wanted gridpack from the official/local repository 
 cd $JOB_SCRATCH_DIR
-cp /afs/cern.ch/cms/generators/www/slc5_ia32_gcc434/madgraph/V5_1.1/7TeV_Summer11/Gridpacks/${name}_gridpack.tar.gz ./
+cp /opt/ppd/newscratch/williams/Summer11MG/GridPackStore/${name}_gridpack.tar.gz ./
 
 export SOURCE=`pwd`/${name}_gridpack.tar.gz
 
