@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.8 2011/10/22 13:57:10 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.9 2011/11/21 15:55:48 tsw Exp $
 //
 //
 
@@ -66,6 +66,15 @@ sjlkd
 //...for accessing trigger objects
 #include "DataFormats/HLTReco/interface/TriggerObject.h"
 #include "DataFormats/HLTReco/interface/TriggerEvent.h"
+
+//...for PU re-weighting
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
+#include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
+
+//... for accessing generator information (GenEventInfoProduct & LHE)
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 
 //...for histograms creation
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -144,9 +153,15 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 
 		//For reading the event information into the member variables...
 		void ReadInEvtInfo(bool, const edm::Event&);
+		//For reading vertex info. and doing pile up re-weighting ...
+		void ReadInVtxAndPUInfo(bool, const edm::Event&);
+
+		// For reading generator info into tsw::Event member var ...
+		void ReadInGenInfo(bool, const edm::Event&);
+
 
 		//For reading the electron information into the member variables...
-		void ReadInNormGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&, edm::ESHandle<CaloGeometry>&, EcalRecHitMetaCollection*, EcalRecHitMetaCollection*, edm::Handle<reco::TrackCollection>&);
+		void ReadInNormGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&, edm::ESHandle<CaloGeometry>&, EcalRecHitMetaCollection*, EcalRecHitMetaCollection*, edm::Handle<reco::TrackCollection>&, const edm::Event&);
 		void ReadInBstdGsfEles(bool, const edm::Handle<reco::GsfElectronCollection>&);
 
 		//For reading in the muon information, and dumping it into tsw::Event class ...
@@ -169,6 +184,7 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 
 		int numEvts;
 		unsigned int numEvtsStored_;
+		// Member vars read in from cfg file
 		int dyJetsToLL_EventType_;
 		bool mcFlag_;
 		bool vBool_;
@@ -176,10 +192,14 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		const bool readInBstdReco_;
 		const bool is2010SignalDataset_;
 		const bool useReducedRecHitsCollns_;
+		edm::InputTag vertexSrc_;
 
 		double histoEtMin;
 		double histoEtMax;
 		int    histoEtNBins;
+
+		edm::LumiReWeighting LumiWeights_;
+		reco::Vertex recoVtx_highestSumPtVtx_;
 
 		//Variables whose values will be stored as branches...
 		tsw::Event* event_;
@@ -499,9 +519,12 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 	readInBstdReco_(iConfig.getUntrackedParameter<bool>("readInBstdReco",0)),
 	is2010SignalDataset_(iConfig.getUntrackedParameter<bool>("is2010SignalDataset",0)),
 	useReducedRecHitsCollns_(iConfig.getUntrackedParameter<bool>("useReducedRecHitsCollns",0)),
+	vertexSrc_(iConfig.getUntrackedParameter<edm::InputTag>("vertexSrc")),
 	histoEtMin(0.0),
 	histoEtMax(80.0),
 	histoEtNBins(40),
+	LumiWeights_("Fall2011_finebin.root", "Data_full2011_Pileup-finebin_2011-01-30.root",
+			"F2011exp", "pileup"),
 	hltResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltResultsTag",edm::InputTag("TriggerResults","","HLT"))),
 	hltEventTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltEventTag",edm::InputTag("hltTriggerSummaryAOD","","HLT"))),
   	hltPathA_("*** DEFAULT TRIGGER NAME ***"),
@@ -629,6 +652,10 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	//Reading in the event information...
 	ReadInEvtInfo(vBool_, iEvent);
 	
+	// Reading in the generator (i.e. GenEventInfoProduct & LHE) info, if MC ...
+	if(mcFlag_)
+		ReadInGenInfo(vBool_, iEvent);
+
 	//Getting the trigger information for the event...	
 	accessTriggerInfo(iEvent,iSetup, vBool_); //This sets the variable hltPathADecision_ as the event pass/fail decision for the HLT path hltPathA_ in the trigger product specified by HLTResultsTag_
 	//Storing branches of trigger information...
@@ -648,7 +675,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	//Reading in the kin variables for the standard and special reco'n GSF electrons... 
 	if(readInNormReco_)
-		ReadInNormGsfEles(vBool_, normGsfElesH, caloGeomH, ecalBarrelHitsMeta, ecalEndcapHitsMeta, ctfTrackCollectionH);
+		ReadInNormGsfEles(vBool_, normGsfElesH, caloGeomH, ecalBarrelHitsMeta, ecalEndcapHitsMeta, ctfTrackCollectionH, iEvent);
 	if(readInBstdReco_)
 		ReadInBstdGsfEles(vBool_, bstdGsfElesH);
 
@@ -918,7 +945,7 @@ BstdZeeNTupler::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
 	// HLT setup
   	bool changed; //This variable is not used by the init method of hltConfig_ and so does not need to be initialised with a value here
   	hltConfig_.init(run, iSetup, hltResultsTag_.process(), changed); //The value of changed now indicates whether the HLT configuration has changed with respect to the previous run or not.
-	printDatasetsAndTriggerNames();
+	//printDatasetsAndTriggerNames();
 
 	// Run through all of the possible trigger names for the signal trigger (i.e. hltPathA) ...
 	std::cout << " * Looking through the supplied trigger names:" << std::endl;
@@ -1760,11 +1787,119 @@ void BstdZeeNTupler::ReadInEvtInfo(bool beVerbose, const edm::Event& edmEventObj
 	if(beVerbose){
 		std::cout << " ->Run: " << evt_runNum_ << ", Lumi block: " << evt_lumiSec_ << ", Evt: " << evt_evtNum_ << std::endl;
 	}
+
+	// Read the vertex and pile up re-weighting info into branches
+	ReadInVtxAndPUInfo(beVerbose, edmEventObject);
 }
 
+//----------------------------------------------------------------------------------------------------
+//------------ method for reading in the vertex information, ...                       ---------------
+//------------ and calculating the pile up re-weighting factors                        ---------------
+void BstdZeeNTupler::ReadInVtxAndPUInfo(bool beVerbose, const edm::Event& edmEventRef)
+{
+	// 1) Read in the info about the MC PU vertices, and store PU re-weighting factor [IFF running over MC ...]
+	if(mcFlag_){
+		edm::Handle<std::vector< PileupSummaryInfo > >  PupInfo;
+		edmEventRef.getByLabel(edm::InputTag("addPileupInfo"), PupInfo);
+		std::vector<PileupSummaryInfo>::const_iterator PVI;
+		for(PVI = PupInfo->begin(); PVI != PupInfo->end(); ++PVI) {
+			int BX = PVI->getBunchCrossing();
+			if(BX == 0) {
+				float trueNumPUVertices = PVI->getTrueNumInteractions();
+				unsigned int numPUVertices = PVI->getPU_NumInteractions();
+				std::vector<float> puVertices_zPosns = PVI->getPU_zpositions();
+				double MyWeight = LumiWeights_.weight( trueNumPUVertices );
+
+				event_->SetMCPUInfo(trueNumPUVertices, numPUVertices, puVertices_zPosns, MyWeight);
+			}
+		}
+	}
+
+	// 2) Read in the info about the reconstructed vertices
+
+	edm::Handle< std::vector<reco::Vertex> > handle_RecoVtxs;
+	edmEventRef.getByLabel(vertexSrc_, handle_RecoVtxs);
+
+	unsigned int numVtxs = 0;
+	unsigned int numGoodVtxs = 0;
+	// Count total num of vertices, and num of good vertices
+	for (std::vector<reco::Vertex>::const_iterator itv = handle_RecoVtxs->begin(); itv != handle_RecoVtxs->end(); ++itv) {
+		numVtxs += 1;
+		// require that the vertex meets certain criteria
+		if(itv->ndof()<5) continue;
+		if(fabs(itv->z())>50.0) continue;
+		if(fabs(itv->position().rho())>2.0) continue;
+		numGoodVtxs += 1;
+	}
+	event_->SetRecoVtxInfo(numVtxs, numGoodVtxs);
+
+	// Print out this information if in 'verbose' mode ...
+	if(beVerbose)
+		event_->PrintPUVtxInfo();
+
+	// Store the pointer to the first (i.e. highest sum pt) vertex, for future use ...
+	recoVtx_highestSumPtVtx_ = handle_RecoVtxs->front();
+}
+
+void BstdZeeNTupler::ReadInGenInfo(bool beVerbose, const edm::Event& edmEventRef)
+{
+	// Read in the mc Event weight from the GenEventInfoProduct ...
+	edm::Handle<GenEventInfoProduct> handle_GenInfoProduct;
+	edmEventRef.getByLabel("generator", handle_GenInfoProduct);
+
+	event_->SetMCGenWeight(handle_GenInfoProduct->weight());
+
+	if(beVerbose)
+		event_->PrintMCGenWeight();
+
+	// Read in the LHE Z boson 4-momentum (iff the file contains LHE info) ...
+	edm::Handle<LHEEventProduct> h_lheEvent;
+	edmEventRef.getByLabel("source",h_lheEvent);
+	if( !(h_lheEvent.failedToGet()) ){
+		const lhef::HEPEUP eventInfo = h_lheEvent->hepeup();
+
+		// Now, loop over the particles in the LHE event ...
+		int numParticles = eventInfo.NUP;
+		for(int idx=0; idx<numParticles; idx++){
+			// Check if the particle is a Z boson; if so, then extract it's 4 momentum & read into tsw::Event
+			if(eventInfo.IDUP.at(idx)==23){
+				lhef::HEPEUP::FiveVector p5 =  eventInfo.PUP.at(idx);
+
+				ROOT::Math::XYZTVector Zboson_p4;
+				Zboson_p4.SetPxPyPzE(p5[0], p5[1], p5[2], p5[3]);
+				event_->SetLHEZbosonInfo(Zboson_p4);
+			}//end: if PID==23
+		}//END: for idx<numParticles
+		if(beVerbose)
+			event_->PrintLHEZbosonInfo();
+	}
+	else if(beVerbose)
+		std::cout << " * Couldn't find any LHE information *" << std::endl;
+
+
+}
+
+
 //------------ method for reading in the values of the standard GSF electron variables ---------------
-void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::GsfElectronCollection>& handle_normGsfEles, edm::ESHandle<CaloGeometry>& handle_caloGeom, EcalRecHitMetaCollection* recHitsMeta_EB, EcalRecHitMetaCollection* recHitsMeta_EE, edm::Handle<reco::TrackCollection>& handle_ctfTracks){
+void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::GsfElectronCollection>& handle_normGsfEles, edm::ESHandle<CaloGeometry>& handle_caloGeom, EcalRecHitMetaCollection* recHitsMeta_EB, EcalRecHitMetaCollection* recHitsMeta_EE, edm::Handle<reco::TrackCollection>& handle_ctfTracks, const edm::Event& iEvent){
 	
+	// Setting up value map handles for electron isol values re-calculated from IsoDeposits
+	edm::Handle< edm::ValueMap<double> > h_stdEleIsoFromDeps_Tk;
+	edm::Handle< edm::ValueMap<double> > h_modEleIsoFromDeps_Tk;
+	iEvent.getByLabel("stdEleIsoFromDepsTk",h_stdEleIsoFromDeps_Tk);
+	iEvent.getByLabel("modEleIsoFromDepsTk",h_modEleIsoFromDeps_Tk);
+
+	edm::Handle< edm::ValueMap<double> > h_stdEleIsoFromDeps_Ecal;
+	edm::Handle< edm::ValueMap<double> > h_modEleIsoFromDeps_Ecal;
+	iEvent.getByLabel("stdEleIsoFromDepsEcal",h_stdEleIsoFromDeps_Ecal);
+	iEvent.getByLabel("modEleIsoFromDepsEcal",h_modEleIsoFromDeps_Ecal);
+
+	edm::Handle< edm::ValueMap<double> > h_stdEleIsoFromDeps_HcalD1;
+	edm::Handle< edm::ValueMap<double> > h_modEleIsoFromDeps_HcalD1;
+	iEvent.getByLabel("stdEleIsoFromDepsHcalD1",h_stdEleIsoFromDeps_HcalD1);
+	iEvent.getByLabel("modEleIsoFromDepsHcalD1",h_modEleIsoFromDeps_HcalD1);
+
+
 	reco::GsfElectron ithGsfEle;
 	heep::Ele ithHEEPEle(ithGsfEle);
 	tsw::EleStruct ithtswEleStruct;
@@ -2016,6 +2151,10 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	   normHEEPEles_innerIsoConeTrks_phi_.push_back( innerIsoConeTrks_phi );
 	   normHEEPEles_innerIsoConeTrks_vz_.push_back(  innerIsoConeTrks_vz  );
 
+		// Reading-in ele isolation values re-calculated with IsoDeposits ...
+		reco::GsfElectronRef ithGsfEleRef(handle_normGsfEles, eleIdx);
+		event_->AddStdEleInfo_isoDep_std( (*h_stdEleIsoFromDeps_Tk)[ithGsfEleRef], (*h_stdEleIsoFromDeps_Ecal)[ithGsfEleRef], (*h_stdEleIsoFromDeps_HcalD1)[ithGsfEleRef] );
+		event_->AddStdEleInfo_isoDep_inrVeto( (*h_modEleIsoFromDeps_Tk)[ithGsfEleRef], (*h_modEleIsoFromDeps_Ecal)[ithGsfEleRef], (*h_modEleIsoFromDeps_HcalD1)[ithGsfEleRef] );
 	}
 	
 	//Printing these values to screen...
@@ -2122,6 +2261,8 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		   std::cout << "; isolEmHadDepth1=" << normHEEPEles_isolEmHadDepth1_.at(iEle) << std::endl;
 
 		   std::cout << "       numMissInnerHits = " << normHEEPEles_numMissInnerHits_.at(iEle) << std::endl;
+
+		   event_->PrintStdEleInfo_isoDepIsoValues(iEle);
 
 		   std::cout << "         -=-=-" << std::endl;
 		   std::cout << "       recHits... (tot num =" << normHEEPEles_SC_totNumRecHits_.at(iEle) << ", totEnergy=" << normHEEPEles_SC_totEnergyRecHits_.at(iEle) << "; num stored=" << normHEEPEles_SC_recHits_Et_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_eta_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_phi_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_isFromEB_.at(iEle).size() << "?? of them)" << std::endl;
