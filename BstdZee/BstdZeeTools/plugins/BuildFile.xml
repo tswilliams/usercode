@@ -6,6 +6,7 @@
 <use name="DataFormats/TrackReco"/>
 <use name="DataFormats/GsfTrackReco"/>
 <use name="RecoEgamma/EgammaIsolationAlgos"/>
+<use name="RecoLocalCalo/EcalRecAlgos"/>
 <use name="DataFormats/EcalDetId"/>
 <use name="RecoCaloTools/MetaCollections"/>
 <use name="Geometry/Records"/>

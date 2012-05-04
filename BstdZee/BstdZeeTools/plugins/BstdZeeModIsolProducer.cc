@@ -35,6 +35,7 @@
 #include "DataFormats/GsfTrackReco/interface/GsfTrack.h"
 #include "RecoEgamma/EgammaIsolationAlgos/interface/EgammaTrackSelector.h"
 
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalSeverityLevelAlgoRcd.h"
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 #include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
 #include "DataFormats/EcalDetId/interface/EcalSubdetector.h"
@@ -52,6 +53,10 @@ BstdZeeModIsolProducer::BstdZeeModIsolProducer(const edm::ParameterSet& iConfig)
 	tk_intRadiusEndcap_(iConfig.getParameter<double>("intRadiusEndcapTk")),
 	tk_stripWidthBarrel_(iConfig.getParameter<double>("stripBarrelTk")),
 	tk_stripWidthEndcap_(iConfig.getParameter<double>("stripEndcapTk")),
+   tk_otherElesIntRadiusBarrel_(iConfig.getParameter<double>("otherElesIntRadiusBarrelTk")),
+   tk_otherElesIntRadiusEndcap_(iConfig.getParameter<double>("otherElesIntRadiusEndcapTk")),
+   tk_otherElesStripWidthBarrel_(iConfig.getParameter<double>("otherElesStripBarrelTk")),
+   tk_otherElesStripWidthEndcap_(iConfig.getParameter<double>("otherElesStripEndcapTk")),
 	tk_ptMin_(iConfig.getParameter<double>("ptMinTk")),
 	tk_maxVtxDist_(iConfig.getParameter<double>("maxVtxDistTk")),
 	tk_beamSpotTag_(iConfig.getParameter<edm::InputTag>("beamSpotTag")),
@@ -60,22 +65,29 @@ BstdZeeModIsolProducer::BstdZeeModIsolProducer(const edm::ParameterSet& iConfig)
 	ecalParams_EB_(iConfig.getParameter<edm::InputTag>("barrelRecHitsTag"),
 						iConfig.getParameter<double>("intRadiusEcalBarrel"),
 						iConfig.getParameter<double>("jurassicWidth"),
+						iConfig.getParameter<double>("otherElesIntRadiusEcalBarrel"),
+						iConfig.getParameter<double>("otherElesJurassicWidth"),
 						iConfig.getParameter<double>("etMinBarrel"),
 						iConfig.getParameter<double>("eMinBarrel") ),
 	ecalParams_EE_(iConfig.getParameter<edm::InputTag>("endcapRecHitsTag"),
 						iConfig.getParameter<double>("intRadiusEcalEndcaps"),
 						iConfig.getParameter<double>("jurassicWidth"),
+						iConfig.getParameter<double>("otherElesIntRadiusEcalEndcaps"),
+						iConfig.getParameter<double>("otherElesJurassicWidth"),
 						iConfig.getParameter<double>("etMinEndcaps"),
 						iConfig.getParameter<double>("eMinEndcaps") ),
 	ecal_vetoClustered_(iConfig.getParameter<bool>("vetoClustered")),
 	ecal_useNumCrystals_(iConfig.getParameter<bool>("useNumCrystals")),
 	ecal_severityLevelCut_(iConfig.getParameter<int>("severityLevelCut")),
+   recHitFlagsToBeExcluded_(iConfig.getParameter< std::vector<int> >("recHitFlagsToBeExcluded")),
 	// HCAL depth 1 isolation
 	hcalTowersTag_(iConfig.getParameter<edm::InputTag>("hcalTowers")),
 	hcal_intRadius_(iConfig.getParameter<double>("intRadiusHcal")),
 	hcal_etMin_(iConfig.getParameter<double>("etMinHcal"))
 {
+   std::sort( recHitFlagsToBeExcluded_.begin(), recHitFlagsToBeExcluded_.end() );
    // Now, register the products
+	produces< std::vector<reco::Track> >("tracksInIsolSum");
 	produces< edm::ValueMap<double> >("track");
 	produces< edm::ValueMap<double> >("ecal");
 	produces< edm::ValueMap<double> >("hcalDepth1");
@@ -98,6 +110,7 @@ BstdZeeModIsolProducer::~BstdZeeModIsolProducer()
 // ------------ method called to produce the data  ------------
 void BstdZeeModIsolProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+	tracksInIsolSum_.clear();
 	// Grab the electron collections
 	edm::Handle< reco::GsfElectronCollection > inputEleHandle, vetoEleHandle;
 	iEvent.getByLabel(inputGsfCollnTag_, inputEleHandle);
@@ -111,6 +124,10 @@ void BstdZeeModIsolProducer::produce(edm::Event& iEvent, const edm::EventSetup& 
 //	// Run over the input electrons, calculating the new isolation values for each one
 //	for( reco::GsfElectronCollection::const_iterator gsfEle = inputEleHandle->begin();
 //			gsfEle!=inputEleHandle->end(); gsfEle++) {
+	edm::Handle<EcalRecHitCollection> recHitsHandleEB;
+	iEvent.getByLabel(ecalParams_EB_.recHitsTag, recHitsHandleEB);
+	ecalBarHits_ = recHitsHandleEB.product();
+
 	std::vector<double> trackIsolVec  = getTrackIsol(*inputEleHandle, *vetoEleHandle, iEvent);
 	std::vector<double> ecalIsolVec   = getEcalIsol(*inputEleHandle, *vetoEleHandle, iEvent, iSetup);
 	std::vector<double> hcalD1IsolVec = getHcalDepth1Isol(*inputEleHandle, *vetoEleHandle, iEvent);
@@ -127,10 +144,11 @@ void BstdZeeModIsolProducer::produce(edm::Event& iEvent, const edm::EventSetup& 
 	hcalD1MapFiller.fill();
 
 	// Store the products
+	std::auto_ptr< std::vector<reco::Track> > tracksToStore( new std::vector<reco::Track>(tracksInIsolSum_) );
+	iEvent.put(tracksToStore, "tracksInIsolSum");
 	iEvent.put(trackMap, "track");
 	iEvent.put(ecalMap, "ecal");
 	iEvent.put(hcalD1Map, "hcalDepth1");
- 
 }
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -205,15 +223,39 @@ double BstdZeeModIsolProducer::getTrackIsol(const reco::GsfElectron& theEle, con
 			if ( fabs(dr) < extRadius_ && fabs(dr) >= tk_intRadiusEndcap_ && fabs(deta) >= tk_stripWidthEndcap_)
 				includeInIsolSum = true;
 		}
+		if(!includeInIsolSum)
+			continue;
 
 		//TODO -- Check if the track is in the inner veto area of any of the vetoEles
+		for( reco::GsfElectronCollection::const_iterator otherEleIt = vetoEles.begin(); otherEleIt!=vetoEles.end(); otherEleIt++){
+			reco::GsfTrackRef otherEleTrack = otherEleIt->gsfTrack();
 
-		if(includeInIsolSum)
+			// Skip if this is the electron who's isol value is being calculated
+			if( fabs(otherEleTrack->eta()-tmpTrack->eta())<0.001 && fabs(otherEleTrack->phi()-tmpTrack->phi())<0.001 )
+				continue;
+
+			double vsOtherEle_dR = ROOT::Math::VectorUtil::DeltaR(itrTr->momentum(), otherEleTrack->momentum() );
+			double vsOtherEle_dEta = (*itrTr).eta() - otherEleTrack->eta();
+			if (fabs(tmpElectronEtaAtVertex) < 1.479) {
+				if ( fabs(vsOtherEle_dR) < tk_otherElesIntRadiusBarrel_ || ( fabs(vsOtherEle_dR) < extRadius_ && fabs(vsOtherEle_dEta) < tk_otherElesStripWidthBarrel_ ) )
+					includeInIsolSum = false;
+			}
+			else {
+				if ( fabs(vsOtherEle_dR) < tk_otherElesIntRadiusEndcap_ || ( fabs(vsOtherEle_dR) < extRadius_ && fabs(vsOtherEle_dEta) < tk_otherElesStripWidthEndcap_ ) )
+					includeInIsolSum = false;
+			}
+			if(!includeInIsolSum)
+				break;
+		} // End loop over vetoEles
+
+		if(includeInIsolSum){
 			ptSum += this_pt;
+			tracksInIsolSum_.push_back(*itrTr);
+		}
 
-	  } //end loop over tracks
+	} //end loop over tracks
 
-	  return ptSum;
+	return ptSum;
 }
 
 std::vector<double> BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectronCollection& inputEles, const reco::GsfElectronCollection& vetoEles, const edm::Event& iEvent, const edm::EventSetup& iSetup)
@@ -230,9 +272,13 @@ std::vector<double> BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectronC
 	edm::ESHandle<CaloGeometry> theCaloGeom;
 	iSetup.get<CaloGeometryRecord>().get(theCaloGeom);
 
+	// Grab the ECAL severity level algo
+	edm::ESHandle<EcalSeverityLevelAlgo> sevLevelAlgo;
+   iSetup.get<EcalSeverityLevelAlgoRcd>().get(sevLevelAlgo);
+
 	std::vector<double> isolValues;
 	for( reco::GsfElectronCollection::const_iterator eleIt = inputEles.begin(); eleIt!=inputEles.end(); eleIt++)
-		isolValues.push_back( getEcalIsol(*eleIt, vetoEles, recHitsMetaEB, theCaloGeom, ecalParams_EB_) + getEcalIsol(*eleIt, vetoEles, recHitsMetaEE, theCaloGeom, ecalParams_EE_) );
+		isolValues.push_back( getEcalIsol(*eleIt, vetoEles, recHitsMetaEB, theCaloGeom, ecalParams_EB_, sevLevelAlgo.product()) + getEcalIsol(*eleIt, vetoEles, recHitsMetaEE, theCaloGeom, ecalParams_EE_) );
 
 	delete recHitsMetaEB;
 	delete recHitsMetaEE;
@@ -241,9 +287,8 @@ std::vector<double> BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectronC
 }
 
 
-double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const EcalRecHitMetaCollection* recHitsMeta, const edm::ESHandle<CaloGeometry>& theCaloGeom, const BstdZeeModIsolProducer::ECALParams& params)
+double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const EcalRecHitMetaCollection* recHitsMeta, const edm::ESHandle<CaloGeometry>& theCaloGeom, const BstdZeeModIsolProducer::ECALParams& params, const EcalSeverityLevelAlgo* sevLevelAlgo)
 {
-	const CaloGeometry* caloGeom = theCaloGeom.product();
 	const CaloSubdetectorGeometry* subdetGeoms[2];
 	subdetGeoms[0] = theCaloGeom->getSubdetectorGeometry(DetId::Ecal,EcalBarrel);
 	subdetGeoms[1] = theCaloGeom->getSubdetectorGeometry(DetId::Ecal,EcalEndcap);
@@ -303,33 +348,70 @@ double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, cons
 						if(isClustered) continue;
 					}  //end if vetoClustered_
 
-					//TODO -- Check if recHit is in inner veto area around any of the 'veto' eles
+					// *** Check if recHit is in inner veto area around any of the 'veto' eles
+					bool vetoedByVetoEles = false;
+					for( reco::GsfElectronCollection::const_iterator otherEleIt = vetoEles.begin(); otherEleIt!=vetoEles.end(); otherEleIt++){
+						reco::SuperClusterRef otherEleSC = otherEleIt->get<reco::SuperClusterRef>();
+						math::XYZPoint otherEle_caloPosition = otherEleSC.get()->position();
+						GlobalPoint otherEle_pclu (otherEle_caloPosition.x () ,
+								otherEle_caloPosition.y () ,
+								otherEle_caloPosition.z () );
+						double otherEle_etaclus = otherEle_pclu.eta();
+						double otherEle_phiclus = otherEle_pclu.phi();
 
-					//TODO -- Uncomment spike-removal & add relevant members/vars
-//					//Severity level check
-//					//make sure we have a barrel rechit
-//					//call the severity level method
-//					//passing the EBDetId
-//					//the rechit collection in order to calculate the swiss crss
-//					//and the EcalChannelRecHitRcd
-//					//only consider rechits with ET >
-//					//the SpikeId method (currently kE1OverE9 or kSwissCross)
-//					//cut value for above
-//					//then if the severity level is too high, we continue to the next rechit
-//
-//					if( ecal_severityLevelCut_!=-1 && ecalBarHits_ &&
-//							sevLevel_->severityLevel(EBDetId(j->detid()), *ecalBarHits_) >= ecal_severityLevelCut_)
-//						continue;
-//					//                            *chStatus_,
-//					//        severityRecHitThreshold_,
-//					//        spId_,
-//					//        spIdThreshold_
-//					//    ) >= severityLevelCut_) continue;
-//
-//					//Check based on flags to protect from recovered channels from non-read towers
-//					//Assumption is that v_chstatus_ is empty unless doFlagChecks() has been called
-//					std::vector<int>::const_iterator vit = std::find( v_chstatus_.begin(), v_chstatus_.end(),  ((EcalRecHit*)(&*j))->recoFlag() );
-//					if ( vit != v_chstatus_.end() ) continue; // the recHit has to be excluded from the iso sum
+						// Skip if this is the electron who's isol value is being calculated
+						if( fabs(otherEle_etaclus-etaclus)<0.001 && fabs(otherEle_phiclus-phiclus)<0.001 )
+							continue;
+
+						double otherEle_etaDiff = eta - otherEle_etaclus;
+						double otherEle_phiDiff = reco::deltaPhi(phi, otherEle_phiclus);
+						double otherEle_dR = sqrt(otherEle_etaDiff*otherEle_etaDiff + otherEle_phiDiff*otherEle_phiDiff );
+
+						if(otherEle_dR>extRadius_)
+							continue;
+						if(ecal_useNumCrystals_) {
+							if( fabs(etaclus) < 1.479 ) {  // Barrel num crystals, crystal width = 0.0174
+								if ( fabs(otherEle_etaDiff) < 0.0174*params.otherElesEtaSlice ) vetoedByVetoEles=true;
+								if ( otherEle_dR < 0.0174*params.otherElesIntRadius) vetoedByVetoEles=true;
+							} else {                       // Endcap num crystals, crystal width = 0.00864*fabs(sinh(eta))
+								if ( fabs(otherEle_etaDiff) < 0.00864*fabs(sinh(eta))*params.otherElesEtaSlice) vetoedByVetoEles=true;
+								if	 ( otherEle_dR < 0.00864*fabs(sinh(eta))*params.otherElesIntRadius) vetoedByVetoEles=true;
+							}
+						} else {
+							if ( fabs(otherEle_etaDiff) < params.otherElesEtaSlice) vetoedByVetoEles=true;  // jurassic strip cut
+							if ( otherEle_dR < params.otherElesIntRadius) vetoedByVetoEles=true; // jurassic exclusion cone cut
+						}
+						if(vetoedByVetoEles)
+							break;
+					}
+					if(vetoedByVetoEles)
+						continue;
+
+					//Severity level check
+					//make sure we have a barrel rechit
+					//call the severity level method
+					//passing the EBDetId
+					//the rechit collection in order to calculate the swiss crss
+					//and the EcalChannelRecHitRcd
+					//only consider rechits with ET >
+					//the SpikeId method (currently kE1OverE9 or kSwissCross)
+					//cut value for above
+					//then if the severity level is too high, we continue to the next rechit
+					if(sevLevelAlgo!=0){
+						if( ecal_severityLevelCut_!=-1 && ecalBarHits_ &&
+								sevLevelAlgo->severityLevel(EBDetId(j->detid()), *ecalBarHits_) >= ecal_severityLevelCut_)
+							continue;
+					}
+					//                            *chStatus_,
+					//        severityRecHitThreshold_,
+					//        spId_,
+					//        spIdThreshold_
+					//    ) >= severityLevelCut_) continue;
+
+					//Check based on flags to protect from recovered channels from non-read towers
+					//Assumption is that v_chstatus_ is empty unless doFlagChecks() has been called
+					std::vector<int>::const_iterator vit = std::find( recHitFlagsToBeExcluded_.begin(), recHitFlagsToBeExcluded_.end(),  ((EcalRecHit*)(&*j))->recoFlag() );
+					if ( vit != recHitFlagsToBeExcluded_.end() ) continue; // the recHit has to be excluded from the iso sum
 
 					double et = energy*position.perp()/position.mag();
 					if ( fabs(et) > params.etMin && fabs(energy) > params.eMin ){ //Changed energy --> fabs(energy)
@@ -391,14 +473,33 @@ double BstdZeeModIsolProducer::getHcalDepth1Isol(const reco::GsfElectron& theEle
 		if(deltaPhi>M_PI) deltaPhi=twoPi-deltaPhi;
 		double deltaEta = towerEta - candEta;
 
-		// TODO -- Check if caloTower is within inner veto area of any of the other eles
+		double dr2 = deltaEta*deltaEta + deltaPhi*deltaPhi;
 
-		double dr = deltaEta*deltaEta + deltaPhi*deltaPhi;
-		if( dr < extRadius_*extRadius_ &&
-				dr >= hcal_intRadius_*hcal_intRadius_ )
-		{
-			ptSum += this_pt;
+		bool includeInIsolSum=false;
+		if( dr2 < extRadius_*extRadius_ && dr2 >= hcal_intRadius_*hcal_intRadius_ )
+			includeInIsolSum = true;
+
+		// TODO -- Check if caloTower is within inner veto area of any of the other eles
+		for( reco::GsfElectronCollection::const_iterator otherEleIt = vetoEles.begin(); otherEleIt!=vetoEles.end(); otherEleIt++){
+			const reco::SuperCluster* otherEleSC = otherEleIt->get<reco::SuperClusterRef>().get();
+			math::XYZPoint otherEleCaloPosition = otherEleSC->position();
+			double otherEle_eta = otherEleSC->eta();
+			double otherEle_phi = otherEleSC->phi();
+
+			double otherEle_dEta = towerEta - otherEle_eta;
+			double otherEle_dPhi = reco::deltaPhi(towerPhi, otherEle_phi);
+			double otherEle_dR   = sqrt(otherEle_dEta*otherEle_dEta + otherEle_dPhi*otherEle_dPhi);
+
+			if(otherEle_dR < hcal_intRadius_)
+				includeInIsolSum=false;
+
+			if(!includeInIsolSum)
+				break;
 		}
+
+		if(includeInIsolSum)
+			ptSum += this_pt;
+
 	}//end loop over caloTowers
 
 	return ptSum;
