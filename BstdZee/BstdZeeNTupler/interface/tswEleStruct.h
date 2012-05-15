@@ -13,6 +13,12 @@ namespace tsw {
    	   	hOverE_(-999.9),  dEtaIn_(-999.9), dPhiIn_(-999.9), dPhiOut_(-999.9), epIn_(-999.9), epOut_(-999.9), fbrem_(-999.9), bremFrac_(-999.9), invEOverInvP_(-999.9),
    	   	sigmaEtaEta_(-999.9), sigmaEtaEtaUnCorr_(-999.9), sigmaIEtaIEta_(-999.9), e1x5_(-999.9), e2x5Max_(-999.9), e5x5_(-999.9), e1x5Over5x5_(-999.9), e2x5MaxOver5x5_(-999.9),
    	   	isolEm_(-999.9), isolHad_(-999.9), isolHadDepth1_(-999.9), isolHadDepth2_(-999.9), isolPtTrks_(-999.9), isolEmHadDepth1_(-999.9),
+   	   	isol_isoDep_stdTrk_(-999.9), isol_isoDep_stdEm_(-999.9), isol_isoDep_stdHadD1_(-999.9),
+   	   	isol_isoDep_inrVetoModTrk_(-999.9), isol_isoDep_inrVetoModEm_(-999.9), isol_isoDep_inrVetoModHadD1_(-999.9),
+   	   	isol_inrXSVetoModTrk_(-999.9),isol_inrSVetoModTrk_(-999.9),isol_inrMVetoModTrk_(-999.9),isol_inrLVetoModTrk_(-999.9),isol_inrXLVetoModTrk_(-999.9),
+   	   	isol_inrXSVetoModEm_(-999.9),isol_inrSVetoModEm_(-999.9),isol_inrMVetoModEm_(-999.9),isol_inrLVetoModEm_(-999.9),isol_inrXLVetoModEm_(-999.9),
+   	   	isol_inrXSVetoModHadD1_(-999.9),isol_inrSVetoModHadD1_(-999.9),isol_inrMVetoModHadD1_(-999.9),isol_inrLVetoModHadD1_(-999.9),isol_inrXLVetoModHadD1_(-999.9),
+   	   	isol_nGenHadronsDr04_(9999), isol_ptSumGenHadronsDr04_(9999.9),
    	   	numMissInnerHits_(9999),
    	   	SC_posn_eta_(-999.9), SC_posn_phi_(-999.9), SC_rawEnergy_(-999.9), SC_recHits_Et_(), SC_recHits_eta_(), SC_recHits_phi_(), SC_recHits_isFromEB_(), SC_totEnergyRecHits_(-999.9), SC_totNumRecHits_(0),
    	   	gsfTrk_eta_(-999.9), gsfTrk_phi_(-999.9), gsfTrk_vz_(-999.9),
@@ -88,6 +94,37 @@ namespace tsw {
 	  	float isolHadDepth2_;
 	  	float isolPtTrks_;
 	  	float isolEmHadDepth1_;
+
+	  	// Alternative isolation variables, calculated by IsoDeps modules ...
+	  	double isol_isoDep_stdTrk_;
+	  	double isol_isoDep_stdEm_;
+	  	double isol_isoDep_stdHadD1_;
+	  	double isol_isoDep_inrVetoModTrk_;
+	  	double isol_isoDep_inrVetoModEm_;
+	  	double isol_isoDep_inrVetoModHadD1_;
+
+	  	// Alternative isolation variables, calculated by BstdZeeModIsolProducer ...
+	  	double isol_inrXSVetoModTrk_;
+	  	double isol_inrSVetoModTrk_;
+	  	double isol_inrMVetoModTrk_;
+	  	double isol_inrLVetoModTrk_;
+	  	double isol_inrXLVetoModTrk_;
+
+	  	double isol_inrXSVetoModEm_;
+	  	double isol_inrSVetoModEm_;
+	  	double isol_inrMVetoModEm_;
+	  	double isol_inrLVetoModEm_;
+	  	double isol_inrXLVetoModEm_;
+
+	  	double isol_inrXSVetoModHadD1_;
+	  	double isol_inrSVetoModHadD1_;
+	  	double isol_inrMVetoModHadD1_;
+	  	double isol_inrLVetoModHadD1_;
+	  	double isol_inrXLVetoModHadD1_;
+
+	  	// Number & pT sum of final-state gen-level hadrons within dR cone of 0.4
+	  	unsigned int isol_nGenHadronsDr04_;
+	  	double isol_ptSumGenHadronsDr04_;
 
 	  	// Number of missing hits
 	  	unsigned int numMissInnerHits_;
