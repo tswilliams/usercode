@@ -66,6 +66,11 @@ namespace tsw{
 		muH_inner_nPixHits_  = new TH1D(hNamePrefix + "inner_nPixHits",  "N_{Pixel hits} distribution (" + str_muonType_muons_cutsPhrase +   "); Number of valid pixel hits, N_{Pixel hits};"      + str_NoOfMuons, 26, -0.5, 25.5);
 		muH_inner_nTrkrHits_ = new TH1D(hNamePrefix + "inner_nTrkrHits", "N_{Tracker hits} distribution (" + str_muonType_muons_cutsPhrase + "); Number of valid tracker hits, N_{Tracker hits};"  + str_NoOfMuons, 26, -0.5, 25.5);
 		muH_inner_dxyOrigin_ = new TH1D(hNamePrefix + "inner_dxyOrigin", "d_{xy,origin} distribution (" + str_muonType_muons_cutsPhrase +    "); Impact parameter from origin, d_{xy,origin} /??;" + str_NoOfMuons, 25, -5.0, 5.0);
+
+		// Set-up histograms so that errors are automatically calculated as the histos are filled
+		std::vector<TH1D*> ptrsToHists = GetPtrsToHistos();
+		for(unsigned int iHist=0; iHist<ptrsToHists.size() ; iHist++)
+			ptrsToHists.at(iHist)->Sumw2();
 	}
 
 	//--------------------------------//
