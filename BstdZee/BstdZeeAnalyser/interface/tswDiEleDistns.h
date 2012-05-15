@@ -25,6 +25,7 @@ namespace tsw{
 			TH1D* diEleHist_regions_;
 			TH1D* diEleHist_invMass_;
 			TH1D* diEleHist_sumEt_;
+			TH1D* diEleHist_coarsePt_;
 			TH1D* diEleHist_sumEtLog_;
 			TH1D* diEleHist_openingAngle_;
 			TH1D* diEleHist_deltaEta_;
@@ -91,17 +92,22 @@ namespace tsw{
 		diEleHist_invMass_     = new TH1D(hNamePrefix + "invMass",   "Di-electron invariant mass distribution  (" + str_eleType_GSFeles_cutsPhrase + "); M_{ee} /GeVc^{-2};" + str_NoOfDiEles + " per GeV", hNBins_mass, 50.0, 130.0);
 		Double_t hMax_DiEleEt = 1200.0;
 		diEleHist_sumEt_       = new TH1D(hNamePrefix + "sumEt",     "Di-electron p_{T} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); p_{T, ee} /GeVc^{-1};" + str_NoOfDiEles, hNBins_pt, 0.0, hMax_pt);
+
+		Int_t    hNBins_ptCoarse = 8;
+		Double_t hBinLims_ptCoarse[] = {0.0, 5.0, 10.0, 25.0, 50.0, 100.0, 200.0, 500.0, 1000.0};
+		diEleHist_coarsePt_    = new TH1D(hNamePrefix + "coarsePt",     "Di-electron p_{T} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); p_{T, ee} /GeVc^{-1};" + str_NoOfDiEles, hNBins_ptCoarse, hBinLims_ptCoarse);
+
 		Double_t hBinLims_ptLog[121]; hBinLims_ptLog[0] = 0.1;
 		for(unsigned int i=1; i<121; i++){
 			hBinLims_ptLog[i] = pow(hMax_pt/hBinLims_ptLog[0], 1.0/120.0)*hBinLims_ptLog[i-1];
 		}
 		diEleHist_sumEtLog_    = new TH1D(hNamePrefix + "sumEtLog",     "Di-electron p_{T} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); p_{T, ee} /GeVc^{-1};" + str_NoOfDiEles, hNBins_pt, hBinLims_ptLog);
 		diEleHist_openingAngle_= new TH1D(hNamePrefix + "openAngle", "Di-electron opening angle distribution  (" + str_eleType_GSFeles_cutsPhrase + "); Di-electron opening angle, #theta_{ee} /rad;" + str_NoOfDiEles, 30, 0.0, 3.1416);
-		diEleHist_deltaEta_    = new TH1D(hNamePrefix + "deltaEta",  "#Delta#eta_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta#eta_{ee};" + str_NoOfDiEles, 50, -5.0, 5.0);
-		diEleHist_deltaPhi_    = new TH1D(hNamePrefix + "deltaPhi",  "#Delta#phi_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta#phi_{ee};" + str_NoOfDiEles, 30, -3.15, 3.15);
-		diEleHist_deltaR_      = new TH1D(hNamePrefix + "deltaR",  "#Delta{}R_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta{}R_{ee};" + str_NoOfDiEles, 50, 0.0, 5.0);
+		diEleHist_deltaEta_    = new TH1D(hNamePrefix + "deltaEta",  "#Delta#eta_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta#eta_{ee};" + str_NoOfDiEles, 200, -5.0, 5.0);
+		diEleHist_deltaPhi_    = new TH1D(hNamePrefix + "deltaPhi",  "#Delta#phi_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta#phi_{ee};" + str_NoOfDiEles, 126, -3.15, 3.15);
+		diEleHist_deltaR_      = new TH1D(hNamePrefix + "deltaR",  "#Delta{}R_{ee} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); #Delta{}R_{ee};" + str_NoOfDiEles, 100, 0.0, 5.0);
 		diEleHist_EtAminEtB_   = new TH1D(hNamePrefix + "EtAminEtB",  "E_{T}^{A}-E_{T}^{B} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); E_{T}^{A}-E_{T}^{B} /GeV;" + str_NoOfDiEles, 120, 0.0, 1200.0);
-		diEleHist_EtAOverEtB_  = new TH1D(hNamePrefix + "EtAOverEtB", "E_{T}^{A}/E_{T}^{B} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); E_{T}^{A}/E_{T}^{B};" + str_NoOfDiEles, 200, 0.0, 20.0);
+		diEleHist_EtAOverEtB_  = new TH1D(hNamePrefix + "EtAOverEtB", "E_{T}^{A}/E_{T}^{B} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); E_{T}^{A}/E_{T}^{B};" + str_NoOfDiEles, 40, 0.0, 20.0);
 
 		//Initialise the single ele histos ...
 		Int_t hNBins_eleEt = hNBins_pt; Double_t hMin_eleEt = 0.0; Double_t hMax_eleEt = hMax_pt/2.0;
@@ -148,6 +154,11 @@ namespace tsw{
 		eleBHist_modHad1IsoOverHad1_ = new TH1D(hNamePrefix + "eleB_modHad1IsoOverHad1",  "eleB modHad1IsoOverHad1 distribution (" + str_eleType_GSFeles_cutsPhrase + "); eleB #Sigma E_{T}^{modHad1} / #Sigma E_{T}^{Had1};" + str_NoOfEles, 200, -4.5, +1.5);
 
 		SetHistAttributes(lineColorIdx, lineStyleIdx);
+
+		// Set-up histograms so that errors are automatically calculated as the histos are filled
+		std::vector<TH1D*> ptrsToHists = GetPtrsToHistos();
+		for(unsigned int iHist=0; iHist<ptrsToHists.size() ; iHist++)
+			ptrsToHists.at(iHist)->Sumw2();
 	}
 
 	/////////////////////
@@ -157,6 +168,7 @@ namespace tsw{
 		delete diEleHist_regions_;
 		delete diEleHist_invMass_;
 		delete diEleHist_sumEt_;
+		delete diEleHist_coarsePt_;
 		delete diEleHist_sumEtLog_;
 		delete diEleHist_openingAngle_;
 		delete diEleHist_deltaEta_;
@@ -211,6 +223,7 @@ namespace tsw{
 			diEleHist_regions_->Fill(3.0, dieleWeight);
 		diEleHist_invMass_->Fill(      theDiEle.invMass()      , dieleWeight);
 		diEleHist_sumEt_->Fill(        theDiEle.pT()           , dieleWeight);
+		diEleHist_coarsePt_->Fill(     theDiEle.pT()           , dieleWeight);
 		diEleHist_sumEtLog_->Fill(     theDiEle.pT()           , dieleWeight);
 		diEleHist_openingAngle_->Fill( theDiEle.openingAngle() , dieleWeight);
 		diEleHist_deltaEta_->Fill(     theDiEle.deltaEta()     , dieleWeight);
@@ -289,6 +302,7 @@ namespace tsw{
 		diEleHist_regions_->Write();
 		diEleHist_invMass_->Write();
 		diEleHist_sumEt_->Write();
+		diEleHist_coarsePt_->Write();
 		diEleHist_sumEtLog_->Write();
 		diEleHist_openingAngle_->Write();
 		diEleHist_deltaEta_->Write();
@@ -341,6 +355,7 @@ namespace tsw{
 		tmpPtrsVector.push_back(diEleHist_regions_);
 		tmpPtrsVector.push_back(diEleHist_invMass_);
 		tmpPtrsVector.push_back(diEleHist_sumEt_);
+		tmpPtrsVector.push_back(diEleHist_coarsePt_);
 		tmpPtrsVector.push_back(diEleHist_sumEtLog_);
 		tmpPtrsVector.push_back(diEleHist_openingAngle_);
 		tmpPtrsVector.push_back(diEleHist_deltaEta_);
