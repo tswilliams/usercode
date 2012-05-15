@@ -83,6 +83,11 @@ namespace tsw{
 		muHist_phi_ = new TH1D(hNamePrefix + "mu_phi",  "Muon #phi distribution  (" + str_eleType_GSFeles_cutsPhrase + ");" + str_NoOfMuons + "; Muon #phi", hNBins_elePhi, hMin_elePhi, hMax_elePhi);
 
 		SetHistAttributes(lineColorIdx, lineStyleIdx);
+
+		// Set-up histograms so that errors are automatically calculated as the histos are filled
+		std::vector<TH1D*> ptrsToHists = GetPtrsToHistos();
+		for(unsigned int iHist=0; iHist<ptrsToHists.size() ; iHist++)
+			ptrsToHists.at(iHist)->Sumw2();
 	}
 
 	/////////////////////
