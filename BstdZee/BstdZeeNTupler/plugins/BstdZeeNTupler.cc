@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.10 2012/02/06 17:56:41 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.11 2012/02/06 22:06:34 tsw Exp $
 //
 //
 
@@ -91,24 +91,12 @@ sjlkd
 //Must include TROOT.h in order for the gROOT->ProcessLine(...) lines to work.
 #include "TROOT.h"
 #include "TSystem.h"
-//#include "TApplication.h"
-//#include "TException.h"
-//#include "TSysEvtHandler.h"
-//#include "TBrowser.h"
-//#include "TString.h"
-//#include "TOrdCollection.h"
-//#include "TCint.h"
-//#include "TRegexp.h"
-//#include "TTimer.h"
-//#include "TObjString.h"
 #include "TClassTable.h"
 
-#include "NTupler/BstdZeeNTupler/interface/tswHEEPEle.h"
+#include "NTupler/BstdZeeNTupler/interface/tswEleStruct.h"
 #include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
 #include "NTupler/BstdZeeNTupler/interface/tswMuStruct.h"
 #include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
-
-#pragma link C++ class std::vector< tsw::HEEPEle >+;
 
 //Functions...
 Double_t CalcOpeningAngle(const ROOT::Math::XYZTVector& , const ROOT::Math::XYZTVector& );
@@ -402,9 +390,6 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		std::vector< std::vector<float> > normHEEPEles_innerIsoConeTrks_phi_;
 		std::vector< std::vector<float> > normHEEPEles_innerIsoConeTrks_vz_;
 
-		//std::vector<tsw::HEEPEle>  normGsfEles_tswHEEPEle_;
-		//std::vector<tsw::HEEPEle>* normGsfEles_tswHEEPElePtr_;
-
 		//Boosted reco'n electron variables...
 		unsigned int bstdGsfEles_number_;
 		std::vector<ROOT::Math::XYZTVector> bstdGsfEles_p4_;
@@ -688,6 +673,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	ReadInMuons(vBool_, iEvent);
 
 	Int_t zBosonDaughter_PDGid = 0;
+	Int_t zBosonDaughterIfSherpa_PDGid = 0;
 	if(mcFlag_){
 		if(vBool_){std::cout << " ->There are " << genParticles->size() << " generator-particles in this event." << std::endl;}
 
@@ -703,6 +689,9 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				//Get the first Z boson daughter ...
 				const reco::Candidate* mcDaughter = mcParticle.daughter(0);
 				zBosonDaughter_PDGid = mcDaughter->pdgId();
+			}
+			if(particleStatus==3 && (abs(particlePDGid)==11 || abs(particlePDGid)==13 || abs(particlePDGid)==15) && mcParticle.numberOfMothers()==2 ){
+				zBosonDaughterIfSherpa_PDGid = particlePDGid;
 			}
 			//Finding the Z bosons, and counting up numbers with various statuses...
 			if(abs(particlePDGid)==23){
@@ -913,6 +902,8 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	}
 	
 	//Reset branch addresses here each time...
+	if(zBosonDaughter_PDGid==0)
+		zBosonDaughter_PDGid = zBosonDaughterIfSherpa_PDGid;
 	if(dyJetsToLL_EventType_==0){
 		numEvtsStored_++;
 		EventDataTree->Fill();
@@ -1846,6 +1837,14 @@ void BstdZeeNTupler::ReadInVtxAndPUInfo(bool beVerbose, const edm::Event& edmEve
 
 	// Store the pointer to the first (i.e. highest sum pt) vertex, for future use ...
 	recoVtx_highestSumPtVtx_ = handle_RecoVtxs->front();
+
+	// 3) Read in the 'rho' jet recon 'PU activity' parameter - to be used for PU correction of calo isol values
+	edm::Handle<double> rhoHandle;
+	edmEventRef.getByLabel(edm::InputTag("kt6PFJets:rho"),rhoHandle);
+	const double rho = *(rhoHandle.product());
+	event_->SetPURho(rho);
+	if(beVerbose)
+		event_->PrintPURho();
 }
 
 void BstdZeeNTupler::ReadInGenInfo(bool beVerbose, const edm::Event& edmEventRef)
@@ -1906,11 +1905,42 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	iEvent.getByLabel("stdEleIsoFromDepsHcalD1",h_stdEleIsoFromDeps_HcalD1);
 	iEvent.getByLabel("modEleIsoFromDepsHcalD1",h_modEleIsoFromDeps_HcalD1);
 
+	edm::Handle< edm::ValueMap<double> > h_inrXSVetoEleIso_Tk;
+	edm::Handle< edm::ValueMap<double> > h_inrSVetoEleIso_Tk;
+	edm::Handle< edm::ValueMap<double> > h_inrMVetoEleIso_Tk;
+	edm::Handle< edm::ValueMap<double> > h_inrLVetoEleIso_Tk;
+	edm::Handle< edm::ValueMap<double> > h_inrXLVetoEleIso_Tk;
+	iEvent.getByLabel("innerXSVetoModEleIso","track", h_inrXSVetoEleIso_Tk);
+	iEvent.getByLabel("innerSVetoModEleIso","track",  h_inrSVetoEleIso_Tk);
+	iEvent.getByLabel("innerMVetoModEleIso","track",  h_inrMVetoEleIso_Tk);
+	iEvent.getByLabel("innerLVetoModEleIso","track",  h_inrLVetoEleIso_Tk);
+	iEvent.getByLabel("innerXLVetoModEleIso","track", h_inrXLVetoEleIso_Tk);
+
+	edm::Handle< edm::ValueMap<double> > h_inrXSVetoEleIso_Ecal;
+	edm::Handle< edm::ValueMap<double> > h_inrSVetoEleIso_Ecal;
+	edm::Handle< edm::ValueMap<double> > h_inrMVetoEleIso_Ecal;
+	edm::Handle< edm::ValueMap<double> > h_inrLVetoEleIso_Ecal;
+	edm::Handle< edm::ValueMap<double> > h_inrXLVetoEleIso_Ecal;
+	iEvent.getByLabel("innerXSVetoModEleIso","ecal", h_inrXSVetoEleIso_Ecal);
+	iEvent.getByLabel("innerSVetoModEleIso","ecal",  h_inrSVetoEleIso_Ecal);
+	iEvent.getByLabel("innerMVetoModEleIso","ecal",  h_inrMVetoEleIso_Ecal);
+	iEvent.getByLabel("innerLVetoModEleIso","ecal",  h_inrLVetoEleIso_Ecal);
+	iEvent.getByLabel("innerXLVetoModEleIso","ecal", h_inrXLVetoEleIso_Ecal);
+
+	edm::Handle< edm::ValueMap<double> > h_inrXSVetoEleIso_HcalD1;
+	edm::Handle< edm::ValueMap<double> > h_inrSVetoEleIso_HcalD1;
+	edm::Handle< edm::ValueMap<double> > h_inrMVetoEleIso_HcalD1;
+	edm::Handle< edm::ValueMap<double> > h_inrLVetoEleIso_HcalD1;
+	edm::Handle< edm::ValueMap<double> > h_inrXLVetoEleIso_HcalD1;
+	iEvent.getByLabel("innerXSVetoModEleIso","hcalDepth1", h_inrXSVetoEleIso_HcalD1);
+	iEvent.getByLabel("innerSVetoModEleIso","hcalDepth1",  h_inrSVetoEleIso_HcalD1);
+	iEvent.getByLabel("innerMVetoModEleIso","hcalDepth1",  h_inrMVetoEleIso_HcalD1);
+	iEvent.getByLabel("innerLVetoModEleIso","hcalDepth1",  h_inrLVetoEleIso_HcalD1);
+	iEvent.getByLabel("innerXLVetoModEleIso","hcalDepth1", h_inrXLVetoEleIso_HcalD1);
 
 	reco::GsfElectron ithGsfEle;
 	heep::Ele ithHEEPEle(ithGsfEle);
 	tsw::EleStruct ithtswEleStruct;
-	tsw::HEEPEle ithtswHEEPEle;
 
 	//Setting the values of the standard reconstruction GSF electron variables...
 	normGsfEles_number_ = handle_normGsfEles.product()->size();
@@ -2041,8 +2071,6 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 
 	   normHEEPEles_numMissInnerHits_.push_back( ithHEEPEle.nrMissHits() );
 
-	   ithtswHEEPEle = tsw::EleStruct(ithtswEleStruct);
-		//normGsfEles_tswHEEPEle_.push_back(ithtswHEEPEle);
 
 	   // For getting the caloGeometry information ... es.get<CaloGeometryRecord>().get(eventSetupData_->caloGeom);
 	   // Variables storing the recHits information ...
@@ -2162,7 +2190,51 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		reco::GsfElectronRef ithGsfEleRef(handle_normGsfEles, eleIdx);
 		event_->AddStdEleInfo_isoDep_std( (*h_stdEleIsoFromDeps_Tk)[ithGsfEleRef], (*h_stdEleIsoFromDeps_Ecal)[ithGsfEleRef], (*h_stdEleIsoFromDeps_HcalD1)[ithGsfEleRef] );
 		event_->AddStdEleInfo_isoDep_inrVeto( (*h_modEleIsoFromDeps_Tk)[ithGsfEleRef], (*h_modEleIsoFromDeps_Ecal)[ithGsfEleRef], (*h_modEleIsoFromDeps_HcalD1)[ithGsfEleRef] );
-	}
+		event_->AddStdEleInfo_inrVetoModIso(tsw::Event::xSmallVeto, (*h_inrXSVetoEleIso_Tk)[ithGsfEleRef], (*h_inrXSVetoEleIso_Ecal)[ithGsfEleRef], (*h_inrXSVetoEleIso_HcalD1)[ithGsfEleRef] );
+		event_->AddStdEleInfo_inrVetoModIso(tsw::Event::smallVeto,  (*h_inrSVetoEleIso_Tk )[ithGsfEleRef], (*h_inrSVetoEleIso_Ecal )[ithGsfEleRef], (*h_inrSVetoEleIso_HcalD1 )[ithGsfEleRef] );
+		event_->AddStdEleInfo_inrVetoModIso(tsw::Event::mediumVeto, (*h_inrMVetoEleIso_Tk )[ithGsfEleRef], (*h_inrMVetoEleIso_Ecal )[ithGsfEleRef], (*h_inrMVetoEleIso_HcalD1 )[ithGsfEleRef] );
+		event_->AddStdEleInfo_inrVetoModIso(tsw::Event::largeVeto,  (*h_inrLVetoEleIso_Tk )[ithGsfEleRef], (*h_inrLVetoEleIso_Ecal )[ithGsfEleRef], (*h_inrLVetoEleIso_HcalD1 )[ithGsfEleRef] );
+		event_->AddStdEleInfo_inrVetoModIso(tsw::Event::xLargeVeto, (*h_inrXLVetoEleIso_Tk)[ithGsfEleRef], (*h_inrXLVetoEleIso_Ecal)[ithGsfEleRef], (*h_inrXLVetoEleIso_HcalD1)[ithGsfEleRef] );
+
+		// Calculating the number of hadrons within a dR=0.4 cone around each electron (for separation of underlying event & other-electron-footprint effects from isolation cut efficiency curves)
+		unsigned int nGenHadrons_dR04 = 0;
+		double   ptSumGenHadrons_dR04 = 0.0;
+
+		edm::Handle<reco::GenParticleCollection> h_genParticles;
+		iEvent.getByLabel("genParticles", h_genParticles);
+
+		if( !(h_genParticles.failedToGet()) ){
+			const TLorentzVector gsfP4 = TLorentzVector(ithGsfEle.px(), ithGsfEle.py(), ithGsfEle.pz(), ithGsfEle.energy());
+			for(size_t iGen=0; iGen<h_genParticles->size(); iGen++){
+				const reco::GenParticle& genParticle = h_genParticles->at(iGen);
+
+				if(genParticle.pt()<0.4) // Check that particle's pT is > 0.4GeV
+					continue;
+
+				if(genParticle.status()==3 || genParticle.status()==2) // Check that particle is not part of hard interaction
+					continue;
+				int pdgId = genParticle.pdgId();
+				if(abs(pdgId)>=11 && abs(pdgId)<=18) // Check that particle is not a lepton
+					continue;
+				else if(abs(pdgId)==4000001 || abs(pdgId)==4000002 || abs(pdgId)==4000011 || abs(pdgId)==4000012 ) // Check that particle is not an excited fermion
+					continue;
+				else if(abs(pdgId)==9 || (abs(pdgId)>=21 && abs(pdgId)<=25) || (abs(pdgId)>=32 && abs(pdgId)<=37) ) // Check that particle is not a gauge/Higgs boson
+					continue;
+				// If have got this far then particle must be a hadron from the underlying event (at least for 2011 signal/DY+Jets MC)
+
+				if( fabs(ithGsfEle.eta()-genParticle.eta())>0.4 )
+					continue;
+				const TLorentzVector genP4 = TLorentzVector(genParticle.px(),  genParticle.py(), genParticle.pz(), genParticle.energy());
+				const double drVsGsfEle = genP4.DeltaR(gsfP4);
+				if(drVsGsfEle<0.4){
+					nGenHadrons_dR04++;
+					ptSumGenHadrons_dR04 += genParticle.pt();
+				}
+			}
+		} //End: if got genParticles from event
+		event_->AddStdEleInfo_genHadronsDr04(nGenHadrons_dR04, ptSumGenHadrons_dR04);
+
+	} //End: for loop over GSF eles
 	
 	//Printing these values to screen...
 	if(beVerbose){
@@ -2269,7 +2341,7 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 
 		   std::cout << "       numMissInnerHits = " << normHEEPEles_numMissInnerHits_.at(iEle) << std::endl;
 
-		   event_->PrintStdEleInfo_isoDepIsoValues(iEle);
+		   event_->PrintStdEleInfo_isoValues(iEle);
 
 		   std::cout << "         -=-=-" << std::endl;
 		   std::cout << "       recHits... (tot num =" << normHEEPEles_SC_totNumRecHits_.at(iEle) << ", totEnergy=" << normHEEPEles_SC_totEnergyRecHits_.at(iEle) << "; num stored=" << normHEEPEles_SC_recHits_Et_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_eta_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_phi_.at(iEle).size() << "=" << normHEEPEles_SC_recHits_isFromEB_.at(iEle).size() << "?? of them)" << std::endl;
@@ -2304,7 +2376,6 @@ void BstdZeeNTupler::ReadInBstdGsfEles(bool beVerbose, const edm::Handle<reco::G
 	reco::GsfElectron ithGsfEle;
 	heep::Ele ithHEEPEle(ithGsfEle);
 	tsw::EleStruct ithtswEleStruct;
-	tsw::HEEPEle ithtswHEEPEle;
 
 	//Setting the values of the standard reconstruction GSF electron variables...
 	bstdGsfEles_number_ = handle_bstdGsfEles.product()->size();
