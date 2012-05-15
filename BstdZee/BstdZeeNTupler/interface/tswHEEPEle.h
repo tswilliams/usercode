@@ -26,19 +26,25 @@ namespace tsw{
 			bool ApplySimpleCuts();
 			bool isFiducialAndEcalDriven();
 			bool isFidEcalDrAndPassesFRPre();
-			bool isHEEPEB();
-			bool isHEEPEE();
+			const bool isHEEPEB() const;
+			const bool isHEEPEE() const;
 			bool ApplyHEEPCutsNoIso();
 			bool ApplyHEEPIsoCut_Trk();
+			const bool ApplyHEEPIsoCut_Trk(const double trkIsoValue) const {
+				bool tmpCutsFlag = false;
+				if( isHEEPEB() || isHEEPEE() )
+					tmpCutsFlag = (trkIsoValue<5.0);
+				return tmpCutsFlag;
+			}
 			bool ApplyHEEPIsoCut_EmHad1();
-			bool ApplyHEEPIsoCut_EmHad1(float );
+			const bool ApplyHEEPIsoCut_EmHad1(float ) const;
 			bool ApplyHEEPIsoCut_Had2();
 			bool ApplyIsoVarHEEPCuts();
 			bool ApplyAllHEEPCuts();
 			/////////////////////////////////////////////////
 			//Methods for reading out all of the HEEP variables ...
 			// Kinematic and geometric variables
-			float et(){return eleStr_.et_;}
+			const float et() const {return eleStr_.et_;}
 			float gsfEt(){return eleStr_.gsfEt_;}
 			float scEt(){return eleStr_.scEt_;}
 			float energy(){return eleStr_.energy_;}
@@ -46,22 +52,22 @@ namespace tsw{
 			float caloEnergy(){return eleStr_.caloEnergy_;}
 			float ecalEnergyError(){return eleStr_.ecalEnergyError_;}
 			float eta(){return eleStr_.eta_;}
-			float scEta(){return eleStr_.scEta_;}
+			const float scEta() const {return eleStr_.scEta_;}
 //			float detEta(){return eleStr_.detEta_;}
 //			float detEtaAbs(){return eleStr_.detEtaAbs_;}
 			float phi(){return eleStr_.phi_;}
 			float scPhi(){return eleStr_.scPhi_;}
 //			float detPhi(){return eleStr_.detPhi_;}
 //			float zVtx(){return eleStr_.zVtx_;}
-			TLorentzVector p4(){return ConvertToTLorentzVector( &(eleStr_.p4_) );}
+			TLorentzVector p4() const {return ConvertToTLorentzVector( &(eleStr_.p4_) );}
 			TLorentzVector gsfP4(){return ConvertToTLorentzVector( &(eleStr_.gsfP4_) );}
 
 			// 'Classification'
 //			int classification(){return eleStr_.classification_;}
-			bool isEcalDriven(){return eleStr_.isEcalDriven_;}
+			bool isEcalDriven() const {return eleStr_.isEcalDriven_;}
 //			bool isTrackerDriven(){return eleStr_.isTrackerDriven_;}
-			bool isEB(){return eleStr_.isEB_;}
-			bool isEE(){return eleStr_.isEE_;}
+			bool isEB() const {return eleStr_.isEB_;}
+			bool isEE() const {return eleStr_.isEE_;}
 
 			// Track variables ...
 			int charge(){return eleStr_.charge_;}
@@ -88,9 +94,9 @@ namespace tsw{
 //		  	float closestCtfTrk_outerPhi(){return eleStr_.closestCtfTrk_outerPhi_;}
 
 			// Various other variables ...
-			float hOverE(){return eleStr_.hOverE_;}
-			float dEtaIn(){return eleStr_.dEtaIn_;}
-			float dPhiIn(){return eleStr_.dPhiIn_;}
+			float hOverE() const {return eleStr_.hOverE_;}
+			float dEtaIn() const {return eleStr_.dEtaIn_;}
+			float dPhiIn() const {return eleStr_.dPhiIn_;}
 //			float dPhiOut(){return eleStr_.dPhiOut_;}
 			float epIn(){return eleStr_.epIn_;}
 			float epOut(){return eleStr_.epOut_;}
@@ -105,8 +111,8 @@ namespace tsw{
 //			float e1x5(){return eleStr_.e1x5_;}
 //			float e2x5Max(){return eleStr_.e2x5Max_;}
 //			float e5x5(){return eleStr_.e5x5_;}
-			float e1x5Over5x5(){return eleStr_.e1x5Over5x5_;}
-			float e2x5MaxOver5x5(){return eleStr_.e2x5MaxOver5x5_;}
+			float e1x5Over5x5() const {return eleStr_.e1x5Over5x5_;}
+			float e2x5MaxOver5x5() const {return eleStr_.e2x5MaxOver5x5_;}
 
 			// Isolation variables ...
 			float isolEm(){return eleStr_.isolEm_;}
@@ -115,6 +121,49 @@ namespace tsw{
 			float isolHadDepth2(){return eleStr_.isolHadDepth2_;}
 			float isolPtTrks(){return eleStr_.isolPtTrks_;}
 			float isolEmHadDepth1(){return eleStr_.isolEmHadDepth1_;}
+
+			// Alternative isolation variables from isoDeps module ...
+			const double isol_isoDep_stdTrk() const { return eleStr_.isol_isoDep_stdTrk_; }
+			const double isol_isoDep_stdEm()  const { return eleStr_.isol_isoDep_stdEm_; }
+			const double isol_isoDep_stdHadD1() const { return eleStr_.isol_isoDep_stdHadD1_; }
+			const double isol_isoDep_stdEmHadD1() const { return (eleStr_.isol_isoDep_stdEm_ + eleStr_.isol_isoDep_stdHadD1_); }
+			const bool isolCut_isoDep_stdEmHadD1() const {
+				return ApplyHEEPIsoCut_EmHad1( isol_isoDep_stdEmHadD1() ); }
+
+			const double isol_isoDep_inrVetoModTrk() const { return eleStr_.isol_isoDep_inrVetoModTrk_; }
+			const double isol_isoDep_inrVetoModEm()  const { return eleStr_.isol_isoDep_inrVetoModEm_; }
+			const double isol_isoDep_inrVetoModHadD1() const { return eleStr_.isol_isoDep_inrVetoModHadD1_; }
+			const double isol_isoDep_inrVetoModEmHadD1() const { return (eleStr_.isol_isoDep_inrVetoModEm_ + eleStr_.isol_isoDep_inrVetoModHadD1_); }
+			const bool isolCut_isoDep_inrVetoModEmHadD1() const {
+				return ApplyHEEPIsoCut_EmHad1(isol_isoDep_inrVetoModEmHadD1()); }
+
+			double isol_inrVetoModTrk(const tsw::Event::InnerVetoSize) const;
+			double isol_inrVetoModEm(const tsw::Event::InnerVetoSize) const;
+			double isol_inrVetoModHadD1(const tsw::Event::InnerVetoSize) const;
+			double isol_inrVetoModEmHadD1(const tsw::Event::InnerVetoSize) const;
+			const bool isolCut_inrVetoModEmHadD1(const tsw::Event::InnerVetoSize) const;
+
+			unsigned int isol_nGenHadronsDr04() const { return eleStr_.isol_nGenHadronsDr04_; }
+			double isol_ptSumGenHadronsDr04()   const { return eleStr_.isol_ptSumGenHadronsDr04_; }
+
+//			double isol_rhoCorrnEcal(const tsw::EventHelper& eventHelper) const {
+//				double effArea = 0.0;
+//				if( isHEEPEB() )
+//					effArea = 0.101;
+//				else if( isHEEPEE() )
+//					effArea = 0.046;
+//				return effArea*eventHelper.GetPURho();
+//			}
+//			double isol_rhoCorrnHcalD1(const tsw::EventHelper& eventHelper) const {
+//				double effArea = 0.0;
+//				if( isHEEPEB() )
+//					effArea = 0.021;
+//				else if( isHEEPEE() )
+//					effArea = 0.040;
+//				return effArea*eventHelper.GetPURho();
+//			}
+			double isol_rhoCorrnEmH1(const tsw::EventHelper& evtHelper) const {
+				return 0.28*(evtHelper.GetPURho()); }
 
 			unsigned int numMissInnerHits(){ return eleStr_.numMissInnerHits_; }
 
@@ -339,10 +388,10 @@ namespace tsw{
 		return tmpCutsFlag;
 	}
 
-	bool HEEPEle::isHEEPEB(){
+	const bool HEEPEle::isHEEPEB() const {
 		return ( fabs(scEta()) < 1.442 );
 	}
-	bool HEEPEle::isHEEPEE(){
+	const bool HEEPEle::isHEEPEE() const {
 		return ( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) );
 	}
 
@@ -364,6 +413,8 @@ namespace tsw{
 			//tmpCutsFlag = tmpCutsFlag && ( sigmaIEtaIEta()< 0.01);
 			// E2x5/E5x5 cut ...
 			tmpCutsFlag = tmpCutsFlag && ( (e2x5MaxOver5x5()>0.94) || (e1x5Over5x5()>0.83) );
+			// Inner layer lost hits cut ...
+			tmpCutsFlag = tmpCutsFlag && ( numMissInnerHits()==0 );
 		}
 		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) ){
 			// E_T cut ...
@@ -380,6 +431,8 @@ namespace tsw{
 			tmpCutsFlag = tmpCutsFlag && ( sigmaIEtaIEta()< 0.03);
 			// E2x5/E5x5 cut ...
 			// ---> N/A
+			// Inner layer lost hits cut ...
+			tmpCutsFlag = tmpCutsFlag && ( numMissInnerHits()==0 );
 		}
 		else
 			tmpCutsFlag = false;
@@ -389,14 +442,9 @@ namespace tsw{
 
 	bool HEEPEle::ApplyHEEPIsoCut_Trk(){
 		bool tmpCutsFlag = false;
-		if( fabs(scEta()) < 1.442 ){
-			tmpCutsFlag = ( isolPtTrks()<7.5 );
+		if( isHEEPEB() || isHEEPEE() ){
+			tmpCutsFlag = (isolPtTrks()<5.0);
 		}
-		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) )
-			tmpCutsFlag = ( isolPtTrks()<15.0 );
-		else
-			tmpCutsFlag = false;
-
 		return tmpCutsFlag;
 	}
 
@@ -416,7 +464,7 @@ namespace tsw{
 
 		return tmpCutsFlag;
 	}
-	bool HEEPEle::ApplyHEEPIsoCut_EmHad1(float emHad1IsolValue){
+	const bool HEEPEle::ApplyHEEPIsoCut_EmHad1(float emHad1IsolValue) const {
 		bool tmpCutsFlag = false;
 		if( isHEEPEB() ){
 			tmpCutsFlag = ( emHad1IsolValue<(2.0+0.03*et()) );
@@ -483,13 +531,88 @@ namespace tsw{
 		return ( ApplyHEEPCutsNoIso() && ApplyIsoVarHEEPCuts() );
 	}
 
-	//ClassImp(tsw::HEEPEle)
-
-	/*void HEEPEle::PrintOutVariables(){
-		//Placeholder
-	}*/
-
 }
+
+///////////////////////////////////////////
+// Modified isol value accessor methods ...
+
+double tsw::HEEPEle::isol_inrVetoModTrk(const tsw::Event::InnerVetoSize vetoSize) const
+{
+	double trkIso = 9999.9;
+	switch (vetoSize)
+	{
+		case tsw::Event::xSmallVeto:
+			trkIso = eleStr_.isol_inrXSVetoModTrk_; break;
+		case tsw::Event::smallVeto:
+			trkIso = eleStr_.isol_inrSVetoModTrk_; break;
+		case tsw::Event::mediumVeto:
+			trkIso = eleStr_.isol_inrMVetoModTrk_; break;
+		case tsw::Event::largeVeto:
+			trkIso = eleStr_.isol_inrLVetoModTrk_; break;
+		case tsw::Event::xLargeVeto:
+			trkIso = eleStr_.isol_inrXLVetoModTrk_; break;
+		default:
+			std::cout << " *** ERROR : Unknown VetoSize enum value passed to tsw::HEEPEle::isol_inrVetoModTrk ! ***" << std::endl;
+			break;
+	}
+	return trkIso;
+}
+
+double tsw::HEEPEle::isol_inrVetoModEm(const tsw::Event::InnerVetoSize vetoSize) const
+{
+	double ecalIso = 9999.9;
+	switch (vetoSize)
+	{
+		case tsw::Event::xSmallVeto:
+			ecalIso = eleStr_.isol_inrXSVetoModEm_; break;
+		case tsw::Event::smallVeto:
+			ecalIso = eleStr_.isol_inrSVetoModEm_; break;
+		case tsw::Event::mediumVeto:
+			ecalIso = eleStr_.isol_inrMVetoModEm_; break;
+		case tsw::Event::largeVeto:
+			ecalIso = eleStr_.isol_inrLVetoModEm_; break;
+		case tsw::Event::xLargeVeto:
+			ecalIso = eleStr_.isol_inrXLVetoModEm_; break;
+		default:
+			std::cout << " *** ERROR : Unknown VetoSize enum value passed to tsw::HEEPEle::isol_inrVetoModEm ! ***" << std::endl;
+			break;
+	}
+	return ecalIso;
+}
+
+double tsw::HEEPEle::isol_inrVetoModHadD1(const tsw::Event::InnerVetoSize vetoSize) const
+{
+	double hcalD1Iso = 9999.9;
+	switch (vetoSize)
+	{
+		case tsw::Event::xSmallVeto:
+			hcalD1Iso = eleStr_.isol_inrXSVetoModHadD1_; break;
+		case tsw::Event::smallVeto:
+			hcalD1Iso = eleStr_.isol_inrSVetoModHadD1_; break;
+		case tsw::Event::mediumVeto:
+			hcalD1Iso = eleStr_.isol_inrMVetoModHadD1_; break;
+		case tsw::Event::largeVeto:
+			hcalD1Iso = eleStr_.isol_inrLVetoModHadD1_; break;
+		case tsw::Event::xLargeVeto:
+			hcalD1Iso = eleStr_.isol_inrXLVetoModHadD1_; break;
+		default:
+			std::cout << " *** ERROR : Unknown VetoSize enum value passed to tsw::HEEPEle::isol_inrVetoModHadD1 ! ***" << std::endl;
+			break;
+	}
+	return hcalD1Iso;
+}
+
+double tsw::HEEPEle::isol_inrVetoModEmHadD1(const tsw::Event::InnerVetoSize vetoSize) const
+{
+	return ( isol_inrVetoModEm(vetoSize) + isol_inrVetoModHadD1(vetoSize) );
+}
+const bool tsw::HEEPEle::isolCut_inrVetoModEmHadD1(const tsw::Event::InnerVetoSize vetoSize) const
+{
+	return ApplyHEEPIsoCut_EmHad1( isol_inrVetoModEmHadD1(vetoSize) );
+}
+
+
+
 
 float tsw::HEEPEle::modTrkIso(tsw::HEEPEle* theOtherEle)
 {
