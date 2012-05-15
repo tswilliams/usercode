@@ -9,6 +9,7 @@ namespace tsw{
 		mc_genWeight_(-999.9), mcLHE_ZbosonP4_(),
 		mc_bx0_nPUVtxPoissonMean_(-999.9), mc_bx0_nPUVtx_(9999), mc_bx0_PUVtxZPosns_(), mc_puWeight_1D_(-999.9),
 		recoVtx_totalNum_(9999), recoVtx_numGoodVtxs_(9999),
+		pu_rho_(0.0),
 		normMuons_charge_(), normMuons_isGlobalMuon_(), normMuons_isTrackerMuon_(), normMuons_isStandAloneMuon_(), normMuons_numMatchedMuonStns_(), normMuons_isolR03_sumPt_(),
 		normMuons_globTrk_exists_(), normMuons_globTrk_pT_(), normMuons_globTrk_eta_(), normMuons_globTrk_phi_(), normMuons_globTrk_charge_(), normMuons_globTrk_numberOfValidMuonHits_(), normMuons_globTrk_normalisedChi2_(),
 		normMuons_inTrk_exists_(), normMuons_inTrk_pT_(), normMuons_inTrk_eta_(), normMuons_inTrk_phi_(), normMuons_inTrk_charge_(), normMuons_inTrk_numValidPixHits_(), normMuons_inTrk_numValidTrkrHits_(), normMuons_inTrk_dxyVsOrigin_(),
@@ -42,6 +43,8 @@ namespace tsw{
 		recoVtx_totalNum_ = nRecoVtxs;
 		recoVtx_numGoodVtxs_ = nGoodRecoVtxs;
 	}
+	void Event::SetPURho(const double rho){
+		pu_rho_ = rho;	}
 
 	void Event::PrintBasicEventInformation(){
 		std::cout << "Run " << runNum_ << ", LumiSec " << lumiSec_ << ", event " << evtNum_ << std::endl;
@@ -64,6 +67,9 @@ namespace tsw{
 		std::cout << "  * Reconstructed vertices:" << std::endl;
 		std::cout << "       totNum=" << recoVtx_totalNum_ << "; numGoodVtxs=" << recoVtx_numGoodVtxs_ << std::endl;
 	}
+	void Event::PrintPURho(){
+		std::cout << "  * PU jet rho = " << pu_rho_ << std::endl;
+	}
 
 	void Event::SetEMuTriggerInfo(const std::string eMuPathName, const bool eMuPathDecision)
 	{
@@ -83,11 +89,55 @@ namespace tsw{
 		stdEles_isoDeps_inrVetoModEcalIso_.push_back( modEcalIso );
 		stdEles_isoDeps_inrVetoModHcalD1Iso_.push_back( modHcalD1Iso );
 	}
-	void Event::PrintStdEleInfo_isoDepIsoValues(unsigned int iEle){
+
+	void Event::AddStdEleInfo_inrVetoModIso(const tsw::Event::InnerVetoSize vetoSize, const double modTrkIso, const double modEcalIso, const double modHcalD1Iso)
+	{
+		switch (vetoSize)
+		{
+			case tsw::Event::xSmallVeto:
+				stdEles_inrVetoXSModIso_Trk_.push_back(modTrkIso);
+				stdEles_inrVetoXSModIso_Ecal_.push_back(modEcalIso);
+				stdEles_inrVetoXSModIso_HcalD1_.push_back(modHcalD1Iso);
+				break;
+			case tsw::Event::smallVeto:
+				stdEles_inrVetoSModIso_Trk_.push_back(modTrkIso);
+				stdEles_inrVetoSModIso_Ecal_.push_back(modEcalIso);
+				stdEles_inrVetoSModIso_HcalD1_.push_back(modHcalD1Iso);
+				break;
+			case tsw::Event::mediumVeto:
+				stdEles_inrVetoModIso_Trk_.push_back(modTrkIso);
+				stdEles_inrVetoModIso_Ecal_.push_back(modEcalIso);
+				stdEles_inrVetoModIso_HcalD1_.push_back(modHcalD1Iso);
+				break;
+			case tsw::Event::largeVeto:
+				stdEles_inrVetoLModIso_Trk_.push_back(modTrkIso);
+				stdEles_inrVetoLModIso_Ecal_.push_back(modEcalIso);
+				stdEles_inrVetoLModIso_HcalD1_.push_back(modHcalD1Iso);
+				break;
+			case tsw::Event::xLargeVeto:
+				stdEles_inrVetoXLModIso_Trk_.push_back(modTrkIso);
+				stdEles_inrVetoXLModIso_Ecal_.push_back(modEcalIso);
+				stdEles_inrVetoXLModIso_HcalD1_.push_back(modHcalD1Iso);
+				break;
+			default:
+				std::cout << std::endl;
+				std::cout << " *** ERROR : Unknown InnerVetoSize enum value passed to tsw::Event::AddStdEleInfo_inrVetoModIso method! ***" << std::endl;
+				std::cout << std::endl;
+				break;
+		}
+	}
+
+	void Event::AddStdEleInfo_genHadronsDr04(unsigned int nGenHadrons_dR04, double ptSumGenHadrons_dR04){
+		stdEles_nGenHadronsDr04_.push_back(nGenHadrons_dR04);
+		stdEles_ptSumGenHadronsDr04_.push_back(ptSumGenHadrons_dR04);
+	}
+
+	void Event::PrintStdEleInfo_isoValues(unsigned int iEle){
 		std::cout << "    Iso values from isoDeposits... " << std::endl;
 		std::cout << "          Std values:    Trk=" << stdEles_isoDeps_stdTrkIso_.at(iEle) << ", Ecal=" << stdEles_isoDeps_stdEcalIso_.at(iEle) << ", HcalDepth1=" << stdEles_isoDeps_stdHcalD1Iso_.at(iEle) << std::endl;
 		std::cout << "          Mod (inrVeto): Trk=" << stdEles_isoDeps_inrVetoModTrkIso_.at(iEle) << ", Ecal=" << stdEles_isoDeps_inrVetoModEcalIso_.at(iEle) << ", HcalDepth1=" << stdEles_isoDeps_inrVetoModHcalD1Iso_.at(iEle) << std::endl;
-
+		std::cout << "     InnerVetoMod iso values from bstdZee code ..." << std::endl;
+		std::cout << "          Trk=" << stdEles_inrVetoModIso_Trk_.at(iEle) << ", Ecal=" << stdEles_inrVetoModIso_Ecal_.at(iEle) << ", HcalDepth1=" << stdEles_inrVetoModIso_HcalD1_.at(iEle) << std::endl;
 	}
 
 
