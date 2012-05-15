@@ -16,15 +16,28 @@ namespace tsw{
 			Event();
 			~Event();
 
+			// Enum for size of inner vetos
+			enum InnerVetoSize{
+				xSmallVeto = 0,
+				smallVeto = 1,
+				mediumVeto = 2,
+				largeVeto = 3,
+				xLargeVeto = 4
+			};
+
 			//Methods to set information ...
 			void SetBasicEventInformation(unsigned int runNumber, unsigned int lumiSection, unsigned int eventNumber);
 			void SetMCGenWeight(float genWeight);
 			void SetLHEZbosonInfo(ROOT::Math::XYZTVector p4_Zboson);
 			void SetMCPUInfo(float nVtxPoissonMean, unsigned int nVertices, std::vector<float> vtxZposns, double puWeight_1D);
 			void SetRecoVtxInfo(unsigned int nRecoVtxs, unsigned int nGoodRecoVtxs);
+			void SetPURho(const double rhoValue);
 			void SetEMuTriggerInfo(const std::string eMuPathName, const bool eMuPathDecision);
 			void AddStdEleInfo_isoDep_std(double ,double ,double );
 			void AddStdEleInfo_isoDep_inrVeto(double, double, double );
+			void AddStdEleInfo_inrVetoModIso(tsw::Event::InnerVetoSize, double, double, double );
+			void AddStdEleInfo_genHadronsDr04(unsigned int nGenHadrons_dR04, double ptSumGenHadrons_dR04);
+
 			void AddNormMuon(tsw::MuStruct* theMuon);
 
 			/// Prints out basic event information to screen
@@ -32,7 +45,8 @@ namespace tsw{
 			void PrintMCGenWeight();
 			void PrintLHEZbosonInfo();
 			void PrintPUVtxInfo();
-			void PrintStdEleInfo_isoDepIsoValues(unsigned int iEle);
+			void PrintPURho();
+			void PrintStdEleInfo_isoValues(unsigned int iEle);
 
 		private:
 			//General event information ...
@@ -54,6 +68,9 @@ namespace tsw{
 			unsigned int recoVtx_totalNum_;
 			unsigned int recoVtx_numGoodVtxs_;
 
+			// Isol value PU correction info ...
+			double pu_rho_;
+
 			// Information about e-mu trigger ...
 			std::string trg_emuPath_name_;
 			bool trg_emuPath_decision_;
@@ -65,6 +82,25 @@ namespace tsw{
 			std::vector<Double_t> stdEles_isoDeps_inrVetoModTrkIso_;
 			std::vector<Double_t> stdEles_isoDeps_inrVetoModEcalIso_;
 			std::vector<Double_t> stdEles_isoDeps_inrVetoModHcalD1Iso_;
+
+			std::vector<Double_t> stdEles_inrVetoModIso_Trk_;
+			std::vector<Double_t> stdEles_inrVetoModIso_Ecal_;
+			std::vector<Double_t> stdEles_inrVetoModIso_HcalD1_;
+			std::vector<Double_t> stdEles_inrVetoXSModIso_Trk_;
+			std::vector<Double_t> stdEles_inrVetoXSModIso_Ecal_;
+			std::vector<Double_t> stdEles_inrVetoXSModIso_HcalD1_;
+			std::vector<Double_t> stdEles_inrVetoSModIso_Trk_;
+			std::vector<Double_t> stdEles_inrVetoSModIso_Ecal_;
+			std::vector<Double_t> stdEles_inrVetoSModIso_HcalD1_;
+			std::vector<Double_t> stdEles_inrVetoLModIso_Trk_;
+			std::vector<Double_t> stdEles_inrVetoLModIso_Ecal_;
+			std::vector<Double_t> stdEles_inrVetoLModIso_HcalD1_;
+			std::vector<Double_t> stdEles_inrVetoXLModIso_Trk_;
+			std::vector<Double_t> stdEles_inrVetoXLModIso_Ecal_;
+			std::vector<Double_t> stdEles_inrVetoXLModIso_HcalD1_;
+
+			std::vector<UInt_t>   stdEles_nGenHadronsDr04_;
+			std::vector<Double_t> stdEles_ptSumGenHadronsDr04_;
 
 			//Information about the standard muons ...
 			std::vector<ROOT::Math::XYZTVector> normMuons_p4_;
@@ -98,7 +134,7 @@ namespace tsw{
 			std::vector<Double_t> normMuons_outTrk_phi_;
 			std::vector<Int_t>    normMuons_outTrk_charge_;
 
-			ClassDef(tsw::Event,8);
+			ClassDef(tsw::Event,12);
 	};
 }
 
