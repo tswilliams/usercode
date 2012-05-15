@@ -125,11 +125,16 @@ namespace tsw{
 		passFailFlag = passFailFlag && ( glob_normalisedChi2()<10 );
 		passFailFlag = passFailFlag && ( glob_numValidMuonHits()>0 );
 		passFailFlag = passFailFlag && ( numMatchedMuonStns()>1 );
+		// Isolation ...
+		passFailFlag = passFailFlag && ( isolR03_sumPt()<10.0 );
 		// Tracker stuff ...
 		passFailFlag = passFailFlag && ( inner_exists() );
-		passFailFlag = passFailFlag && ( fabs(inner_dxyVsOrigin())<0.2 );
 		passFailFlag = passFailFlag && ( inner_numValidPixHits()>0 );
 		passFailFlag = passFailFlag && ( inner_numValidTrkrHits()>10 );
+		// --- N.B: dxy cut has temporarily been removed as it is highly inefficient under the current way that I'm calculating the value of dxy
+		// -------- [i.e. calculating dxy rel. to (0,0) RATHER THAN prim vertex/beamspot ]
+		// -------- This cut also currently results in weird phi distributions (i.e. tight muons only having phi from 0.4->1.4 and -1.7 to -2.7)
+		//passFailFlag = passFailFlag && ( fabs(inner_dxyVsOrigin())<0.2 ); // N.B: It may be this cut that's responsible for weird behaviour
 
 		return passFailFlag;
 	}
