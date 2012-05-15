@@ -1,6 +1,8 @@
 #ifndef tswHEEPVarDistns_h
 #define tswHEEPVarDistns_h
 
+#include "TH2.h"
+
 namespace tsw{
 	class HEEPVarDistns{
 		public:
@@ -52,6 +54,9 @@ namespace tsw{
 			//TH1D* eleHist_zVtx_;
 			//	ROOT::Math::XYZTVector p4(){return eleStr_.p4_;}
 			//	ROOT::Math::XYZTVector gsfP4(){return eleStr_.gsfP4_;}
+			TH1D* eleHist_caloVsRecHitsEnergyRatio_;
+			TH1D* eleHist_caloEnergyFracError_;
+			TH2D* ele2DHist_caloRecHitEnergyRatioVsNumRecHits_;
 
 			// 'Classification'
 			//	int classification(){return eleStr_.classification_;}
@@ -167,6 +172,10 @@ namespace tsw{
 		eleHist_phi_   = new TH1D(hNamePrefix + "phi", "#phi distribution of the " + str_eleType_GSFeles_cutsPhrase + "; #phi; " + str_NoOfEleTypeEles + " per ...", hNBins_phi, hMin_phi, hMax_phi);
 		eleHist_scPhi_ = new TH1D(hNamePrefix + "scPhi", "#phi_{SC} distribution of the " + str_eleType_GSFeles_cutsPhrase + "; #phi_{SC}; " + str_NoOfEleTypeEles + " per ...", hNBins_phi, hMin_phi, hMax_phi);
 
+
+		eleHist_caloVsRecHitsEnergyRatio_ = new TH1D(hNamePrefix + "caloVsRecHitsEnergyRatio", "E^{calo}/E^{SC}_{recHits} distribution of the " + str_eleType_GSFeles_cutsPhrase + "; E^{calo}/E^{SC}_{recHits}; " + str_NoOfEleTypeEles + " per ...", 200, 0.95, 1.15);
+		eleHist_caloEnergyFracError_ = new TH1D(hNamePrefix + "caloEnergyFracError", "E_{ecalError}/E_{caloEnergy} distribution of the " + str_eleType_GSFeles_cutsPhrase + "; E_{ecalError}/E_{caloEnergy}; " + str_NoOfEleTypeEles + " per ...", 200, 0.95, 1.15);
+		ele2DHist_caloRecHitEnergyRatioVsNumRecHits_ = new TH2D(hNamePrefix+"caloRecHitEnergyRatioVsNumRecHits", "E^{calo}/E^{SC}_{recHits} vs N^{SC}_{recHits} 2-D plot of the " + str_eleType_GSFeles_cutsPhrase + "; E^{calo}/E^{SC}_{recHits}; N^{SC}_{recHits};" + str_NoOfEleTypeEles + " per ...", 40, 0.95, 1.15, 60, -0.5, 119.5);
 		//eleHist_zVtx_;
 
 		// 'Classification'
@@ -206,6 +215,11 @@ namespace tsw{
 		eleHist_isolHadDepth2_ = new TH1D(hNamePrefix + "isolHadDepth2", "isolHadDepth2 distribution of the " + str_eleType_GSFeles_cutsPhrase + "; isolHadDepth2; " + str_NoOfEleTypeEles + " per ...", hNBins_isolHad2, hMin_isolHad2, hMax_isolHad2);
 		Double_t hMin_isolTrks = 0.0; Double_t hMax_isolTrks = 100.0; Int_t hNBins_isolTrks = 50;
 		eleHist_isolPtTrks_ = new TH1D(hNamePrefix + "isolPtTrks", "isolPtTrks distribution of the " + str_eleType_GSFeles_cutsPhrase + "; isolPtTrks; " + str_NoOfEleTypeEles + " per ...", hNBins_isolTrks, hMin_isolTrks, hMax_isolTrks);
+
+		// Set-up histograms so that errors are automatically calculated as the histos are filled
+		std::vector<TH1D*> ptrsToHists = GetPointersToHistos();
+		for(unsigned int iHist=0; iHist<ptrsToHists.size() ; iHist++)
+			ptrsToHists.at(iHist)->Sumw2();
 	}
 
 	HEEPVarDistns::~HEEPVarDistns(){
@@ -223,6 +237,9 @@ namespace tsw{
 		eleHist_phi_->Fill(   ele.phi()   , eleWeight);
 		eleHist_scPhi_->Fill( ele.scPhi() , eleWeight);
 		//eleHist_zVtx_->Fill( ele.zVtx() , eleWeight);
+		eleHist_caloVsRecHitsEnergyRatio_->Fill( ele.caloEnergy()/ele.SC_totEnergyRecHits(), eleWeight );
+		ele2DHist_caloRecHitEnergyRatioVsNumRecHits_->Fill( ele.caloEnergy()/ele.SC_totEnergyRecHits(), ele.SC_totNumRecHits(), eleWeight );
+		eleHist_caloEnergyFracError_->Fill( ele.caloEnergy()/ele.ecalEnergyError(), eleWeight);
 
 		// 'Classification'
 		eleHist_isEcalDriven_->Fill( ele.isEcalDriven() , eleWeight);
@@ -308,6 +325,9 @@ namespace tsw{
 		eleHist_phi_->Write();
 		eleHist_scPhi_->Write();
 		//eleHist_zVtx_->Write();
+		eleHist_caloVsRecHitsEnergyRatio_->Write();
+		eleHist_caloEnergyFracError_->Write();
+		ele2DHist_caloRecHitEnergyRatioVsNumRecHits_->Write();
 
 		// 'Classification'
 		eleHist_isEcalDriven_->Write();
@@ -365,7 +385,8 @@ namespace tsw{
 		tmpVector.push_back(eleHist_scEta_);
 		tmpVector.push_back(eleHist_phi_);
 		tmpVector.push_back(eleHist_scPhi_);
-
+		tmpVector.push_back(eleHist_caloVsRecHitsEnergyRatio_);
+		tmpVector.push_back(eleHist_caloEnergyFracError_);
 		//tmpVector.push_back(eleHist_zVtx_);
 
 		// 'Classification'
@@ -437,6 +458,9 @@ namespace tsw{
 		delete eleHist_scEta_;
 		delete eleHist_phi_;
 		delete eleHist_scPhi_;
+		delete eleHist_caloVsRecHitsEnergyRatio_;
+		delete eleHist_caloEnergyFracError_;
+		delete ele2DHist_caloRecHitEnergyRatioVsNumRecHits_;
 
 		//delete eleHist_zVtx_;
 
