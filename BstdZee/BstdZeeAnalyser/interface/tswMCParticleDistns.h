@@ -51,17 +51,22 @@ namespace tsw{
 		hist_pdgId_       = new TH1D(hNamePrefix + "pdgId",   "PDG ID distribution  (" + str_particleType_cutsPhrase + "); PDG ID;" + str_NoOfParticles + "", 41, -20.5, 20.5);
 		hist_hepMCstatus_ = new TH1D(hNamePrefix + "hepMCstatus",     "HEP MC status distribution  (" + str_particleType_cutsPhrase + "); HEP MC status;" + str_NoOfParticles, 11, -0.5, 10.5);
 		hist_charge_      = new TH1D(hNamePrefix + "charge", "MC charge distribution ("   + str_particleType_cutsPhrase + "); MC particle charge /e;"  + str_NoOfParticles,                   5, -2.5, 2.5);
-		hist_p_           = new TH1D(hNamePrefix + "p",      "MC momentum distribution (" + str_particleType_cutsPhrase + "); MC momentum /GeVc^{-1};" + str_NoOfParticles,                   hNBins_pt, 0.0, hMax_pt);
+		hist_p_           = new TH1D(hNamePrefix + "p",      "MC momentum distribution (" + str_particleType_cutsPhrase + "); MC momentum /GeVc^{-1};" + str_NoOfParticles,                   hNBins_pt, 0.0, hMax_pt*1.25);
 		hist_pT_          = new TH1D(hNamePrefix + "pT",     "MC p_{T} distribution ("    + str_particleType_cutsPhrase + "); MC transverse momentum, p_{T} /GeVc^{-1};" + str_NoOfParticles, hNBins_pt, 0.0, hMax_pt);
-		hist_eta_         = new TH1D(hNamePrefix + "eta",    "MC #eta distribution ("     + str_particleType_cutsPhrase + "); MC pseudorapidity, #eta;"                  + str_NoOfParticles, 40, -4.0, +4.0);
+		hist_eta_         = new TH1D(hNamePrefix + "eta",    "MC #eta distribution ("     + str_particleType_cutsPhrase + "); MC pseudorapidity, #eta;"                  + str_NoOfParticles, 20, -4.0, +4.0);
 		hist_phi_         = new TH1D(hNamePrefix + "phi",    "MC #phi distribution ("     + str_particleType_cutsPhrase + "); MC azimuthal angle, #phi;"                 + str_NoOfParticles, 40, -3.1416, +3.1416);
 
-		hist_daughter_dR_           = new TH1D(hNamePrefix + "daughter_dR",        "MC daughter #Delta R ("      + str_particleType_cutsPhrase + "); MC "+titleStr_particle+" daughter #Delta R;"              + str_NoOfParticles, 50, 0.0, 5.0);
-		hist_daughter_dEta_         = new TH1D(hNamePrefix + "daughter_dEta",      "MC daughter #Delta#eta ("    + str_particleType_cutsPhrase + "); MC "+titleStr_particle+" daughter #Delta#eta;"            + str_NoOfParticles, 50, -5.0, +5.0);
-		hist_daughter_dPhi_         = new TH1D(hNamePrefix + "daughter_dPhi",      "MC daughter #Delta#phi ("    + str_particleType_cutsPhrase + "); MC "+titleStr_particle+" daughter #Delta#phi;"            + str_NoOfParticles, 50, -3.1416, +3.1416);
+		hist_daughter_dR_           = new TH1D(hNamePrefix + "daughter_dR",        "MC daughter #Delta R ("      + str_particleType_cutsPhrase + "); MC "+titleStr_particle+" daughter #Delta R;"              + str_NoOfParticles, 25, 0.0, 5.0);
+		hist_daughter_dEta_         = new TH1D(hNamePrefix + "daughter_dEta",      "MC daughter #Delta#eta ("    + str_particleType_cutsPhrase + "); MC "+titleStr_particle+" daughter #Delta#eta;"            + str_NoOfParticles, 40, -5.0, +5.0);
+		hist_daughter_dPhi_         = new TH1D(hNamePrefix + "daughter_dPhi",      "MC daughter #Delta#phi ("    + str_particleType_cutsPhrase + "); MC "+titleStr_particle+" daughter #Delta#phi;"            + str_NoOfParticles, 30, -3.1416, +3.1416);
 		hist_daughter_openingAngle_ = new TH1D(hNamePrefix + "daughter_openAngle", "MC daughter opening angle (" + str_particleType_cutsPhrase + "); MC "+titleStr_particle+" daughter opening angle, #theta;" + str_NoOfParticles, 50, 0.0, 3.1416);
 
 		SetHistAttributes(lineColorIdx, lineStyleIdx);
+
+		// Set-up histograms so that errors are automatically calculated as the histos are filled
+		std::vector<TH1D*> ptrsToHists = GetPtrsToHistos();
+		for(unsigned int iHist=0; iHist<ptrsToHists.size() ; iHist++)
+			ptrsToHists.at(iHist)->Sumw2();
 	}
 
 	/////////////////////
