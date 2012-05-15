@@ -59,6 +59,14 @@ namespace tsw{
 				}
 				return MuonCollection(&tmpMuonsVec, muonType_+", within Acc");
 			}
+			MuonCollection GetBarrelMuons(){
+				std::vector<Muon> tmpMuonsVec; tmpMuonsVec.clear();
+				for(unsigned int muIdx=0; muIdx<vecOfMuons_.size(); muIdx++){
+					if( fabs(vecOfMuons_.at(muIdx).eta()) < 1.44 )
+						tmpMuonsVec.push_back( vecOfMuons_.at(muIdx) );
+				}
+				return MuonCollection(&tmpMuonsVec, muonType_+", in barrel");
+			}
 			MuonCollection GetTightMuons(){
 				std::vector<Muon> tightMuonsVec; tightMuonsVec.clear();
 				for(unsigned int muIdx=0; muIdx<vecOfMuons_.size(); muIdx++){
