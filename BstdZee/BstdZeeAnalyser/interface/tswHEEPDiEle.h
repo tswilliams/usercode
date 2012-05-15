@@ -9,6 +9,28 @@ namespace tsw{
 				eleA_(),
 				eleB_()
 			{}
+
+			HEEPDiEle(tsw::HEEPEle ele1, tsw::HEEPEle ele2):
+				cache_eleA_modEmHad1Iso_(9999.9),
+				cache_eleB_modEmHad1Iso_(9999.9),
+				cache_eleA_modHad1Iso_(9999.9),
+				cache_eleB_modHad1Iso_(9999.9),
+				eleA_modEmHad1Iso_isCached_(false),
+				eleB_modEmHad1Iso_isCached_(false),
+				eleA_modHad1Iso_isCached_(false),
+				eleB_modHad1Iso_isCached_(false)
+			{
+				// Assign the higher Et electron to be eleA_, and assign the other ele to be eleB_ ...
+				if(ele1.et()>ele2.et()){
+					eleA_ = ele1;
+					eleB_ = ele2;
+				}
+				else{
+					eleA_ = ele2;
+					eleB_ = ele1;
+				}
+			}
+
 			HEEPDiEle(const std::vector<tsw::HEEPEle>& etOrderedEles, const std::vector<bool> cutsPassFailFlags);
 			~HEEPDiEle(){}
 
@@ -58,10 +80,18 @@ namespace tsw{
 				else
 					return false;
 			}
+			bool isAboveZMassRange(){
+				if( invMass()>120.0 )
+					return true;
+				else
+					return false;
+			}
 
 			//Methods for applying the modified track isolation HEEP cut - w/ modification occuring using innerIsoConeTrks information
 			float eleA_modTrkIso(){ return eleA_.modTrkIso(&eleB_); }
 			float eleB_modTrkIso(){ return eleB_.modTrkIso(&eleA_); }
+			bool eleA_modTrkIsolCut();
+			bool eleB_modTrkIsolCut();
 			bool ApplyDiEleTrkIsolCut();
 
 			// The old (simpler) methods for applying the modified track isolation HEEP cut.
@@ -113,6 +143,8 @@ namespace tsw{
 				}
 				return cache_eleB_modHad1Iso_;
 			}
+			bool eleA_modEmHad1IsoCut();
+			bool eleB_modEmHad1IsoCut();
 			bool ApplyDiEleEmHad1IsolCut();
 //			bool ApplyDiEleHEEPIsolCuts(){
 //				return ( ApplyDiEleTrkIsolCut() && ApplyDiEleEmHad1IsolCut() );
@@ -167,8 +199,38 @@ namespace tsw{
 		//PrintOutInfo();
 	}
 
+
 	//-------------------------------------------------------------------***
 	//Methods for applying the modified track isolation HEEP cut ...
+	bool HEEPDiEle::eleA_modTrkIsolCut()
+	{
+		float eleA_isolPtTrks = eleA_modTrkIso();
+		bool eleA_cutFlag = false;
+
+		if( eleA().isHEEPEB() && (eleA_isolPtTrks<5.0) )
+			eleA_cutFlag = true;
+		else if( eleA().isHEEPEE() && (eleA_isolPtTrks<5.0) )
+			eleA_cutFlag = true;
+		else
+			eleA_cutFlag = false;
+
+		return eleA_cutFlag;
+	}
+	bool HEEPDiEle::eleB_modTrkIsolCut()
+	{
+		float eleB_isolPtTrks = eleB_modTrkIso();
+		bool eleB_cutFlag = false;
+
+		if( eleB().isHEEPEB() && (eleB_isolPtTrks<5.0) )
+			eleB_cutFlag = true;
+		else if( eleB().isHEEPEE() && (eleB_isolPtTrks<5.0) )
+			eleB_cutFlag = true;
+		else
+			eleB_cutFlag = false;
+
+		return eleB_cutFlag;
+	}
+
 	bool HEEPDiEle::ApplyDiEleTrkIsolCut()
 	{
 		const bool coutDebugTxt = false;
@@ -188,17 +250,17 @@ namespace tsw{
 		bool eleA_cutFlag = false;
 		bool eleB_cutFlag = false;
 
-		if( eleA().isHEEPEB() && (eleA_isolPtTrks<7.5) )
+		if( eleA().isHEEPEB() && (eleA_isolPtTrks<5.0) )
 			eleA_cutFlag = true;
-		else if( eleA().isHEEPEE() && (eleA_isolPtTrks<15.0) )
+		else if( eleA().isHEEPEE() && (eleA_isolPtTrks<5.0) )
 			eleA_cutFlag = true;
 		else
 			eleA_cutFlag = false;
 		if(coutDebugTxt){std::cout << "      ** Applying HEEP cut to electron A => " << eleA_cutFlag << std::endl;}
 
-		if( eleB().isHEEPEB() && (eleB_isolPtTrks<7.5) )
+		if( eleB().isHEEPEB() && (eleB_isolPtTrks<5.0) )
 			eleB_cutFlag = true;
-		else if( eleB().isHEEPEE() && (eleB_isolPtTrks<15.0) )
+		else if( eleB().isHEEPEE() && (eleB_isolPtTrks<5.0) )
 			eleB_cutFlag = true;
 		else
 			eleB_cutFlag = false;
@@ -303,6 +365,21 @@ namespace tsw{
 
 	//-------------------------------------------------------------------***
 	//Method for applying the modified EmHad1 isolation HEEP cut ...
+	bool HEEPDiEle::eleA_modEmHad1IsoCut()
+	{
+		double eleA_isolEmHad1 = eleA_modEmHad1Iso();
+		bool eleA_cutFlag = eleA_.ApplyHEEPIsoCut_EmHad1( eleA_isolEmHad1 );
+
+		return eleA_cutFlag;
+	}
+	bool HEEPDiEle::eleB_modEmHad1IsoCut()
+	{
+		double eleB_isolEmHad1 = eleB_modEmHad1Iso();
+		bool eleB_cutFlag = eleB_.ApplyHEEPIsoCut_EmHad1( eleB_isolEmHad1 );
+
+		return eleB_cutFlag;
+	}
+
 	bool HEEPDiEle::ApplyDiEleEmHad1IsolCut(){
 		bool coutDebugTxt = false;
 		if(coutDebugTxt){std::cout << "      **Applying the di-electron modified HEEP EmHad1 isolation cut ...:" << std::endl;}
