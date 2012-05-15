@@ -1,5 +1,11 @@
 import FWCore.ParameterSet.Config as cms
 
+#####################################
+# Input flags
+input_isMC = True
+input_is2010SignalMC = False
+input_dyJetsToLLFilter =0 #==0 =>Don't select events, ==11 =>ele, ==13 =>muon, ==15 =>tau
+
 #####################################################
 ## Useful function for local running...
 
@@ -12,12 +18,40 @@ def DataFileLocationAdaptor(fileLocation):
       filePrefix=""
    return filePrefix + fileLocation
 
+######################################################
+## For reading in options from command line arguments
+import FWCore.ParameterSet.VarParsing as VarParsing
+import os
+
+options = VarParsing.VarParsing ('analysis')
+
+# setup any defaults you want
+options.outputFile = 'tmp.root'
+options.inputFiles = 'file1.root', 'file2.root'
+options.maxEvents  = -1 # -1 means all events
+
+# get and parse the command line arguments
+options.parseArguments()
+
+## Act appropriately if 1st specified inputFile is a directory
+if os.path.isdir(options.inputFiles[0]) or os.path.isdir('/pnfs/pp.rl.ac.uk/data/cms/'+options.inputFiles[0]):
+   # Grab directory location from cmd line arg, and list files within
+   dirLocation = options.inputFiles.pop(0).replace('/pnfs/pp.rl.ac.uk/data/cms/store/','/store/')
+
+   if(dirLocation).startswith('/store/'):
+      options.inputFiles = os.listdir('/pnfs/pp.rl.ac.uk/data/cms'+dirLocation)
+   else:
+      options.inputFiles = os.listdir(dirLocation)
+
+   # Pre-pend the directory to the file names 
+   for i in range(len(options.inputFiles)):
+      options.inputFiles[i] = dirLocation+options.inputFiles[i]      
 
 
 #####################################################
 ## General setup/load lines, defining nevts, input & output etc.
 
-process = cms.Process("Demo")
+process = cms.Process("NTupler")
 
 ## Loading Geometry modules for creation of transient geometry information used in determining eta and phi values of recHits ...
 process.load("Configuration.StandardSequences.GeometryDB_cff")
@@ -36,8 +70,8 @@ process.MessageLogger.categories=cms.untracked.vstring('FwkJob'
 process.MessageLogger.cerr.Generator = cms.untracked.PSet(limit = cms.untracked.int32(0))
 process.MessageLogger.cerr.LHEInterface = cms.untracked.PSet(limit = cms.untracked.int32(10000))
 
-process.MessageLogger.cerr.FwkReport.reportEvery = 1000
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.MessageLogger.cerr.FwkReport.reportEvery = 50000
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(options.maxEvents) )
 
 #Reading in a list of datafile locations from a file...
 fileName_DatafileList = "/home/ppd/nnd85574/FileLocations/BstdZee/Boosted_Quark_To_ee_2TeV/tsw-bstd412Recon_2-00TeVu_v2-c17b3790b1be6b1dd249df112816fe9d/USER/fileList.txt"
@@ -46,75 +80,11 @@ datafilesList = f_DatafileList.readlines()
 f_DatafileList.close()
 datafileLocations = map(DataFileLocationAdaptor,datafilesList)
 
-process.source = cms.Source("PoolSource",
-#                            fileNames = cms.untracked.vstring('/store/data/Run2011B/Photon/AOD/PromptReco-v1/000/180/252/6291CDCD-0B05-E111-8CDB-003048F117EC.root')
-#                            fileNames = cms.untracked.vstring('/store/mc/Fall11/DYToLL_M-50_1jEnh2_2jEnh35_3jEnh40_4jEnh50_7TeV-sherpa/AODSIM/PU_S6_START42_V14B-v1/0000/0028E808-D407-E111-AD5B-0026189438D4.root')
-                            fileNames = cms.untracked.vstring('/store/mc/Fall11/DYJetsToLL_TuneZ2_M-50_7TeV-madgraph-tauola/AODSIM/PU_S6_START42_V14B-v1/0000/0007A683-23F6-E011-9703-90E6BA0D09DC.root')
-)
+process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(options.inputFiles) )
 
-#Defining the output file to store the histograms/NTuples in...
-process.TFileService = cms.Service("TFileService", fileName=cms.string('mcNTuple_42Xv1h.root'))
-
-
-
-#####################################################
-## Modified muon track reconstruction [OLD]
-
-#process.refitMuons = cms.EDProducer('MuonsFromRefitTracksProducer',
-#    # The input MuonCollection from which the starting Muon objects
-#    # will be taken. The module will only consider globalMuons from
-#    # the merged muon collection, i.e. trackerMuons, stand-alone muons
-#    # will be filtered out of the merged MuonCollection.
-#    src = cms.InputTag('muons'),
-#
-#    # The particular set of refit tracks to use. Could also be
-#    # 'tevMuons:default', 'tevMuons:picky', or 'tevMuons:firstHit' to
-#    # use the corresponding refits; 'none' to use this module as just
-#    # a filter for globalMuons (as opposed to trackerMuons or
-#    # caloMuons); to make Muons out of the cocktail tracks, 'tevMuons'
-#    # by itself must be used (also specifying fromCocktail = True
-#    # below).
-#    tevMuonTracks = cms.string('tevMuons'),
-#
-#    # Exactly one of the below boolean flags may be True (determines
-#    # the refit track picked for each muon).
-#
-#    # Whether to call muon::tevOptimized as in the above code and use
-#    # the result of the cocktail choice.
-#    fromCocktail = cms.bool(True),
-#
-#    # Whether to replace the input muons' kinematics with that of the
-#    # tracker-only fit. I.e., the muon's momentum, vertex, and charge are
-#    # taken from the track accessed by reco::Muon::innerTrack().
-#    fromTrackerTrack = cms.bool(False),
-#
-#    # Whether to replace the input muons' kinematics with that of the
-#    # tracker-only fit. I.e., the muon's momentum, vertex, and charge are
-#    # taken from the track accessed by reco::Muon::innerTrack().
-#    fromGlobalTrack = cms.bool(False),
-#
-#    # Whether to apply the TMR cocktail algorithm. For each muon track, we
-#    # start with the first-muon-hit fit. If the difference in -ln(chi^2
-#    # tail probability) between the first-muon-hit and tracker-only is
-#    # greater than the below prescribed cut value, the tracker-only fit
-#    # replaces the first-muon-hit. For further details see XXX.
-#    fromTMR = cms.bool(False),
-#
-#    # The cut value used in the TMR cocktail.
-#    TMRcut = cms.double(4.0),
-#
-#    # Whether to use Adam Everett's sigma-switch method, choosing
-#    # between the global track and the tracker track.
-#    fromSigmaSwitch = cms.bool(False),
-#
-#    # The number of sigma to switch on in the above method.
-#    nSigmaSwitch = cms.double(2),
-#    
-#    # The pT threshold to switch at in the above method.
-#    ptThreshold = cms.double(200),
-#)
-
-
+#Defining the output file to store the histograms/NTuples in... 
+#process.TFileService = cms.Service("TFileService", fileName=cms.string("mcNTuple_42Xv1x_Fall11.root"))
+process.TFileService = cms.Service("TFileService", fileName=cms.string(options.outputFile))
 
 ###################################################################################################
 ## Code for modified isolation values ...
@@ -129,12 +99,83 @@ process.heepIdNoIso = cms.EDProducer("HEEPIdValueMapProducer",
 process.heepIdNoIso.barrelCuts.cuts=cms.string("et:detEta:ecalDriven:dEtaIn:dPhiIn:hadem:e2x5Over5x5:nrMissHits")
 process.heepIdNoIso.endcapCuts.cuts=cms.string("et:detEta:ecalDriven:dEtaIn:dPhiIn:hadem:sigmaIEtaIEta:nrMissHits")
 
-process.heepIdNoIsoEles = cms.EDProducer("tsw::HEEPGsfProducer",
-                                         cutValueMap = cms.InputTag("heepIdNoIso"),
-                                         inputGsfEles = cms.InputTag("gsfElectrons")
-                                         )
+process.heepIdNoIsoEles = cms.EDProducer("tsw::HEEPGsfProducer", cutValueMap = cms.InputTag("heepIdNoIso"),
+                                         inputGsfEles = cms.InputTag("gsfElectrons")  )
 
-# ModIso: 2) Calculating the modified iso. values from IsoDeposits
+# ModIso: 2a) Calculating the modified iso. values using BstdZeeTools EDProducer
+
+from TSWilliams.BstdZeeTools.bstdzeemodisolproducer_cff import *
+
+process.innerXSVetoModEleIso = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles") )
+process.innerXSVetoModEleIso.otherElesIntRadiusBarrelTk    = cms.double(0.015)
+process.innerXSVetoModEleIso.otherElesIntRadiusEndcapTk    = cms.double(0.015)
+process.innerXSVetoModEleIso.otherElesStripBarrelTk        = cms.double(0.015)
+process.innerXSVetoModEleIso.otherElesStripEndcapTk        = cms.double(0.015)
+process.innerXSVetoModEleIso.otherElesIntRadiusEcalBarrel  = cms.double(3.0)
+process.innerXSVetoModEleIso.otherElesIntRadiusEcalEndcaps = cms.double(3.0)
+process.innerXSVetoModEleIso.otherElesJurassicWidth        = cms.double(1.5)
+
+
+process.innerSVetoModEleIso = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles") )
+process.innerSVetoModEleIso.otherElesIntRadiusBarrelTk    = cms.double(0.03)
+process.innerSVetoModEleIso.otherElesIntRadiusEndcapTk    = cms.double(0.03)
+process.innerSVetoModEleIso.otherElesStripBarrelTk        = cms.double(0.03)
+process.innerSVetoModEleIso.otherElesStripEndcapTk        = cms.double(0.03)
+process.innerSVetoModEleIso.otherElesIntRadiusEcalBarrel  = cms.double(3.5)
+process.innerSVetoModEleIso.otherElesIntRadiusEcalEndcaps = cms.double(3.5)
+process.innerSVetoModEleIso.otherElesJurassicWidth        = cms.double(1.75)
+
+
+process.innerMVetoModEleIso = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles") )
+process.innerMVetoModEleIso.otherElesIntRadiusBarrelTk    = cms.double(0.045)
+process.innerMVetoModEleIso.otherElesIntRadiusEndcapTk    = cms.double(0.045)
+process.innerMVetoModEleIso.otherElesStripBarrelTk        = cms.double(0.045)
+process.innerMVetoModEleIso.otherElesStripEndcapTk        = cms.double(0.045)
+process.innerMVetoModEleIso.otherElesIntRadiusEcalBarrel  = cms.double(4.0)
+process.innerMVetoModEleIso.otherElesIntRadiusEcalEndcaps = cms.double(4.0)
+process.innerMVetoModEleIso.otherElesJurassicWidth        = cms.double(2.0)
+
+
+process.innerLVetoModEleIso = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles") )
+process.innerLVetoModEleIso.otherElesIntRadiusBarrelTk    = cms.double(0.06)
+process.innerLVetoModEleIso.otherElesIntRadiusEndcapTk    = cms.double(0.06)
+process.innerLVetoModEleIso.otherElesStripBarrelTk        = cms.double(0.06)
+process.innerLVetoModEleIso.otherElesStripEndcapTk        = cms.double(0.06)
+process.innerLVetoModEleIso.otherElesIntRadiusEcalBarrel  = cms.double(5.0)
+process.innerLVetoModEleIso.otherElesIntRadiusEcalEndcaps = cms.double(5.0)
+process.innerLVetoModEleIso.otherElesJurassicWidth        = cms.double(2.5)
+
+
+process.innerXLVetoModEleIso = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles") )
+process.innerXLVetoModEleIso.otherElesIntRadiusBarrelTk    = cms.double(0.09)
+process.innerXLVetoModEleIso.otherElesIntRadiusEndcapTk    = cms.double(0.09)
+process.innerXLVetoModEleIso.otherElesStripBarrelTk        = cms.double(0.09)
+process.innerXLVetoModEleIso.otherElesStripEndcapTk        = cms.double(0.09)
+process.innerXLVetoModEleIso.otherElesIntRadiusEcalBarrel  = cms.double(7.0)
+process.innerXLVetoModEleIso.otherElesIntRadiusEcalEndcaps = cms.double(7.0)
+process.innerXLVetoModEleIso.otherElesJurassicWidth        = cms.double(3.5)
+
+#process.innerXSVetoModEleIso.barrelRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEB:stdRECO")
+#process.innerXSVetoModEleIso.endcapRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEE:stdRECO")
+#process.innerSVetoModEleIso.barrelRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEB:stdRECO")
+#process.innerSVetoModEleIso.endcapRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEE:stdRECO")
+#process.innerMVetoModEleIso.barrelRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEB:stdRECO")
+#process.innerMVetoModEleIso.endcapRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEE:stdRECO")
+#process.innerLVetoModEleIso.barrelRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEB:stdRECO")
+#process.innerLVetoModEleIso.endcapRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEE:stdRECO")
+#process.innerXLVetoModEleIso.barrelRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEB:stdRECO")
+#process.innerXLVetoModEleIso.endcapRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEE:stdRECO")
+
+process.innerVetoModEleIsos = cms.Sequence( process.innerXSVetoModEleIso * process.innerSVetoModEleIso * process.innerMVetoModEleIso
+                                            * process.innerLVetoModEleIso * process.innerXLVetoModEleIso )
+
+
+# ModIso: 2b) Calculating modified iso. values with IsoDeposits framework
 
 from RecoEgamma.EgammaIsolationAlgos.eleIsoDepositTk_cff import *
 from RecoEgamma.EgammaIsolationAlgos.eleIsoDepositEcalFromHits_cff import *
@@ -148,8 +189,10 @@ process.eleIsoDepositHcalDepth1FromTowers = eleIsoDepositHcalDepth1FromTowers
 
 process.eleIsoDepositTk.src = "gsfElectrons"
 process.eleIsoDepositEcalFromHits.src = "gsfElectrons"
-process.eleIsoDepositEcalFromHits.ExtractorPSet.barrelEcalHits = cms.InputTag("reducedEcalRecHitsEB")
-process.eleIsoDepositEcalFromHits.ExtractorPSet.endcapEcalHits = cms.InputTag("reducedEcalRecHitsEE")
+#process.eleIsoDepositEcalFromHits.ExtractorPSet.barrelEcalHits = cms.InputTag("ecalRecHit:EcalRecHitsEB:stdRECO")
+#process.eleIsoDepositEcalFromHits.ExtractorPSet.endcapEcalHits = cms.InputTag("ecalRecHit:EcalRecHitsEE:stdRECO")
+process.eleIsoDepositEcalFromHits.ExtractorPSet.barrelEcalHits = cms.InputTag("reducedEcalRecHitsEB::RECO")
+process.eleIsoDepositEcalFromHits.ExtractorPSet.endcapEcalHits = cms.InputTag("reducedEcalRecHitsEE::RECO")
 process.eleIsoDepositHcalDepth1FromTowers.src = "gsfElectrons"
 
 process.stdEleIsoFromDepsTk = cms.EDProducer("CandIsolatorFromDeposits",
@@ -183,8 +226,9 @@ process.stdEleIsoFromDepsEcal = cms.EDProducer("CandIsolatorFromDeposits",
        weight = cms.string('1'),
        deltaR = cms.double(0.3),
        vetos = cms.vstring('NumCrystalVeto(3.0)',
-                           'EcalBarrel:NumCrystalEtaPhiVeto(1.5,9999.0)',
-                           'EcalBarrel:AbsThresholdFromTransverse(0.08)'),
+                           'NumCrystalEtaPhiVeto(1.5,9999.0)',
+                           'EcalBarrel:AbsThreshold(0.08)',
+                           'EcalEndcaps:AbsThresholdFromTransverse(0.1)'),
        skipDefaultVeto = cms.bool(True)
    ))
 )
@@ -196,8 +240,9 @@ process.modEleIsoFromDepsEcal = cms.EDProducer("CandIsolatorFromDeposits",
        weight = cms.string('1'),
        deltaR = cms.double(0.3),
        vetos = cms.vstring('NumCrystalVeto(3.0)',
-                           'EcalBarrel:NumCrystalEtaPhiVeto(1.5,9999.0)',
-                           'EcalBarrel:AbsThresholdFromTransverse(0.08)',
+                           'NumCrystalEtaPhiVeto(1.5,9999.0)',
+                           'EcalBarrel:AbsThreshold(0.08)',
+                           'EcalEndcaps:AbsThresholdFromTransverse(0.1)',
                            'heepIdNoIsoEles:NumCrystalVeto(3.0)',
                            'heepIdNoIsoEles:NumCrystalEtaPhiVeto(1.5,17.25)'),
        skipDefaultVeto = cms.bool(True)
@@ -225,23 +270,27 @@ process.modEleIsoFromDepsHcalD1 = cms.EDProducer("CandIsolatorFromDeposits",
        mode = cms.string('sum')
    ))
 ) 
-process.recalculateIsoVars = cms.Sequence(process.eleIsoDepositTk * process.stdEleIsoFromDepsTk * process.modEleIsoFromDepsTk *
+process.recalcIsoVarsWithIsoDeps = cms.Sequence(process.eleIsoDepositTk * process.stdEleIsoFromDepsTk * process.modEleIsoFromDepsTk *
                                           process.eleIsoDepositEcalFromHits * process.stdEleIsoFromDepsEcal * process.modEleIsoFromDepsEcal *
                                           process.eleIsoDepositHcalDepth1FromTowers * process.stdEleIsoFromDepsHcalD1 * process.modEleIsoFromDepsHcalD1)
 
+####################################################################################################
+## Code for calculating the 'rho' value for PU correction ...
+
+process.load("RecoJets.JetProducers.kt4PFJets_cfi")
+process.kt6PFJets = process.kt4PFJets.clone( rParam = 0.6, doRhoFastjet = True )
+process.kt6PFJets.Rho_EtaMax = cms.double(2.5) 
 
 
 ####################################################################################################
 ## Calling the NTupler , and defining sequence for running modules ...
 process.demo = cms.EDAnalyzer('BstdZeeNTupler',
-                              dyJetsToLL_EventType = cms.untracked.int32(0), #==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
-                              isMC = cms.untracked.bool(True),
+                              dyJetsToLL_EventType = cms.untracked.int32(input_dyJetsToLLFilter), #==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
+                              isMC = cms.untracked.bool(input_isMC),
                               printOutInfo = cms.untracked.bool(False), 
-                              readInNormReco = cms.untracked.bool(True),
-                              readInBstdReco = cms.untracked.bool(False),
-                              readInTrigInfo = cms.untracked.bool(False),
-                              is2010SignalDataset = cms.untracked.bool(False),
-                              useReducedRecHitsCollns = cms.untracked.bool(True),
+                              readInNormReco = cms.untracked.bool(True), readInBstdReco = cms.untracked.bool(False), readInTrigInfo = cms.untracked.bool(True),
+                              useReducedRecHitsCollns = cms.untracked.bool(True) ,
+                              is2010SignalDataset = cms.untracked.bool(input_is2010SignalMC),
                               vertexSrc = cms.untracked.InputTag("offlinePrimaryVertices"),
                               hltPathA_possNames = cms.untracked.vstring("HLT_DoubleEle33_CaloIdT_v2",
                                                                          "HLT_DoubleEle33_CaloIdT_v3",
@@ -267,10 +316,30 @@ process.demo = cms.EDAnalyzer('BstdZeeNTupler',
                                                                             "HLT_Mu15_Photon20_CaloIdL_v9")
       ) 
 
-#process.totalKinematicsFilter = cms.EDFilter('TotalKinematicsFilter',
-#  src             = cms.InputTag("genParticles"),
-#  tolerance       = cms.double(0.5),
-#  verbose         = cms.untracked.bool(False)                                   
-#)
 
-process.p = cms.Path( process.heepIdNoIso * process.heepIdNoIsoEles * process.recalculateIsoVars * process.demo)
+##################################################################################
+# Useful modules for looking at details of generator event record 
+#process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
+#process.printTree = cms.EDAnalyzer("ParticleListDrawer",
+#  maxEventsToPrint = cms.untracked.int32(100),
+#  printVertex = cms.untracked.bool(False),
+#  src = cms.InputTag("genParticles")
+#)
+#
+#process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
+#process.printDecayTree = cms.EDAnalyzer("ParticleTreeDrawer",
+#                                   src = cms.InputTag("genParticles"),                                                                 
+#                                   printP4 = cms.untracked.bool(False),
+#                                   printPtEtaPhi = cms.untracked.bool(True),
+#                                   printVertex = cms.untracked.bool(False),
+#                                   printStatus = cms.untracked.bool(True),
+#                                   printIndex = cms.untracked.bool(True)
+#                                   )
+
+##################################################################################
+# Construct the whole path ...
+process.p = cms.Path( process.heepIdNoIso * process.heepIdNoIsoEles * process.innerVetoModEleIsos * process.recalcIsoVarsWithIsoDeps * process.kt6PFJets * process.demo )
+
+## For checking transient event content ....
+#process.Out = cms.OutputModule("PoolOutputModule", fileName = cms.untracked.string (options.outputFile+"_AODPlus.root") )
+#process.end = cms.EndPath( process.Out )
