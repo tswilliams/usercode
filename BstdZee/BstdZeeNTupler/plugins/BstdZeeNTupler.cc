@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.11 2012/02/06 22:06:34 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.12 2012/05/15 14:00:47 tsw Exp $
 //
 //
 
@@ -93,7 +93,6 @@ sjlkd
 #include "TSystem.h"
 #include "TClassTable.h"
 
-#include "NTupler/BstdZeeNTupler/interface/tswEleStruct.h"
 #include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
 #include "NTupler/BstdZeeNTupler/interface/tswMuStruct.h"
 #include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
@@ -480,9 +479,6 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		std::vector<float> bstdHEEPEles_isolHadDepth2_;
 		std::vector<float> bstdHEEPEles_isolPtTrks_;
 		std::vector<float> bstdHEEPEles_isolEmHadDepth1_;
-
-		//std::vector<tsw::HEEPEle>  normGsfEles_tswHEEPEle_;
-		//std::vector<tsw::HEEPEle>* normGsfEles_tswHEEPElePtr_;
 };
 
 //
@@ -539,14 +535,6 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 	EventDataTree = fHistos->make<TTree>("EventDataTree", "Electron event data");
 	//EventDataTree = new TTree("EventDataTree", "GSFelectroneventdata");
 	
-
-	//gROOT->ProcessLine(".L interface/tswHEEPEle.h+");
-	//gInterpreter->GenerateDictionary("tsw::HEEPEle","interface/tswHEEPEle.h");
-   // check to see if the event class is in the dictionary
-   // if it is not load the definition in libEvent.so
-   /*if (!TClassTable::GetDict("tsw::HEEPEle")) {
-      gSystem->Load("interface/tswHEEPEle_h.so");
-	}*/
 	//Setting up the links between variables and branches...
 	event_ = 0;
 	EventDataTree->Branch("event","tsw::Event", &event_, 64000, 1); // This line was taken from Jim's tupiliser
@@ -1940,7 +1928,6 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 
 	reco::GsfElectron ithGsfEle;
 	heep::Ele ithHEEPEle(ithGsfEle);
-	tsw::EleStruct ithtswEleStruct;
 
 	//Setting the values of the standard reconstruction GSF electron variables...
 	normGsfEles_number_ = handle_normGsfEles.product()->size();
@@ -2375,7 +2362,6 @@ void BstdZeeNTupler::ReadInBstdGsfEles(bool beVerbose, const edm::Handle<reco::G
 	
 	reco::GsfElectron ithGsfEle;
 	heep::Ele ithHEEPEle(ithGsfEle);
-	tsw::EleStruct ithtswEleStruct;
 
 	//Setting the values of the standard reconstruction GSF electron variables...
 	bstdGsfEles_number_ = handle_bstdGsfEles.product()->size();
