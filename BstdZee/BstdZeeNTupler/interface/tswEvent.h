@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "NTupler/BstdZeeNTupler/interface/tswMuStruct.h"
-//#include "BstdZeeFirst/Analyser/interface/tswEventHelper.h"
 
 namespace tsw{
 	class Event : public TObject {
