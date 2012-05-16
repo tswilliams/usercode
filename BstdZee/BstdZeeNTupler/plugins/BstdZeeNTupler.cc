@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.12 2012/05/15 14:00:47 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.13 2012/05/15 14:07:27 tsw Exp $
 //
 //
 
@@ -94,7 +94,6 @@ sjlkd
 #include "TClassTable.h"
 
 #include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
-#include "NTupler/BstdZeeNTupler/interface/tswMuStruct.h"
 #include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
 
 //Functions...
