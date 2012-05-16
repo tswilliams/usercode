@@ -35,12 +35,13 @@ namespace tsw{
 			~HEEPDiEle(){}
 
 			//Methods that return properties of the di-electron pair ...
-			TLorentzVector totalP4(){return (eleA_.p4() + eleB_.p4());}
-			float pT(){return totalP4().Pt();}
-			float invMass(){return totalP4().M();}
-			float openingAngle(){return eleA_.p4().Angle(eleB_.p4().Vect());}
-			float deltaEta(){return eleB_.eta() - eleA_.eta();}
-			float deltaPhi(){
+			TLorentzVector totalP4()  const  {return (eleA_.p4() + eleB_.p4());}
+			TLorentzVector p4()  const  { return totalP4(); }
+			float pT()           const  {return totalP4().Pt();}
+			float invMass()      const  {return totalP4().M();}
+			float openingAngle() const  {return eleA_.p4().Angle(eleB_.p4().Vect());}
+			float deltaEta()     const  {return eleB_.eta() - eleA_.eta();}
+			float deltaPhi()     const  {
 				double value_pi = 3.14159265;
 				float dPhi = eleB_.phi() - eleA_.phi();
 				while(dPhi >= value_pi)
@@ -49,9 +50,9 @@ namespace tsw{
 					dPhi += 2.0*value_pi;
 				return dPhi;
 			}
-			float scDeltaEta(){return eleB_.scEta() - eleA_.scEta();}
-			float scDeltaPhi(){return eleB_.scPhi() - eleA_.scPhi();}
-			float deltaR(){return sqrt( pow(deltaEta(), 2.0) + pow(deltaPhi(),2.0) ); }
+			float scDeltaEta() const  {return eleB_.scEta() - eleA_.scEta();}
+			float scDeltaPhi() const  {return eleB_.scPhi() - eleA_.scPhi();}
+			float deltaR()     const  {return sqrt( pow(deltaEta(), 2.0) + pow(deltaPhi(),2.0) ); }
 
 			bool isEBEB(){
 				if( eleA_.isEB() && eleB_.isEB() )
@@ -151,8 +152,8 @@ namespace tsw{
 //			}
 
 			//Methods that return the electrons ...
-			tsw::HEEPEle eleA(){return eleA_;}
-			tsw::HEEPEle eleB(){return eleB_;}
+			tsw::HEEPEle eleA()  const  { return eleA_; }
+			tsw::HEEPEle eleB()  const  { return eleB_; }
 
 			//Method to write out general quantities of interest about the di-ele
 			void PrintOutInfo();
