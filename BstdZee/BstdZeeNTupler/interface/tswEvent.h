@@ -2,11 +2,14 @@
 #ifndef tswEvent_h
 #define tswEvent_h
 
-#include "TObject.h"
-
+// C++ includes
 #include <vector>
 
-#include "NTupler/BstdZeeNTupler/interface/tswMuStruct.h"
+// ROOT includes
+#include "TObject.h"
+
+// BstdZee includes
+#include "BstdZeeFirst/Analyser/interface/tswMuStruct.h"
 
 namespace tsw{
 	class Event : public TObject {
