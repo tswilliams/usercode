@@ -9,38 +9,42 @@ namespace tsw{
 	class EventHelper{
 		private:
 			tsw::Event* theEvent_;
+			float xsecWeight_;
+
 		public:
 			//CTORs and DTOR ...
 			EventHelper() : theEvent_(0) {}
 			EventHelper(tsw::Event* ptr_event) : theEvent_(ptr_event){}
 
 			// Methods for getting information out of tsw::Event ...
-			float GetMCGenWeight() const {
-				return theEvent_->mc_genWeight_;	}
+			unsigned int runNum()   const  { return theEvent_->runNum_; }
+			unsigned int lumiSec()  const  { return theEvent_->lumiSec_; }
+			unsigned int eventNum() const  { return theEvent_->evtNum_; }
+
+			void setXsecWeight(float xsecWeight) { xsecWeight_ = xsecWeight; }
+			float xsecWeight() const { return xsecWeight_; }
+			float totWeight() const {
+				return (xsecWeight()*genWeight()*puWeight());  }
+
+			float genWeight() const { return theEvent_->mc_genWeight_;	}
 			TLorentzVector GetLHEZbosonP4(){
 				TLorentzVector p4_Z = ConvertToTLorentzVector( &(theEvent_->mcLHE_ZbosonP4_) );
 				return p4_Z; }
 
-			float GetMCPU_TrueNumVtx(){
-				return theEvent_->mc_bx0_nPUVtxPoissonMean_;	}
-			float GetMCPU_nVtx() const {
-				return theEvent_->mc_bx0_nPUVtx_; }
-			std::vector<float> GetMCPU_VtxZPosns(){
-				return theEvent_->mc_bx0_PUVtxZPosns_;	}
-			double GetMCPU_1Dweight(){
-				return theEvent_->mc_puWeight_1D_; }
+			float GetMCPU_TrueNumVtx()             const  { return theEvent_->mc_bx0_nPUVtxPoissonMean_;	}
+			float GetMCPU_nVtx()                   const  { return theEvent_->mc_bx0_nPUVtx_; }
+			std::vector<float> GetMCPU_VtxZPosns() const  { return theEvent_->mc_bx0_PUVtxZPosns_;	}
+			double mcPU_1Dweight()                 const  { return theEvent_->mc_puWeight_1D_; }
+			double puWeight()  const  { return mcPU_1Dweight(); }
 
-			float GetRecoVtx_nVtxs(){
-				return theEvent_->recoVtx_totalNum_;}
-			float GetRecoVtx_nGoodVtxs(){
-					return theEvent_->recoVtx_numGoodVtxs_;}
+			float GetRecoVtx_nVtxs()     const  { return theEvent_->recoVtx_totalNum_; }
+			float GetRecoVtx_nGoodVtxs() const  { return theEvent_->recoVtx_numGoodVtxs_; }
 
 			double GetPURho() const {
 					return ( (theEvent_->pu_rho_)>0.0 ? theEvent_->pu_rho_ : 0.0 ); }
-			std::string GetTrigInfo_eMuPath_name(){
-				return theEvent_->trg_emuPath_name_; }
-			bool GetTrigInfo_eMuPath_decision(){
-				return theEvent_->trg_emuPath_decision_; }
+
+			std::string GetTrigInfo_eMuPath_name() const { return theEvent_->trg_emuPath_name_; }
+			bool GetTrigInfo_eMuPath_decision()    const { return theEvent_->trg_emuPath_decision_; }
 
 			const double GetNormEle_IsoDep_stdTrkIso(const unsigned int iEle) const {return theEvent_->stdEles_isoDeps_stdTrkIso_.at(iEle); }
 			const double GetNormEle_IsoDep_stdEcalIso(const unsigned int iEle) const {return theEvent_->stdEles_isoDeps_stdEcalIso_.at(iEle); }
