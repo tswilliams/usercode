@@ -1,7 +1,8 @@
 #ifndef tswEventHelper_h
 #define tswEventHelper_h
 
-#include "tswMuonCollection.h"
+// BstdZee includes
+#include "BstdZeeFirst/Analyser/interface/tswMuonCollection.h"
 #include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
 
 namespace tsw{

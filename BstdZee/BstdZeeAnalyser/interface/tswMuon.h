@@ -1,7 +1,7 @@
 #ifndef tswMuon_h
 #define tswMuon_h
 
-#include "NTupler/BstdZeeNTupler/interface/tswMuStruct.h"
+#include "BstdZeeFirst/Analyser/interface/tswMuStruct.h"
 #include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
 
 namespace tsw{
