@@ -1,18 +1,20 @@
 #ifndef tswHEEPEle_h
 #define tswHEEPEle_h
 
-//#include "NTupler/BstdZeeNTupler/interface/tswEleStruct.h"
-#include "tswEleStruct.h"
-#include "TObject.h"
-#include "Math/GenVector/LorentzVector.h"
-#include "Math/Vector4Dfwd.h"
-#include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
-
+// C++ includes
 #include <vector>
 #include <functional>
 
+// ROOT includes
+#include "Math/GenVector/LorentzVector.h"
+#include "Math/Vector4Dfwd.h"
+
+// BstdZee includes
+#include "BstdZeeFirst/Analyser/interface/tswEleStruct.h"
+#include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
+
+
 namespace tsw{
-	//class HEEPEle : public TObject {
 	class HEEPEle{
 		private:
 			EleStruct eleStr_;
@@ -234,8 +236,6 @@ namespace tsw{
 				return (this->modEmIso(anotherEle)+this->modHad1Iso(anotherEle));}
 			float modEmHad1Iso_v1(tsw::HEEPEle* theOtherEle);
 
-		//private:
-			//ClassDef(tsw::HEEPEle,1);
 	};
 
 	HEEPEle::HEEPEle(tsw::EleStruct eleStruct){

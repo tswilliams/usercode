@@ -1,7 +1,11 @@
-//Include files...
+
+// C++ includes
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <cmath>
+
+// ROOT includes
 
 #include "TFile.h"
 #include "TTree.h"
@@ -15,18 +19,15 @@
 
 #include "Math/GenVector/LorentzVector.h"
 #include "Math/Vector4Dfwd.h" // Included for the typedef of ROOT::Math::LorentzVector<PxPyPzE4D<double> > to ROOT::Math::XYZTVector
-//#include "Math/PxPyPzE4D.h"
-//#include "Math/GenVector/GenVector_exception.h"
 #include "TLorentzVector.h"
-#include <cmath>
 //Must include TROOT.h in order for the gROOT->ProcessLine("#inlcude <vector>") line to work.
 #include "TROOT.h" 
 //    gROOT->ProcessLine("#include <vector>");
 
-//#include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
-#include "BstdZeeFirst/Analyser/interface/tswEventHelper.h"
 
-#include "NTupler/BstdZeeNTupler/interface/tswHEEPEle.h"
+// BstdZee includes
+#include "BstdZeeFirst/Analyser/interface/tswEventHelper.h"
+#include "BstdZeeFirst/Analyser/interface/tswHEEPEle.h"
 #include "BstdZeeFirst/Analyser/interface/tswReconValidationHistos.h"
 #include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
 #include "BstdZeeFirst/Analyser/interface/tswHEEPDiEle.h"
@@ -39,11 +40,6 @@
 #include "BstdZeeFirst/Analyser/interface/tswEleMuObject.h"
 #include "BstdZeeFirst/Analyser/interface/tswEleMuDistns.h"
 
-//#include "linkdef.h"
-//#pragma link C++ class vector<float> + ;
-//#pragma link C++ class vector<double> + ;
-//#pragma link C++ class vector<int> + ;
-//#pragma link C++ class vector<bool> + ;
 
 #ifdef __MAKECINT__
 #pragma link C++ class vector<Int_t>+;
