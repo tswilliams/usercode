@@ -43,26 +43,27 @@ namespace tsw{
 			bool ApplyHEEPIsoCut_Had2();
 			bool ApplyIsoVarHEEPCuts();
 			bool ApplyAllHEEPCuts();
+
 			/////////////////////////////////////////////////
-			//Methods for reading out all of the HEEP variables ...
+			// Methods for reading out all of the HEEP variables ...
 			// Kinematic and geometric variables
-			const float et() const {return eleStr_.et_;}
-			float gsfEt(){return eleStr_.gsfEt_;}
-			float scEt(){return eleStr_.scEt_;}
-			float energy(){return eleStr_.energy_;}
+			const float et()  const {return eleStr_.et_;}
+			float gsfEt()     const {return eleStr_.gsfEt_;}
+			float scEt()      const {return eleStr_.scEt_;}
+			float energy()    const {return eleStr_.energy_;}
 //			float gsfEnergy(){return eleStr_.gsfEnergy_;}
-			float caloEnergy(){return eleStr_.caloEnergy_;}
+			float caloEnergy() const {return eleStr_.caloEnergy_;}
 			float ecalEnergyError(){return eleStr_.ecalEnergyError_;}
-			float eta(){return eleStr_.eta_;}
+			float eta()         const {return eleStr_.eta_;}
 			const float scEta() const {return eleStr_.scEta_;}
 //			float detEta(){return eleStr_.detEta_;}
 //			float detEtaAbs(){return eleStr_.detEtaAbs_;}
-			float phi(){return eleStr_.phi_;}
-			float scPhi(){return eleStr_.scPhi_;}
+			float phi()    const  {return eleStr_.phi_;}
+			float scPhi()  const  {return eleStr_.scPhi_;}
 //			float detPhi(){return eleStr_.detPhi_;}
 //			float zVtx(){return eleStr_.zVtx_;}
-			TLorentzVector p4() const {return ConvertToTLorentzVector( &(eleStr_.p4_) );}
-			TLorentzVector gsfP4(){return ConvertToTLorentzVector( &(eleStr_.gsfP4_) );}
+			TLorentzVector p4()    const  {return ConvertToTLorentzVector( &(eleStr_.p4_) );}
+			TLorentzVector gsfP4() const  {return ConvertToTLorentzVector( &(eleStr_.gsfP4_) );}
 
 			// 'Classification'
 //			int classification(){return eleStr_.classification_;}
@@ -109,7 +110,7 @@ namespace tsw{
 			// Shower shape variables
 //			float sigmaEtaEta(){return eleStr_.sigmaEtaEta_;}
 //			float sigmaEtaEtaUnCorr(){return eleStr_.sigmaEtaEtaUnCorr_;}
-			float sigmaIEtaIEta(){return eleStr_.sigmaIEtaIEta_;}
+			float sigmaIEtaIEta() const { return eleStr_.sigmaIEtaIEta_; }
 //			float e1x5(){return eleStr_.e1x5_;}
 //			float e2x5Max(){return eleStr_.e2x5Max_;}
 //			float e5x5(){return eleStr_.e5x5_;}
@@ -166,8 +167,15 @@ namespace tsw{
 //			}
 			double isol_rhoCorrnEmH1(const tsw::EventHelper& evtHelper) const {
 				return 0.28*(evtHelper.GetPURho()); }
+			unsigned int numMissInnerHits()  const  { return eleStr_.numMissInnerHits_; }
 
-			unsigned int numMissInnerHits(){ return eleStr_.numMissInnerHits_; }
+			/// Method for applying HEEP cuts with modified isolation (HEEP v4.0, modHeepIso v0.0)
+			int heepIdModIsoCutCode_v40_v00(const tsw::EventHelper& evtHelper) const;
+			int heepIdModIsoCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoCutCode_v40_v00(evtHelper);}
+			bool heepIdModIsoCut(const tsw::EventHelper& evtHelper) const { return (heepIdModIsoCutCode(evtHelper)==0); }
+
+			//////////////////////////////////////////////////////////////////////////////
+			// METHODS FOR CALCULATING OLD MODIFIED ISOLATION CUTS
 
 			//SC information (incl. individual recHits) ...
 			float SC_eta(){ return eleStr_.SC_posn_eta_; }
@@ -235,6 +243,22 @@ namespace tsw{
 			float modEmHad1Iso(tsw::HEEPEle* anotherEle){
 				return (this->modEmIso(anotherEle)+this->modHad1Iso(anotherEle));}
 			float modEmHad1Iso_v1(tsw::HEEPEle* theOtherEle);
+
+
+		private:
+			// Static private members storing the index for each cut in cut codes
+			static const int cutCode_Et_       = 0x0001;
+			static const int cutCode_eta_      = 0x0002;
+			static const int cutCode_ecalDrvn_ = 0x0004;
+			static const int cutCode_dEtaIn_   = 0x0008;
+			static const int cutCode_dPhiIn_   = 0x0010;
+			static const int cutCode_hOverE_   = 0x0020;
+			static const int cutCode_sieie_    = 0x0040;
+			static const int cutCode_eXx5_     = 0x0080;
+			static const int cutCode_isoEmH1_  = 0x0100;
+			static const int cutCode_isoHad2_  = 0x0200;
+			static const int cutCode_isoTrk_   = 0x0400;
+			static const int cutCode_missHits_ = 0x0800;
 
 	};
 
@@ -613,6 +637,56 @@ const bool tsw::HEEPEle::isolCut_inrVetoModEmHadD1(const tsw::Event::InnerVetoSi
 
 
 
+int tsw::HEEPEle::heepIdModIsoCutCode_v40_v00(const tsw::EventHelper& evtHelper) const
+{
+	const bool isInEB = (fabs(scEta()) < 1.442);
+	const bool isInEE = ( fabs(scEta())>1.56 && fabs(scEta())<2.5 );
+	const float thr_Et  = isInEB ? 35.0 : 40.0 ;
+	const float thr_dEtaIn = isInEB ? 0.005 : 0.007 ;
+
+	int cutCode = 0;
+
+	// Fiducial cuts
+	if( !(et()>thr_Et) )
+		cutCode |= cutCode_Et_;
+	if( !(isInEB || isInEE) )
+		cutCode |= cutCode_eta_;
+
+	if( !(isEcalDriven()) )
+		cutCode |= cutCode_ecalDrvn_;
+
+	// Track-SC matching cuts
+	if( !(fabs(dEtaIn())<thr_dEtaIn) )
+		cutCode |= cutCode_dEtaIn_;
+	if( !(fabs(dPhiIn())<0.06) )
+		cutCode |= cutCode_dPhiIn_;
+
+	// Calo-based cuts
+	if( !(hOverE()<0.05) )
+		cutCode |= cutCode_hOverE_;
+	if(  isInEE && !(sigmaIEtaIEta()<0.03)  )
+		cutCode |= cutCode_sieie_;
+	if(  isInEB && !((e2x5MaxOver5x5()>0.94) || (e1x5Over5x5()>0.83))  )
+		cutCode |= cutCode_eXx5_;
+
+	// Mod isolation cuts
+	const float modEmH1isol = isol_inrVetoModEmHadD1(tsw::Event::mediumVeto) - isol_rhoCorrnEmH1(evtHelper);
+	const float modTrkIsol  = isol_inrVetoModTrk(tsw::Event::xSmallVeto);
+	if(  !( isInEB && modEmH1isol<(10.0+0.04*et()) )  )
+		cutCode |= cutCode_isoEmH1_;
+	if(  !( isInEB && modTrkIsol<(8.0+0.06*et()) )  )
+		cutCode |= cutCode_isoTrk_;
+
+	// Missing hits cuts
+	if( numMissInnerHits()!=0 )
+		cutCode |= cutCode_missHits_;
+
+	return cutCode;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+// METHODS FOR CALCULATING SC-BASED MODIFIED ISOLATION VALUES (written Nov/Dec 2011)
+//////////////////////////////////////////////////////////////////////////////////////
 
 float tsw::HEEPEle::modTrkIso(tsw::HEEPEle* theOtherEle)
 {
