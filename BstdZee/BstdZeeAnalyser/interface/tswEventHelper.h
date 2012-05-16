@@ -14,10 +14,116 @@ namespace tsw{
 			EventHelper(tsw::Event* ptr_event) : theEvent_(ptr_event){}
 
 			// Methods for getting information out of tsw::Event ...
+			float GetMCGenWeight() const {
+				return theEvent_->mc_genWeight_;	}
+			TLorentzVector GetLHEZbosonP4(){
+				TLorentzVector p4_Z = ConvertToTLorentzVector( &(theEvent_->mcLHE_ZbosonP4_) );
+				return p4_Z; }
+
+			float GetMCPU_TrueNumVtx(){
+				return theEvent_->mc_bx0_nPUVtxPoissonMean_;	}
+			float GetMCPU_nVtx() const {
+				return theEvent_->mc_bx0_nPUVtx_; }
+			std::vector<float> GetMCPU_VtxZPosns(){
+				return theEvent_->mc_bx0_PUVtxZPosns_;	}
+			double GetMCPU_1Dweight(){
+				return theEvent_->mc_puWeight_1D_; }
+
+			float GetRecoVtx_nVtxs(){
+				return theEvent_->recoVtx_totalNum_;}
+			float GetRecoVtx_nGoodVtxs(){
+					return theEvent_->recoVtx_numGoodVtxs_;}
+
+			double GetPURho() const {
+					return ( (theEvent_->pu_rho_)>0.0 ? theEvent_->pu_rho_ : 0.0 ); }
 			std::string GetTrigInfo_eMuPath_name(){
 				return theEvent_->trg_emuPath_name_; }
 			bool GetTrigInfo_eMuPath_decision(){
 				return theEvent_->trg_emuPath_decision_; }
+
+			const double GetNormEle_IsoDep_stdTrkIso(const unsigned int iEle) const {return theEvent_->stdEles_isoDeps_stdTrkIso_.at(iEle); }
+			const double GetNormEle_IsoDep_stdEcalIso(const unsigned int iEle) const {return theEvent_->stdEles_isoDeps_stdEcalIso_.at(iEle); }
+			const double GetNormEle_IsoDep_stdHcalD1Iso(const unsigned int iEle) const {return theEvent_->stdEles_isoDeps_stdHcalD1Iso_.at(iEle); }
+			const double GetNormEle_IsoDep_inrVetoModTrkIso(const unsigned int iEle) const {return theEvent_->stdEles_isoDeps_inrVetoModTrkIso_.at(iEle); }
+			const double GetNormEle_IsoDep_inrVetoModEcalIso(const unsigned int iEle) const {return theEvent_->stdEles_isoDeps_inrVetoModEcalIso_.at(iEle); }
+			const double GetNormEle_IsoDep_inrVetoModHcalD1Iso(const unsigned int iEle) const {return theEvent_->stdEles_isoDeps_inrVetoModHcalD1Iso_.at(iEle); }
+
+			const double GetNormEle_inrVetoModTrkIso(const unsigned int iEle, const tsw::Event::InnerVetoSize vetoSize) const
+			{
+				double tkIso = 9999.9;
+
+				switch (vetoSize)
+				{
+				case tsw::Event::xSmallVeto:
+					tkIso = theEvent_->stdEles_inrVetoXSModIso_Trk_.at(iEle); break;
+				case tsw::Event::smallVeto:
+					tkIso = theEvent_->stdEles_inrVetoSModIso_Trk_.at(iEle); break;
+				case tsw::Event::mediumVeto:
+					tkIso = theEvent_->stdEles_inrVetoModIso_Trk_.at(iEle); break;
+				case tsw::Event::largeVeto:
+					tkIso = theEvent_->stdEles_inrVetoLModIso_Trk_.at(iEle); break;
+				case tsw::Event::xLargeVeto:
+					tkIso = theEvent_->stdEles_inrVetoXLModIso_Trk_.at(iEle); break;
+				default:
+					std::cout << " *** ERROR : Unknown InnerVetoSize enum value passed to tsw::EventHelper::GetNormEle_inrVetoModTrkIso ! ***" << std::endl;
+					break;
+				}
+
+				return tkIso;
+			}
+
+			const double GetNormEle_inrVetoModEmIso(const unsigned int iEle, const tsw::Event::InnerVetoSize vetoSize) const
+			{
+				double ecalIso = 9999.9;
+
+				switch (vetoSize)
+				{
+				case tsw::Event::xSmallVeto:
+					ecalIso = theEvent_->stdEles_inrVetoXSModIso_Ecal_.at(iEle); break;
+				case tsw::Event::smallVeto:
+					ecalIso = theEvent_->stdEles_inrVetoSModIso_Ecal_.at(iEle); break;
+				case tsw::Event::mediumVeto:
+					ecalIso = theEvent_->stdEles_inrVetoModIso_Ecal_.at(iEle); break;
+				case tsw::Event::largeVeto:
+					ecalIso = theEvent_->stdEles_inrVetoLModIso_Ecal_.at(iEle); break;
+				case tsw::Event::xLargeVeto:
+					ecalIso = theEvent_->stdEles_inrVetoXLModIso_Ecal_.at(iEle); break;
+				default:
+					std::cout << " *** ERROR : Unknown InnerVetoSize enum value passed to tsw::EventHelper::GetNormEle_inrVetoModEcalIso ! ***" << std::endl;
+					break;
+				}
+
+				return ecalIso;
+			}
+
+			const double GetNormEle_inrVetoModHadD1Iso(const unsigned int iEle, const tsw::Event::InnerVetoSize vetoSize) const
+			{
+				double hcalD1Iso = 9999.9;
+
+				switch (vetoSize)
+				{
+				case tsw::Event::xSmallVeto:
+					hcalD1Iso = theEvent_->stdEles_inrVetoXSModIso_HcalD1_.at(iEle); break;
+				case tsw::Event::smallVeto:
+					hcalD1Iso = theEvent_->stdEles_inrVetoSModIso_HcalD1_.at(iEle); break;
+				case tsw::Event::mediumVeto:
+					hcalD1Iso = theEvent_->stdEles_inrVetoModIso_HcalD1_.at(iEle); break;
+				case tsw::Event::largeVeto:
+					hcalD1Iso = theEvent_->stdEles_inrVetoLModIso_HcalD1_.at(iEle); break;
+				case tsw::Event::xLargeVeto:
+					hcalD1Iso = theEvent_->stdEles_inrVetoXLModIso_HcalD1_.at(iEle); break;
+				default:
+					std::cout << " *** ERROR : Unknown InnerVetoSize enum value passed to tsw::EventHelper::GetNormEle_inrVetoModHcalD1Iso ! ***" << std::endl;
+					break;
+				}
+
+				return hcalD1Iso;
+			}
+
+			unsigned int GetNormEle_nGenHadronsDr04(const unsigned int iEle) const {
+				return theEvent_->stdEles_nGenHadronsDr04_.at(iEle); }
+			double GetNormEle_ptSumGenHadronsDr04(const unsigned int iEle) const {
+				return theEvent_->stdEles_ptSumGenHadronsDr04_.at(iEle); }
 
 			tsw::MuonCollection GetNormMuons();
 	};
