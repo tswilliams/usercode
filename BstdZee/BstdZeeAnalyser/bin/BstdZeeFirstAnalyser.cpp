@@ -162,6 +162,10 @@ namespace tsw{
 		}
 	};
 
+	///////////////////////////////////////////////////////////////////////////////
+	// EffiCalcTree: Simple class for generating trees containing small amount of selection cut & kinematic
+	//               info about Z candidates (plus event information)
+	//
 	class DiEleTree{
 	private:
 		// PRIVATE MEMBERS
@@ -169,18 +173,31 @@ namespace tsw{
 
 		// For the event & kinematic branches ...
 		Double_t treeVar_weight_;
+		Double_t treeVar_genWeight_;
+		Double_t treeVar_puWeight_;
+		Double_t treeVar_xsecWeight_;
 
 		UInt_t treeVar_runNum_;
 		UInt_t treeVar_lumiNum_;
 		UInt_t treeVar_evtNum_;
 
-		Double_t treeVar_pT_;
+		Bool_t treeVar_trgDecision_;
+
+		TLorentzVector* treeVar_Zp4Ptr_; TLorentzVector treeVar_Zp4_;
+		Double_t treeVar_ZpT_;
+		Double_t treeVar_Zmass_;
+		Double_t treeVar_dR_;
+		Double_t treeVar_dEta_;
+		Double_t treeVar_dPhi_;
+
 		TLorentzVector* treeVar_eleA_p4Ptr_; TLorentzVector treeVar_eleA_p4_;
 		TLorentzVector* treeVar_eleB_p4Ptr_; TLorentzVector treeVar_eleB_p4_;
+		Int_t treeVar_eleA_modHeepCutCode_;
+		Int_t treeVar_eleB_modHeepCutCode_;
 
 	public:
-		DiEleTree(){
-			diEleTree_ = new TTree("zBosonTree","Tree of Z candidates");
+		DiEleTree(std::string treeName="zBosonTree"){
+			diEleTree_ = new TTree(treeName.c_str(), "Tree of Z candidates");
 			diEleTree_->SetDirectory(0); // This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
 			/* Error is as follows:
 			 * Error in <TTree::Fill>: Failed filling branch:myTree.mass, nbytes=-1, entry=3990
@@ -193,35 +210,59 @@ namespace tsw{
 			 *     TTree *T = new TTree(...)
 			 */
 			// Setting up the event / di-ele branches ...
-			diEleTree_->Branch("weight",      &treeVar_weight_, "weight/D");
+			diEleTree_->Branch("weight",     &treeVar_weight_,     "weight/D");
+			diEleTree_->Branch("genWeight",  &treeVar_genWeight_,  "genWeight/D");
+			diEleTree_->Branch("puWeight",   &treeVar_puWeight_,   "puWeight/D");
+			diEleTree_->Branch("xsecWeight", &treeVar_xsecWeight_, "xsecWeight/D");
 
-			diEleTree_->Branch("run", &treeVar_runNum_,   "run/i");
-			diEleTree_->Branch("lumi", &treeVar_lumiNum_,   "lumi/i");
+			diEleTree_->Branch("run",    &treeVar_runNum_,   "run/i");
+			diEleTree_->Branch("lumi",   &treeVar_lumiNum_,   "lumi/i");
 			diEleTree_->Branch("evtNum", &treeVar_evtNum_,   "evtNum/i");
 
-			diEleTree_->Branch("diEle_pT",   &treeVar_pT_,     "pT/D");
+			diEleTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
 
-			diEleTree_->Branch("eleA_p4",     &treeVar_eleA_p4Ptr_);
-			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;
-			diEleTree_->Branch("eleB_p4",     &treeVar_eleB_p4Ptr_);
-			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;
+			diEleTree_->Branch("Zp4",   &treeVar_Zp4Ptr_); treeVar_Zp4Ptr_ = &treeVar_Zp4_;
+			diEleTree_->Branch("ZpT",   &treeVar_ZpT_,     "ZpT/D");
+			diEleTree_->Branch("Zmass", &treeVar_Zmass_,   "Zmass/D");
+			diEleTree_->Branch("dR",    &treeVar_dR_,      "dR/D");
+			diEleTree_->Branch("dEta",  &treeVar_dEta_,    "dEta/D");
+			diEleTree_->Branch("dPhi",  &treeVar_dPhi_,    "dPhi/D");
+
+			diEleTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);  treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;
+			diEleTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);	treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;
+
+			diEleTree_->Branch("eleA_modHeepCutCode", &treeVar_eleA_modHeepCutCode_, "eleA_modHeepCutCode/I");
+			diEleTree_->Branch("eleB_modHeepCutCode", &treeVar_eleB_modHeepCutCode_, "eleB_modHeepCutCode/I");
+
 
 		}
 		~DiEleTree(){ delete diEleTree_; }
 
-		void FillTree(tsw::HEEPDiEle* diEle, UInt_t runNum, UInt_t lumiNum, UInt_t evtNum, double evtWeight)
+		void FillTree(const tsw::HEEPDiEle& diEle, const tsw::EventHelper& evtHelper, bool trigDecision)
 		{
-			treeVar_weight_ = evtWeight;
+			treeVar_weight_     = evtHelper.totWeight();
+			treeVar_genWeight_  = evtHelper.genWeight();
+			treeVar_puWeight_   = evtHelper.puWeight();
+			treeVar_xsecWeight_ = evtHelper.xsecWeight();
 
-			treeVar_runNum_ = runNum;
-			treeVar_lumiNum_ = lumiNum;
-			treeVar_evtNum_ = evtNum;
+			treeVar_runNum_ = evtHelper.runNum();
+			treeVar_lumiNum_ = evtHelper.lumiSec();
+			treeVar_evtNum_ = evtHelper.eventNum();
 
-			treeVar_pT_ = diEle->pT();
+			treeVar_trgDecision_ = trigDecision;
 
-			treeVar_pT_ = diEle->pT();
-			treeVar_eleA_p4_ = diEle->eleA().p4();
-			treeVar_eleB_p4_ = diEle->eleB().p4();
+			treeVar_Zp4_   = diEle.p4();
+			treeVar_ZpT_   = diEle.pT();
+			treeVar_Zmass_ = diEle.invMass();
+			treeVar_dR_    = diEle.deltaR();
+			treeVar_dEta_  = diEle.deltaEta();
+			treeVar_dPhi_  = diEle.deltaPhi();
+
+			treeVar_eleA_p4_ = diEle.eleA().p4();
+			treeVar_eleB_p4_ = diEle.eleB().p4();
+
+			treeVar_eleA_modHeepCutCode_ = diEle.eleA().heepIdModIsoCutCode(evtHelper);
+			treeVar_eleB_modHeepCutCode_ = diEle.eleB().heepIdModIsoCutCode(evtHelper);
 
 			// And finally fill the tree ...
 			diEleTree_->Fill();
@@ -346,6 +387,9 @@ namespace tsw{
 		Double_t treeVar_eleA_EmH1RhoCorrn_;
 		Double_t treeVar_eleB_EmH1RhoCorrn_;
 
+		Int_t treeVar_eleA_heepIdModIsoCutCode_;
+		Int_t treeVar_eleB_heepIdModIsoCutCode_;
+
 	public:
 		EffiCalcTree()
 		{
@@ -465,13 +509,16 @@ namespace tsw{
 
 			effiCalcTree_->Branch("eleA_EmH1RhoCorrn", &treeVar_eleA_EmH1RhoCorrn_, "eleA_EmH1RhoCorrn_/D");
 			effiCalcTree_->Branch("eleB_EmH1RhoCorrn", &treeVar_eleB_EmH1RhoCorrn_, "eleB_EmH1RhoCorrn_/D");
+
+			effiCalcTree_->Branch("eleA_heepIdModIsoCutCode", &treeVar_eleA_heepIdModIsoCutCode_, "eleA_heepIdModIsoCutCode/I");
+			effiCalcTree_->Branch("eleB_heepIdModIsoCutCode", &treeVar_eleB_heepIdModIsoCutCode_, "eleB_heepIdModIsoCutCode/I");
 		}
 		~EffiCalcTree(){ delete effiCalcTree_; }
 
 		void FillTree(tsw::HEEPDiEle* diEle, const TLorentzVector& mcZboson_ele1, const TLorentzVector& mcZboson_ele2,
-				const unsigned int runNum, const unsigned int lumiNum, const unsigned int evtNum, const tsw::EventHelper& eventHelper, const double evtWeight)
+				const unsigned int runNum, const unsigned int lumiNum, const unsigned int evtNum, const tsw::EventHelper& eventHelper)
 		{
-			treeVar_weight_  = eventHelper.GetMCGenWeight();
+			treeVar_weight_  = eventHelper.totWeight();
 			treeVar_mc_numVtx_ = eventHelper.GetMCPU_nVtx();
 			treeVar_runNum_  = runNum;
 			treeVar_lumiSec_ = lumiNum;
@@ -602,14 +649,17 @@ namespace tsw{
 			treeVar_eleA_EmH1RhoCorrn_ = diEle->eleA().isol_rhoCorrnEmH1(eventHelper);
 			treeVar_eleB_EmH1RhoCorrn_ = diEle->eleB().isol_rhoCorrnEmH1(eventHelper);
 
+			treeVar_eleA_heepIdModIsoCutCode_ = diEle->eleA().heepIdModIsoCutCode_v40_v00(eventHelper);
+			treeVar_eleB_heepIdModIsoCutCode_ = diEle->eleB().heepIdModIsoCutCode_v40_v00(eventHelper);
+
 			// And finally fill the tree ...
 			effiCalcTree_->Fill();
 		}
 
 		void FillTree_NotReconstructed(const TLorentzVector& mcZboson_ele1, const TLorentzVector& mcZboson_ele2,
-				const unsigned int runNum, const unsigned int lumiNum, const unsigned int evtNum, const tsw::EventHelper& eventHelper, const double evtWeight)
+				const unsigned int runNum, const unsigned int lumiNum, const unsigned int evtNum, const tsw::EventHelper& eventHelper)
 		{
-			treeVar_weight_  = eventHelper.GetMCGenWeight();
+			treeVar_weight_  = eventHelper.totWeight();
 			treeVar_mc_numVtx_ = eventHelper.GetMCPU_nVtx();
 			treeVar_runNum_  = runNum;
 			treeVar_lumiSec_ = lumiNum;
@@ -729,6 +779,9 @@ namespace tsw{
 			treeVar_eleA_EmH1RhoCorrn_ = 0.0;
 			treeVar_eleB_EmH1RhoCorrn_ = 0.0;
 
+			treeVar_eleA_heepIdModIsoCutCode_ = 0x01000-1;
+			treeVar_eleB_heepIdModIsoCutCode_ = 0x01000-1;
+
 			// And finally fill the tree ...
 			effiCalcTree_->Fill();
 		}
@@ -765,10 +818,8 @@ class BstdZeeFirstAnalyser{
 		tsw::HEEPDiEle* getMcMatchedDiEle(const TLorentzVector& , const TLorentzVector& , const std::vector<tsw::HEEPEle>& );
 
 		//Methods for filling sets of histograms...
-		void FillReconValidationHistos(const Double_t );
-		void FillDiEleHistos(const Double_t );
-		void FillHistograms(const Double_t );
-		void DoEMuAnalysis(const Double_t );
+		void FillHistograms();
+		void DoEMuAnalysis();
 
 	public:
 		// Method for retrieving the actual number of events run over ...
@@ -1128,7 +1179,8 @@ class BstdZeeFirstAnalyser{
 		tsw::EleMuObject eleMu_EB_HEEPNoIso_muB_tight_;
 
 //		tsw::ABCDMethodTree frPreDiEleTree_;
-		tsw::DiEleTree zCandDiEleTree_;
+		tsw::DiEleTree noIsoZCandDiEleTree_;
+		tsw::DiEleTree modIsoZCandDiEleTree_;
 		tsw::EffiCalcTree zCandEffiTree_;
 
 		TTree* eleMuTree_;
@@ -1257,6 +1309,10 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	normMuons_1stpT_Histos_(             "h_normMuons_1stpT_",       "normal", "",           1, 1, 50, 1000.0, 50, 1000.0),
 	normMuons_tight_1stpT_Histos_(       "h_normMuons_tight_1stpT_", "normal", "tight cuts", 2, 1, 50, 1000.0, 50, 1000.0),
 	normMuons_barrel_tight_1stpT_Histos_("h_normMuons_barrel_tight_1stpT_", "normal", "barrel, tight cuts", 2, 1, 50, 1000.0, 50, 1000.0),
+	//
+	noIsoZCandDiEleTree_("noIsoZBosonTree"),
+	modIsoZCandDiEleTree_("modIsoZBosonTree"),
+	//
 	normEles_reconValidationHistos_(    "h_normEles_",      "standard",  "",              1,  false),
 	normEles_simpleCuts_reconValHistos_("h_normEles_sCuts_", "standard", ", simple cuts", 1,  false), //was 2
 	normEles_HEEPCuts_reconValHistos_(  "h_normEles_HEEP_",  "standard", ", HEEP cuts",   1,  true),  //was 8
@@ -1398,7 +1454,7 @@ BstdZeeFirstAnalyser::~BstdZeeFirstAnalyser(){
 	DeleteReconValidationHistos();
 }
 
-void BstdZeeFirstAnalyser::DoAnalysis(const Double_t evtWeight)
+void BstdZeeFirstAnalyser::DoAnalysis(const Double_t weightFromXsec)
 {
 
 	//Call AnalyseEvent method for each event...
@@ -1427,7 +1483,7 @@ void BstdZeeFirstAnalyser::DoAnalysis(const Double_t evtWeight)
 			continue;
 
 		//Analyse this data...
-		AnalyseEvent(evtWeight);
+		AnalyseEvent(weightFromXsec);
 	}
 	timer_AnalysingEvents.Stop();
 	timer_AnalysingEvents.Print();
@@ -1450,9 +1506,10 @@ void BstdZeeFirstAnalyser::DoAnalysis(const Double_t evtWeight)
 //---------------------- Private methods ----------------------------//
 //-------------------------------------------------------------------//
 
-void BstdZeeFirstAnalyser::AnalyseEvent(const Double_t eventWeight)
+void BstdZeeFirstAnalyser::AnalyseEvent(const Double_t weightFromXsec)
 {
 	eventHelper_ = tsw::EventHelper(event_);
+	eventHelper_.setXsecWeight(weightFromXsec);
 	//Setting up the TLorentzVector 4momenta...
 	timer_DoAnalysis_setup_.Start(false);
 
@@ -1497,11 +1554,11 @@ void BstdZeeFirstAnalyser::AnalyseEvent(const Double_t eventWeight)
 	///////////////////////////////////////
 	// Now, can actually do some physics!
 	timer_DoAnalysis_FillHistograms_.Start(false);
-	FillHistograms(eventWeight);
+	FillHistograms();
 	timer_DoAnalysis_FillHistograms_.Stop();
 
 	timer_DoAnalysis_DoEMuMethod_.Start(false);
-	DoEMuAnalysis(eventWeight);
+	DoEMuAnalysis();
 	timer_DoAnalysis_DoEMuMethod_.Stop();
 }
 
@@ -1948,7 +2005,8 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 //	frPreDiEleTree_.SaveToFile("/opt/ppd/newscratch/williams/Datafiles/abcdDiEleTrees/" + outputFile_name_ + "_abcdTree.root");
 
 	// Save the Z candidate di-ele tree ...
-	zCandDiEleTree_.SaveToFile(outputFile_name_ + "_zCandTree.root");
+	noIsoZCandDiEleTree_.SaveToFile(outputFile_name_ + "_noIsoZCandTree.root");
+	modIsoZCandDiEleTree_.SaveToFile(outputFile_name_ + "_modIsoZCandTree.root");
 	zCandEffiTree_.SaveToFile(outputFile_name_ + "_zEffiTree.root");
 
 	// Output information to screen about diff ordering of cuts in QCD estimation
@@ -2026,51 +2084,23 @@ tsw::HEEPDiEle* BstdZeeFirstAnalyser::getMcMatchedDiEle(const TLorentzVector& p4
 //--------------------------------------------------------//
 //---- Methods for filling sets of histograms ...
 //--------------------------------------------------------//
-void BstdZeeFirstAnalyser::FillReconValidationHistos(const Double_t weight){
-
-	//hist_normEles_number_->Fill(normGsfEles_number_, weight);
-	/*for(unsigned int eleIdx=0; eleIdx<normGsfEles_number_; eleIdx++){
-		hist_normEles_charge_->Fill(normGsfEles_charge_->at(eleIdx), weight);
-		hist_normEles_Et_->Fill(    normGsfEles_Et_->at(eleIdx),     weight);
-		hist_normEles_heepEt_->Fill(normGsfEles_HEEP_Et_, weight);
-		hist_normEles_Eta_->Fill(normGsfEles_Eta_->at(eleIdx), weight);
-		hist_normEles_scEta_->Fill(normGsfEles_scEta_->at(eleIdx), weight);
-		hist_normEles_ecalDriven_->Fill(normGsfEles_ecalDriven_->at(eleIdx), weight);
-		hist_normEles_ecalDrivenSeed_->Fill(normGsfEles_ecalDrivenSeed_->at(eleIdx), weight);
-
-		hist_normEles_heepdEtaIn_->Fill(normGsfEles_HEEP_dEtaIn_->at(eleIdx), weight);
-		hist_normEles_heepdPhiIn_->Fill(normGsfEles_HEEP_dPhiIn_->at(eleIdx), weight);
-		hist_normEles_HoverE_->Fill(normGsfEles_HoverE_->at(eleIdx), weight);
-		hist_normEles_sigmaIetaIeta_->Fill(normGsfEles_sigmaIetaIeta_->at(eleIdx), weight);
-		hist_normEles_scSigmaIetaIeta_->Fill(normGsfEles_scSigmaIetaIeta_->at(eleIdx), weight);
-
-		hist_normEles_dr03EmIsoEt_  ->Fill(normGsfEles_dr03EmIsoEt_->at(eleIdx), weight);
-		hist_normEles_dr03Had1IsoEt_->Fill(normGsfEles_dr03HadDepth1IsoEt_->at(eleIdx), weight);
-		hist_normEles_dr03Had2IsoEt_->Fill(normGsfEles_dr03HadDepth2IsoEt_->at(eleIdx), weight);
-		hist_normEles_dr03TkIsoPt_  ->Fill(normGsfEles_dr03TkIsoPt_->at(eleIdx), weight);
-		hist_normEles_e2x5Max_->Fill(      normGsfEles_e2x5Max_->at(eleIdx), weight);
-		hist_normEles_e5x5_->Fill(         normGsfEles_e5x5_->at(eleIdx), weight);
-	}*/
 
 
-}
-void BstdZeeFirstAnalyser::FillDiEleHistos(const Double_t weight){
-	//Currently a placeholder ...
-}
-
-void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight)
+void BstdZeeFirstAnalyser::FillHistograms()
 {
+	const Double_t evtWeight = eventHelper_.totWeight();
+
 	normDiEle_HEEPNoIso_exists_ = false;
 	normEles_EB_HEEPNoIso_1stpT_exists_ = false;
 
 	//Currently a placeholder ...
-	//FillDiEleHistos(evtWeight);
 	unsigned int idx_highestEtEle = 0;
 	float highestEleEt = -999.9;
 	std::vector<bool> normEles_sCutsFlags;           normEles_sCutsFlags.clear();
 	std::vector<bool> normEles_HEEPCutsFlags;        normEles_HEEPCutsFlags.clear();
 	std::vector<bool> normEles_HEEPCutsNoIsoFlags;   normEles_HEEPCutsNoIsoFlags.clear();
 	std::vector<bool> normEles_EB_HEEPCutsNoIsoFlags;normEles_EB_HEEPCutsNoIsoFlags.clear();
+	std::vector<bool> normEles_EB_heepIdModIsoFlags;
 //	std::vector<bool> normEles_EB_isFidAndEcalDrivenFlags; normEles_EB_isFidAndEcalDrivenFlags.clear();
 	std::vector<bool> normEles_EB_isFidEcalDrAndFRPreFlags; normEles_EB_isFidEcalDrAndFRPreFlags.clear();
 
@@ -2107,6 +2137,8 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight)
 		normEles_HEEPCutsFlags.push_back(normEles_.at(iEle).ApplyAllHEEPCuts()  );
 		normEles_HEEPCutsNoIsoFlags.push_back(normEles_.at(iEle).ApplyHEEPCutsNoIso()  );
 		normEles_EB_HEEPCutsNoIsoFlags.push_back( normEles_.at(iEle).ApplyHEEPCutsNoIso() && normEles_.at(iEle).isEB() );
+
+		normEles_EB_heepIdModIsoFlags.push_back( normEles_.at(iEle).heepIdModIsoCut(eventHelper_) && normEles_.at(iEle).isEB() );
 
 //		normEles_EB_isFidAndEcalDrivenFlags.push_back( normEles_.at(iEle).isFiducialAndEcalDriven() && normEles_.at(iEle).isHEEPEB() );
 		normEles_EB_isFidEcalDrAndFRPreFlags.push_back( normEles_.at(iEle).isFidEcalDrAndPassesFRPre() && normEles_.at(iEle).isHEEPEB() );
@@ -2231,7 +2263,7 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight)
 		if(normDiEle_EB_HEEPNoIso.isInZMassRange()){
 			normDiEle_EB_HEEPNoIso_MZ_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 
-			zCandDiEleTree_.FillTree(&normDiEle_EB_HEEPNoIso, evt_runNum_, evt_lumiSec_, evt_evtNum_, evtWeight);
+			noIsoZCandDiEleTree_.FillTree(normDiEle_EB_HEEPNoIso, eventHelper_, trg_PathA_decision_);
 			// Apply modified track isolation cut ...
 			if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
 				normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
@@ -2282,11 +2314,22 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight)
 
 	if( tsw::HEEPDiEle* mcMatchedDiEle = getMcMatchedDiEle(mcZ_daughterA_p4_, mcZ_daughterB_p4_, normEles_) )
 	{
-		zCandEffiTree_.FillTree(mcMatchedDiEle, mcZ_daughterA_p4_, mcZ_daughterB_p4_, evt_runNum_, evt_lumiSec_, evt_evtNum_, eventHelper_, evtWeight);
+		zCandEffiTree_.FillTree(mcMatchedDiEle, mcZ_daughterA_p4_, mcZ_daughterB_p4_, evt_runNum_, evt_lumiSec_, evt_evtNum_, eventHelper_);
 		delete mcMatchedDiEle;
 	}
 	else
-		zCandEffiTree_.FillTree_NotReconstructed(mcZ_daughterA_p4_, mcZ_daughterB_p4_, evt_runNum_, evt_lumiSec_, evt_evtNum_, eventHelper_, evtWeight);
+		zCandEffiTree_.FillTree_NotReconstructed(mcZ_daughterA_p4_, mcZ_daughterB_p4_, evt_runNum_, evt_lumiSec_, evt_evtNum_, eventHelper_);
+
+	// ------------------------
+	// EB HEEPNoIso di-electrons...
+	if(tsw::NumPassingCuts(normEles_EB_heepIdModIsoFlags)>1){
+		tsw::HEEPDiEle heepIdModIsoEbDiEle( normEles_, normEles_EB_heepIdModIsoFlags);
+
+		if( heepIdModIsoEbDiEle.isInZMassRange() )
+			modIsoZCandDiEleTree_.FillTree(heepIdModIsoEbDiEle, eventHelper_, trg_PathA_decision_);
+
+	}
+
 
 	//-----------------------------------
 	// ABCD method selection code:
@@ -2452,7 +2495,10 @@ void BstdZeeFirstAnalyser::FillHistograms(const Double_t evtWeight)
 
 //--------------------------------------------------------//
 //---- Method for implementing emu analysis ...           //
-void BstdZeeFirstAnalyser::DoEMuAnalysis(const Double_t evtWeight){
+void BstdZeeFirstAnalyser::DoEMuAnalysis()
+{
+	const Double_t evtWeight = eventHelper_.totWeight();
+
 	//  Filling histograms with the properties of the highest pT muon (no cuts), and the highest pT tight Muon ...
 	if(normMuons_.NumOfMuons()>0)
 		normMuons_1stpT_Histos_.FillHistos( normMuons_.HighestPtMuon(), 1.0);
@@ -3254,57 +3300,29 @@ int main()
 
 //		TString inFilePrefix = "/home/ppd/nnd85574/Work/BstdZee/CMSSW_4_2_8_patch7/src/NTupler/BstdZeeNTupler/";
 		TString inFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/NTuples/42Xv1x/ModIsoStudies_2012-05-07/";
-		TString outFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/AnaTuples/ModIsoStudies_2012-05-07/";
+		TString outFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/AnaTuples/ModIsoStudies_2012-05-16tests/";
 		std::vector<BstdZeeFirstAnalyser> myAnalysers; myAnalysers.clear();
 		std::vector<TString> inFile; inFile.clear();
 		std::vector<TString> outFile; outFile.clear();
 		std::vector<bool> isMCflag; isMCflag.clear();
 		std::vector<int>  nEvents; nEvents.clear();
 		std::vector<Double_t> intLumiPerEvent; intLumiPerEvent.clear(); // in inv fb !!
-		Double_t desiredIntLumi = 3.917; // in inv fb !!
+		Double_t desiredIntLumi = 3.917;  // in inv fb !!
 
 		std::vector<std::string> giMasses;
-		giMasses.push_back("500");
-		giMasses.push_back("600");
-		giMasses.push_back("700");
-		giMasses.push_back("800");
-		giMasses.push_back("1000");
-		giMasses.push_back("1100");
-		giMasses.push_back("1200");
-		giMasses.push_back("1300");
-		giMasses.push_back("1400");
-		giMasses.push_back("1500");
-		giMasses.push_back("1600");
-		giMasses.push_back("1700");
-		giMasses.push_back("1800");
-		giMasses.push_back("1900");
 		giMasses.push_back("2000");
-		giMasses.push_back("2500");
 
 		for(std::vector<std::string>::const_iterator giMassIt = giMasses.begin(); giMassIt != giMasses.end(); giMassIt++){
 			inFile.push_back("mcNTuple_42Xv1x_QstarGI-M"+(*giMassIt)+"--Fall11-PUS6_2012-05-07.root"); isMCflag.push_back(true);
-			outFile.push_back("QstarGI-M"+(*giMassIt)+"--Fall11-PUS6_2012-05-07");
+			outFile.push_back("QstarGI-M"+(*giMassIt)+"--Fall11-PUS6_2012-05-16test1");
 			nEvents.push_back( -1 );
 			intLumiPerEvent.push_back( -1.0 ); // in inv fb
 		}
 
 		std::vector<std::string> ciMasses;
-		ciMasses.push_back("500");
-		ciMasses.push_back("700");
-		ciMasses.push_back("800");
-		ciMasses.push_back("1000");
-		ciMasses.push_back("1100");
-		ciMasses.push_back("1200");
-		ciMasses.push_back("1300");
-		ciMasses.push_back("1400");
-		ciMasses.push_back("1600");
-		ciMasses.push_back("1700");
-		ciMasses.push_back("1800");
-		ciMasses.push_back("1900");
-		ciMasses.push_back("2000");
 
 		for(std::vector<std::string>::const_iterator ciMassIt = ciMasses.begin(); ciMassIt != ciMasses.end(); ciMassIt++){
-			inFile.push_back("mcNTuple_42Xv1x_QstarCI-M"+(*ciMassIt)+"--Fall11-PUS6_2012-05-07.root"); isMCflag.push_back(true);
+			inFile.push_back("mcNTuple_42Xv1x_QstarCI-M"+(*ciMassIt)+"--Fall11-PUS6_2012-05-16test1.root"); isMCflag.push_back(true);
 			outFile.push_back("QstarCI-M"+(*ciMassIt)+"--Fall11-PUS6_2012-05-07");
 			nEvents.push_back( -1 );
 			intLumiPerEvent.push_back( -1.0 ); // in inv fb
