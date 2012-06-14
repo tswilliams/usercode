@@ -1,14 +1,21 @@
 
-// C++ includes
+// Standard C/C++ includes
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
 #include <cmath>
+
+// Boost includes
+#include "boost/program_options/options_description.hpp"
+#include "boost/program_options/variables_map.hpp"
+#include "boost/program_options/parsers.hpp"
 
 // ROOT includes
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TChain.h"
 #include "TCanvas.h"
 #include "TFrame.h"
 #include "TH1D.h"
@@ -196,7 +203,8 @@ namespace tsw{
 		Int_t treeVar_eleB_modHeepCutCode_;
 
 	public:
-		DiEleTree(std::string treeName="zBosonTree"){
+		DiEleTree(std::string treeName="zBosonTree")
+		{
 			diEleTree_ = new TTree(treeName.c_str(), "Tree of Z candidates");
 			diEleTree_->SetDirectory(0); // This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
 			/* Error is as follows:
@@ -228,13 +236,11 @@ namespace tsw{
 			diEleTree_->Branch("dEta",  &treeVar_dEta_,    "dEta/D");
 			diEleTree_->Branch("dPhi",  &treeVar_dPhi_,    "dPhi/D");
 
-			diEleTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);  treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;
-			diEleTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);	treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;
+			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;  diEleTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);
+			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;  diEleTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);
 
 			diEleTree_->Branch("eleA_modHeepCutCode", &treeVar_eleA_modHeepCutCode_, "eleA_modHeepCutCode/I");
 			diEleTree_->Branch("eleB_modHeepCutCode", &treeVar_eleB_modHeepCutCode_, "eleB_modHeepCutCode/I");
-
-
 		}
 		~DiEleTree(){ delete diEleTree_; }
 
@@ -800,7 +806,7 @@ namespace tsw{
 
 class BstdZeeFirstAnalyser{
 	public:
-		BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, const TString& inFileName, const TString& outFileName, int vFlg, Int_t nbins_mass, Int_t nbins_pt, Double_t ptmax);
+		BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, const std::vector<std::string>& inFileNamesVec, const std::string& outFileName, int vFlg, Int_t nbins_mass, Int_t nbins_pt, Double_t ptmax);
 		~BstdZeeFirstAnalyser();
 		void DoAnalysis(const Double_t evtWeight);
 		
@@ -810,9 +816,6 @@ class BstdZeeFirstAnalyser{
 		void SetupMuonCollection();
 		void PrintOutBranchVariables();
 		void FinishOffAnalysis(); //Method to be called after all events analysed - i.e. for normalisation of histograms, calculating errors on each bins, etc
-
-		//Methods for application of HEEP cuts ...
-		std::vector<bool> HEEPCutsWithoutIso(int eleType);
 
 		// Method for obtaining MC-matched reconstructed di-electron
 		tsw::HEEPDiEle* getMcMatchedDiEle(const TLorentzVector& , const TLorentzVector& , const std::vector<tsw::HEEPEle>& );
@@ -850,20 +853,17 @@ class BstdZeeFirstAnalyser{
 
 		//Methods called by the constructor (e.g. Initialise methods)...
 		void SetMemberVariablesToDefaultValues();
-		void InitialiseReconValidationHistos();
-		void SetupBranchLinks(const TFile*);
+		void SetupBranchLinks();
 		void SetupEMuMethodTrees();
 
-		//Methods called by the destructor (i.e. deletion of heap-based objects)...
-		void DeleteReconValidationHistos();
 	
 	//Member variables...
 	private:
-		int runMode_;
-		int vFlg_;
+		const int runMode_;
+		const int vFlg_;
 		const int numEvtsRequested_;
 		unsigned int numEvtsRunOver_;
-		bool isMC_;
+		const bool isMC_;
 		const bool readInBstdEles_;
 
 		TStopwatch timer_DoAnalysis_readIn_;
@@ -873,10 +873,9 @@ class BstdZeeFirstAnalyser{
 
 
 		//Input and output files...
-		TFile* inputFile_;
-		TString inputFile_name_;
-		TTree* inputFile_tree_;
-		TString outputFile_name_;
+		const std::vector<std::string> inputFileNamesVec_;
+		TChain* inputFilesTChain_;
+		const std::string outputFileName_;
 
 		// Variables associated with skipping of events ...
 		bool skipFlg_highMCZpTEvts_;
@@ -1297,9 +1296,17 @@ class BstdZeeFirstAnalyser{
 //-------------------------------------------------------------------//
 //--------------------- Public methods ------------------------------//
 
-BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, const TString& inFileName, const TString& outFileName, int vFlg, Int_t nbins_mass, Int_t nbins_pt, Double_t ptmax):
+BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, const std::vector<std::string>& inFileNamesVec, const std::string& outFileName, int vFlg, Int_t nbins_mass, Int_t nbins_pt, Double_t ptmax) :
+   // Initialise the member variables that are arguments of the CTOR...
+   runMode_(runMode),
+   vFlg_(vFlg),
 	numEvtsRequested_(numEvts),
+   isMC_(isMC),
 	readInBstdEles_(false),
+   inputFileNamesVec_(inFileNamesVec),
+   inputFilesTChain_(new TChain("demo/EventDataTree")),
+   outputFileName_(outFileName),
+   //
 	skipFlg_highMCZpTEvts_(false),
 	skipThr_highMCZpTEvts_(99999.9),
 	skipFlg_lowMCZpTEvts_(false),
@@ -1397,52 +1404,31 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	mcZboson_modReconNoIsoEvts_EBEB_Histos_( "h_mcZboson_modReconNoIsoEvts_EBEB_", "Z bosons", "mod recon EB-EB events", 2, 1, nbins_pt, ptmax),
 	mcZboson_modReconNoIsoEvts_EEEE_Histos_( "h_mcZboson_modReconNoIsoEvts_EEEE_", "Z bosons", "mod recon EE-EE events", 2, 1, nbins_pt, ptmax)
 {
-//BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(){
 
 	timer_DoAnalysis_readIn_.Stop(); timer_DoAnalysis_readIn_.Reset();
 	timer_DoAnalysis_setup_.Stop(); timer_DoAnalysis_setup_.Reset();
 	timer_DoAnalysis_FillHistograms_.Stop(); timer_DoAnalysis_FillHistograms_.Reset();
 	timer_DoAnalysis_DoEMuMethod_.Stop(); timer_DoAnalysis_DoEMuMethod_.Reset();
-
-	//Initialise the member variables that are arguments of the CTOR...
-	runMode_ = runMode;
-	isMC_ = isMC;
-	inputFile_name_ = inFileName;
-	outputFile_name_ = outFileName;
-	vFlg_ = vFlg;
 	
 	//Set default (typically clearly 'incorrect') values for non-histo variables...
 	SetMemberVariablesToDefaultValues();
 
-	//Initialise the histograms that will be filled in analysis...
-	InitialiseReconValidationHistos();
-
 	//Setting up the emu method trees ...
 	SetupEMuMethodTrees();
 
-	// ----- OPENING INPUT NTUPLE AND SETTING UP ASSOCIATED BRANCH LINKS ----- //
-	//Opening the datafile(s)
-	std::cout << " Opening the ntuple datafile..." << std::endl;
-	inputFile_ = TFile::Open(inputFile_name_,"READ");
-	/*if(!inputFile_ptr)
-		std::cout << "ERROR in opening file." << std::endl;
-	else
-		std::cout << "   file opened successfully." << std::endl;*/
+	// ----- SETTING UP TCHAIN AND ASSOCIATED BRANCH LINKS ----- //
+   
+   std::vector<std::string>::const_iterator fileNameIt;
+   for( fileNameIt = inputFileNamesVec_.begin(); fileNameIt != inputFileNamesVec_.end(); fileNameIt++ )
+      inputFilesTChain_->Add(fileNameIt->c_str());
 
-	//Changing into the correct directory within the input file ..
-	inputFile_->cd("demo");
-	//Getting a pointer to the ntuple tree in the file
-	inputFile_tree_ = (TTree*)gDirectory->Get("EventDataTree");
+	SetupBranchLinks();
 
-	//Setup the branch links...
-	SetupBranchLinks(inputFile_);
+	inputFilesTChain_->SetCacheSize(10000000);
+	inputFilesTChain_->AddBranchToCache("*");
 
-	inputFile_tree_->SetCacheSize(10000000);
-	inputFile_tree_->AddBranchToCache("*");
-
-	// ---------------------------------------------------- //
 	// Determine the number of events being run over ...
-	unsigned int inputTree_numEvts = inputFile_tree_->GetEntries();
+	unsigned int inputTree_numEvts = inputFilesTChain_->GetEntries();
 	if( numEvtsRequested_<0 || (numEvtsRequested_>static_cast<int>(inputTree_numEvts)) )
 		numEvtsRunOver_ = inputTree_numEvts;
 	else
@@ -1451,24 +1437,31 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 
 BstdZeeFirstAnalyser::~BstdZeeFirstAnalyser(){
 	//Clear any heap variables here...
-	DeleteReconValidationHistos();
+	delete inputFilesTChain_;
 }
 
 void BstdZeeFirstAnalyser::DoAnalysis(const Double_t weightFromXsec)
 {
+	std::cout << std::endl << "Now, running BstdZeeAnalyser with the following parameters ... " << std::endl
+			    << "   - input files: " << std::endl;
+	//TODO -- write list of input files to screen
+	std::cout << "   - output prefix: " << outputFileName_ << std::endl
+				 << "   - Events are " << (isMC_ ? "Monte-Carlo" : "real DATA") << std::endl
+				 << "   - Run mode : " << runMode_ << " ,  Verbosity flag = " << vFlg_ << std::endl
+				 << "   - xSectionWeight = " << weightFromXsec << std::endl
+				 << "     " << GetNumEvtsRunOver() << " events will be run over ..." << std::endl;
+
 
 	//Call AnalyseEvent method for each event...
 	TStopwatch timer_AnalysingEvents; timer_AnalysingEvents.Start();
 	for(unsigned int evtIdx=0; evtIdx<numEvtsRunOver_; evtIdx++){
-		if(vFlg_>0){std::cout << std::endl << " Analysing event no. " << evtIdx << std::endl;}
+		if(vFlg_>0){std::cout << std::endl << "        + Loading event no. " << evtIdx << std::endl;}
 		//Load in data for the evtIdx'th event...
 		timer_DoAnalysis_readIn_.Start(false);
-		Long64_t dataTreeEntry = inputFile_tree_->LoadTree(evtIdx);
-		inputFile_tree_->GetEntry(dataTreeEntry);
+		inputFilesTChain_->GetEntry(evtIdx);
 		timer_DoAnalysis_readIn_.Stop();
 
-		if( (vFlg_>-2) && (evtIdx%500000==0 || evtIdx==(numEvtsRunOver_-1)) ){std::cout << " *** Event no. " << evtIdx << " reached." << std::endl;}
-		//TODO - Put setting up of TLorentzVector 4 momenta here ...
+		if( (vFlg_>-2) && (evtIdx%500000==0 || evtIdx==(numEvtsRunOver_-1)) ){std::cout << "        * Analysing event no. " << evtIdx << std::endl;}
 
 		// Skip to next pass through for loop IFF event should be skipped ...
 		if(skipFlg_highMCZpTEvts_ && skipFlg_lowMCZpTEvts_){
@@ -1495,9 +1488,6 @@ void BstdZeeFirstAnalyser::DoAnalysis(const Double_t weightFromXsec)
 	timer_DoAnalysis_FillHistograms_.Print();
 	std::cout << "*** For timer_DoAnalysis_DoEMuMethod_:" << std::endl;
 	timer_DoAnalysis_DoEMuMethod_.Print();
-
-	//Close the input file ...
-	inputFile_->Close();
 
 	FinishOffAnalysis(); //Output file is opened in here ...
 }
@@ -1982,7 +1972,7 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 
 
 	//Open the output file ...
-	TFile f_histos(outputFile_name_+"_histos.root","RECREATE");
+	TFile f_histos((outputFileName_+"_histos.root").c_str(),"RECREATE");
 	f_histos.Write();
 
 	//Save all of the histograms from analysis ...
@@ -1991,12 +1981,12 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 	f_histos.Close();
 
 	// Open up eMu method files, save the appropriate tree, and then
-	TFile f_eleMuTree("eleMuTree/" + outputFile_name_ + "_eMuTree.root","RECREATE");
+	TFile f_eleMuTree(("eleMuTree/" + outputFileName_ + "_eMuTree.root").c_str(),"RECREATE");
 	eleMuTree_->Write();
 	f_eleMuTree.Close();
 	delete eleMuTree_;
 
-	TFile f_diEleTree("diEleTree/" + outputFile_name_ + "_diEleTree.root","RECREATE");
+	TFile f_diEleTree(("diEleTree/" + outputFileName_ + "_diEleTree.root").c_str(),"RECREATE");
 	diEleTree_->Write();
 	f_diEleTree.Close();
 	delete diEleTree_;
@@ -2005,9 +1995,9 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 //	frPreDiEleTree_.SaveToFile("/opt/ppd/newscratch/williams/Datafiles/abcdDiEleTrees/" + outputFile_name_ + "_abcdTree.root");
 
 	// Save the Z candidate di-ele tree ...
-	noIsoZCandDiEleTree_.SaveToFile(outputFile_name_ + "_noIsoZCandTree.root");
-	modIsoZCandDiEleTree_.SaveToFile(outputFile_name_ + "_modIsoZCandTree.root");
-	zCandEffiTree_.SaveToFile(outputFile_name_ + "_zEffiTree.root");
+	noIsoZCandDiEleTree_.SaveToFile(outputFileName_ + "_noIsoZCandTree.root");
+	modIsoZCandDiEleTree_.SaveToFile(outputFileName_ + "_modIsoZCandTree.root");
+	zCandEffiTree_.SaveToFile(outputFileName_ + "_zEffiTree.root");
 
 	// Output information to screen about diff ordering of cuts in QCD estimation
 	//numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_
@@ -2024,15 +2014,6 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 	std::cout << " ***** ------------------------------------------ *****" << std::endl;
 
 	//numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_DiffFrom_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_
-}
-
-
-//Methods for application of HEEP cuts ...
-std::vector<bool> BstdZeeFirstAnalyser::HEEPCutsWithoutIso(int eleType){
-	//Currently a placeholder ...
-	std::vector<bool> tmpAnswer;
-	tmpAnswer.clear();
-	return tmpAnswer;
 }
 
 
@@ -2915,312 +2896,283 @@ void BstdZeeFirstAnalyser::SetMemberVariablesToDefaultValues(){
 }
 
 //================================================================//
-void BstdZeeFirstAnalyser::InitialiseReconValidationHistos(){
-	//normEles_reconValidationHistos_ = ReconValidationHistos("h_normEles_","standard","");
-	/*hist_normEles_number_ = new TH1D("h_normEles_number", "Histogram of number of standard GSF eles in each event; Number of standard GSF electrons in event; Number of events", 6, -0.5, 5.5);
-	hMin_eleCharge = ;
-	hist_normEles_charge_ = new TH1D("h_normEles_charge", "title; x-axis; y-axis", numbins, min, max); //hMin_eleEt
-	hist_normEles_Et_ = new TH1D("h_normEles_Et", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_heepEt_ = new TH1D("h_normEles_heepEt", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_Eta_ = new TH1D("h_normEles_Eta", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_scEta_ = new TH1D("h_normEles_scEta", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_ecalDriven_ = new TH1D("h_normEles_ecalDriven", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_ecalDrivenSeed_ = new TH1D("h_normEles_ecalDrivenSeed", "title; x-axis; y-axis", numbins, min, max);
-
-	hist_normEles_heepdEtaIn_ = new TH1D("h_normEles_heepdEtaIn", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_heepdPhiIn_ = new TH1D("h_normEles_heepdPhiIn", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_HoverE_ = new TH1D("h_normEles_HoverE", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_sigmaIetaIeta_ = new TH1D("h_normEles_sigmaIetaIeta", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_scSigmaIetaIeta_ = new TH1D("h_normEles_scSigmaIetaIeta", "title; x-axis; y-axis", numbins, min, max);
-
-	hist_normEles_dr03EmIsoEt_ = new TH1D("h_normEles_dr03EmIsoEt", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_dr03Had1IsoEt_ = new TH1D("h_normEles_dr03Had1IsoPt", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_dr03Had2IsoEt_ = new TH1D("h_normEles_dr03Had2IsoPt", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_dr03TkIsoPt_ = new TH1D("h_normEles_dr03TkIsoPt", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_e2x5Max_ = new TH1D("h_normEles_e2x5Max", "title; x-axis; y-axis", numbins, min, max);
-	hist_normEles_e5x5_ = new TH1D("h_normEles_e5x5", "title; x-axis; y-axis", numbins, min, max);*/
-	//Currently a placeholder ...
-}
-
-//================================================================//
-void BstdZeeFirstAnalyser::SetupBranchLinks(const TFile* inFile_ptr){
-	inputFile_tree_->SetBranchAddress("event", &event_); // inputFile_tree_->SetBranchStatus("event",0); //
-	//event_ = &dummyEvent_;
+void BstdZeeFirstAnalyser::SetupBranchLinks()
+{
+	inputFilesTChain_->SetBranchAddress("event", &event_); // inputFile_tree_->SetBranchStatus("event",0); //
 	//Setting up the pointer links for the event information branches ...
-	inputFile_tree_->SetBranchAddress("evt_runNum",&evt_runNum_);   // unsigned int
-	inputFile_tree_->SetBranchAddress("evt_lumiSec",&evt_lumiSec_); // unsigned int
-	inputFile_tree_->SetBranchAddress("evt_evtNum",&evt_evtNum_);   // unsigned int
+	inputFilesTChain_->SetBranchAddress("evt_runNum",&evt_runNum_);   // unsigned int
+	inputFilesTChain_->SetBranchAddress("evt_lumiSec",&evt_lumiSec_); // unsigned int
+	inputFilesTChain_->SetBranchAddress("evt_evtNum",&evt_evtNum_);   // unsigned int
 
 	//Setting up the pointer links for the trigger branches ...
-	inputFile_tree_->SetBranchAddress("trg_PathA_decision", &trg_PathA_decision_);
-	inputFile_tree_->SetBranchAddress("trg_PathA_name",     &trg_PathA_name_ptr_);
-	inputFile_tree_->SetBranchAddress("trg_PathA_nameOfLastFilter", &trg_PathA_nameOfLastFilter_ptr_);
-	inputFile_tree_->SetBranchAddress("trg_PathA_highestTrigObjEt", &trg_PathA_highestTrigObjEt_);
+	inputFilesTChain_->SetBranchAddress("trg_PathA_decision", &trg_PathA_decision_);
+	inputFilesTChain_->SetBranchAddress("trg_PathA_name",     &trg_PathA_name_ptr_);
+	inputFilesTChain_->SetBranchAddress("trg_PathA_nameOfLastFilter", &trg_PathA_nameOfLastFilter_ptr_);
+	inputFilesTChain_->SetBranchAddress("trg_PathA_highestTrigObjEt", &trg_PathA_highestTrigObjEt_);
 
 
 	if(isMC_){
 		//Setting up the pointer links for the MC electron branches ...
-		inputFile_tree_->SetBranchAddress("mcEles_number",          &mc_numFinalStateEles_      );
-		inputFile_tree_->SetBranchAddress("mcEles_HighestEt_charge",&mcEles_HighestEt_charge_   );
-		inputFile_tree_->SetBranchAddress("mcEles_HighestEt_PDGid", &mcEles_HighestEt_PDGid_    );
-		inputFile_tree_->SetBranchAddress("mcEles_HighestEt_status",&mcEles_HighestEt_status_   );
-		inputFile_tree_->SetBranchAddress("mcEles_HighestEt_pt",    &mcEles_HighestEt_pt_       );
-		inputFile_tree_->SetBranchAddress("mcEles_HighestEt_p4",    &mcEles_HighestEt_OLDp4_ptr_);
+		inputFilesTChain_->SetBranchAddress("mcEles_number",          &mc_numFinalStateEles_      );
+		inputFilesTChain_->SetBranchAddress("mcEles_HighestEt_charge",&mcEles_HighestEt_charge_   );
+		inputFilesTChain_->SetBranchAddress("mcEles_HighestEt_PDGid", &mcEles_HighestEt_PDGid_    );
+		inputFilesTChain_->SetBranchAddress("mcEles_HighestEt_status",&mcEles_HighestEt_status_   );
+		inputFilesTChain_->SetBranchAddress("mcEles_HighestEt_pt",    &mcEles_HighestEt_pt_       );
+		inputFilesTChain_->SetBranchAddress("mcEles_HighestEt_p4",    &mcEles_HighestEt_OLDp4_ptr_);
 
-		inputFile_tree_->SetBranchAddress("mcEles_2ndHighestEt_charge", &mcEles_2ndHighestEt_charge_   );
-		inputFile_tree_->SetBranchAddress("mcEles_2ndHighestEt_PDGid",  &mcEles_2ndHighestEt_PDGid_    );
-		inputFile_tree_->SetBranchAddress("mcEles_2ndHighestEt_status", &mcEles_2ndHighestEt_status_   );
-		inputFile_tree_->SetBranchAddress("mcEles_2ndHighestEt_pt",     &mcEles_2ndHighestEt_pt_       );
-		inputFile_tree_->SetBranchAddress("mcEles_2ndHighestEt_p4",     &mcEles_2ndHighestEt_OLDp4_ptr_);
+		inputFilesTChain_->SetBranchAddress("mcEles_2ndHighestEt_charge", &mcEles_2ndHighestEt_charge_   );
+		inputFilesTChain_->SetBranchAddress("mcEles_2ndHighestEt_PDGid",  &mcEles_2ndHighestEt_PDGid_    );
+		inputFilesTChain_->SetBranchAddress("mcEles_2ndHighestEt_status", &mcEles_2ndHighestEt_status_   );
+		inputFilesTChain_->SetBranchAddress("mcEles_2ndHighestEt_pt",     &mcEles_2ndHighestEt_pt_       );
+		inputFilesTChain_->SetBranchAddress("mcEles_2ndHighestEt_p4",     &mcEles_2ndHighestEt_OLDp4_ptr_);
 
-		inputFile_tree_->SetBranchAddress("mcZcandidate_pt",      &mcZcandidate_pt_  ); //Double_t
-		inputFile_tree_->SetBranchAddress("mcZcandidate_eta",     &mcZcandidate_eta_ ); //Double_t
-		inputFile_tree_->SetBranchAddress("mcZcandidate_phi",     &mcZcandidate_phi_ ); //Double_t
-		inputFile_tree_->SetBranchAddress("mcZcandidate_mass",    &mcZcandidate_mass_); //Double_t
-		inputFile_tree_->SetBranchAddress("mcZcandidate_p4",           &mcZcandidate_OLDp4_ptr_   ); //ROOT::Math::XYZTLorentzVector
-		inputFile_tree_->SetBranchAddress("mcZcandidate_dEtaEles",     &mcZcandidate_dEtaEles_    ); //Double_t
-		inputFile_tree_->SetBranchAddress("mcZcandidate_dPhiEles",     &mcZcandidate_dPhiEles_    ); //Double_t
-		inputFile_tree_->SetBranchAddress("mcZcandidate_dREles",       &mcZcandidate_dREles_      ); //Double_t
-		inputFile_tree_->SetBranchAddress("mcZcandidate_openingAngle", &mcZcandidate_openingAngle_); //Double_t
+		inputFilesTChain_->SetBranchAddress("mcZcandidate_pt",      &mcZcandidate_pt_  ); //Double_t
+		inputFilesTChain_->SetBranchAddress("mcZcandidate_eta",     &mcZcandidate_eta_ ); //Double_t
+		inputFilesTChain_->SetBranchAddress("mcZcandidate_phi",     &mcZcandidate_phi_ ); //Double_t
+		inputFilesTChain_->SetBranchAddress("mcZcandidate_mass",    &mcZcandidate_mass_); //Double_t
+		inputFilesTChain_->SetBranchAddress("mcZcandidate_p4",           &mcZcandidate_OLDp4_ptr_   ); //ROOT::Math::XYZTLorentzVector
+		inputFilesTChain_->SetBranchAddress("mcZcandidate_dEtaEles",     &mcZcandidate_dEtaEles_    ); //Double_t
+		inputFilesTChain_->SetBranchAddress("mcZcandidate_dPhiEles",     &mcZcandidate_dPhiEles_    ); //Double_t
+		inputFilesTChain_->SetBranchAddress("mcZcandidate_dREles",       &mcZcandidate_dREles_      ); //Double_t
+		inputFilesTChain_->SetBranchAddress("mcZcandidate_openingAngle", &mcZcandidate_openingAngle_); //Double_t
 
-		inputFile_tree_->SetBranchAddress("mcZboson_pdgId",  &mcZ_pdgId_ );
-		inputFile_tree_->SetBranchAddress("mcZboson_status", &mcZ_status_);
-		inputFile_tree_->SetBranchAddress("mcZboson_p4",     &mcZ_p4_ptr_); //ROOT::Math::XYZTVector //NB: These pointers have to be initialised!! (Initialisation to 0 is fine...)
-		inputFile_tree_->SetBranchAddress("mcZboson_numDaughters",   &mcZ_numDaughters_);
-		inputFile_tree_->SetBranchAddress("mcZboson_daughters_dR",   &mcZ_daughters_dR_);
-		inputFile_tree_->SetBranchAddress("mcZboson_daughters_dEta", &mcZ_daughters_dEta_);
-		inputFile_tree_->SetBranchAddress("mcZboson_daughters_dPhi", &mcZ_daughters_dPhi_);
-		inputFile_tree_->SetBranchAddress("mcZboson_daughters_openingAngle", &mcZ_daughters_openingAngle_);
-		inputFile_tree_->SetBranchAddress("mcZboson_daughterA_p4", &mcZ_daughterA_OLDp4_ptr_);
-		inputFile_tree_->SetBranchAddress("mcZboson_daughterB_p4", &mcZ_daughterB_OLDp4_ptr_);
+		inputFilesTChain_->SetBranchAddress("mcZboson_pdgId",  &mcZ_pdgId_ );
+		inputFilesTChain_->SetBranchAddress("mcZboson_status", &mcZ_status_);
+		inputFilesTChain_->SetBranchAddress("mcZboson_p4",     &mcZ_p4_ptr_); //ROOT::Math::XYZTVector //NB: These pointers have to be initialised!! (Initialisation to 0 is fine...)
+		inputFilesTChain_->SetBranchAddress("mcZboson_numDaughters",   &mcZ_numDaughters_);
+		inputFilesTChain_->SetBranchAddress("mcZboson_daughters_dR",   &mcZ_daughters_dR_);
+		inputFilesTChain_->SetBranchAddress("mcZboson_daughters_dEta", &mcZ_daughters_dEta_);
+		inputFilesTChain_->SetBranchAddress("mcZboson_daughters_dPhi", &mcZ_daughters_dPhi_);
+		inputFilesTChain_->SetBranchAddress("mcZboson_daughters_openingAngle", &mcZ_daughters_openingAngle_);
+		inputFilesTChain_->SetBranchAddress("mcZboson_daughterA_p4", &mcZ_daughterA_OLDp4_ptr_);
+		inputFilesTChain_->SetBranchAddress("mcZboson_daughterB_p4", &mcZ_daughterB_OLDp4_ptr_);
 	}
 	else{
-		inputFile_tree_->SetBranchStatus("mcEles_number",0);
-		inputFile_tree_->SetBranchStatus("mcEles_HighestEt_*",0);
-		inputFile_tree_->SetBranchStatus("mcEles_2ndHighestEt_*",0);
-		inputFile_tree_->SetBranchStatus("mcZcandidate_*",0);
-		inputFile_tree_->SetBranchStatus("mcZboson_*",0);
+		inputFilesTChain_->SetBranchStatus("mcEles_number",0);
+		inputFilesTChain_->SetBranchStatus("mcEles_HighestEt_*",0);
+		inputFilesTChain_->SetBranchStatus("mcEles_2ndHighestEt_*",0);
+		inputFilesTChain_->SetBranchStatus("mcZcandidate_*",0);
+		inputFilesTChain_->SetBranchStatus("mcZboson_*",0);
 	}
 
 
-	inputFile_tree_->SetBranchStatus("normGsfEles_*",0);
-	inputFile_tree_->SetBranchStatus("normGsfEles_number",1);
-	inputFile_tree_->SetBranchStatus("normGsfEles_charge",1);
+	inputFilesTChain_->SetBranchStatus("normGsfEles_*",0);
+	inputFilesTChain_->SetBranchStatus("normGsfEles_number",1);
+	inputFilesTChain_->SetBranchStatus("normGsfEles_charge",1);
 	//Setting up the pointer links for the 'normal' GSF electron branches ...
-	inputFile_tree_->SetBranchAddress("normGsfEles_number", &normGsfEles_number_); //unsigned int
-	//inputFile_tree_->SetBranchAddress("normGsfEles_p4ptr_", &normGsfEles_OLDp4_  ); // std::vector<ROOT::Math::XYZTVector>*
-	inputFile_tree_->SetBranchAddress("normGsfEles_charge", &normGsfEles_charge_); //std::vector<Int_t>*
+	inputFilesTChain_->SetBranchAddress("normGsfEles_number", &normGsfEles_number_); //unsigned int
+	//inputFilesTChain_->SetBranchAddress("normGsfEles_p4ptr_", &normGsfEles_OLDp4_  ); // std::vector<ROOT::Math::XYZTVector>*
+	inputFilesTChain_->SetBranchAddress("normGsfEles_charge", &normGsfEles_charge_); //std::vector<Int_t>*
 	if(false){
-		inputFile_tree_->SetBranchAddress("normGsfEles_Et",      &normGsfEles_Et_     );           // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_HEEP_Et", &normGsfEles_HEEP_Et_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_Eta",     &normGsfEles_Eta_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_scEta",   &normGsfEles_scEta_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_ecalDriven",     &normGsfEles_ecalDriven_);         // std::vector<bool>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_ecalDrivenSeed", &normGsfEles_ecalDrivenSeed_); // std::vector<bool>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_Et",      &normGsfEles_Et_     );           // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_HEEP_Et", &normGsfEles_HEEP_Et_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_Eta",     &normGsfEles_Eta_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_scEta",   &normGsfEles_scEta_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_ecalDriven",     &normGsfEles_ecalDriven_);         // std::vector<bool>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_ecalDrivenSeed", &normGsfEles_ecalDrivenSeed_); // std::vector<bool>*
 
-		inputFile_tree_->SetBranchAddress("normGsfEles_HEEP_dEtaIn", & normGsfEles_HEEP_dEtaIn_);    // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_HEEP_dPhiIn", &normGsfEles_HEEP_dPhiIn_);     // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_HoverE", &normGsfEles_HoverE_);               // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_sigmaIetaIeta", &normGsfEles_sigmaIetaIeta_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_scSigmaIetaIeta", &normGsfEles_scSigmaIetaIeta_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_HEEP_dEtaIn", & normGsfEles_HEEP_dEtaIn_);    // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_HEEP_dPhiIn", &normGsfEles_HEEP_dPhiIn_);     // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_HoverE", &normGsfEles_HoverE_);               // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_sigmaIetaIeta", &normGsfEles_sigmaIetaIeta_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_scSigmaIetaIeta", &normGsfEles_scSigmaIetaIeta_); // std::vector<Double_t>*
 
-		inputFile_tree_->SetBranchAddress("normGsfEles_dr03EmIsoEt", &normGsfEles_dr03EmIsoEt_);             // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_dr03HadDepth1IsoEt", &normGsfEles_dr03HadDepth1IsoEt_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_dr03HadDepth2IsoEt", &normGsfEles_dr03HadDepth2IsoEt_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_dr03TkIsoPt", &normGsfEles_dr03TkIsoPt_);  // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_dr03EmIsoEt", &normGsfEles_dr03EmIsoEt_);             // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_dr03HadDepth1IsoEt", &normGsfEles_dr03HadDepth1IsoEt_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_dr03HadDepth2IsoEt", &normGsfEles_dr03HadDepth2IsoEt_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_dr03TkIsoPt", &normGsfEles_dr03TkIsoPt_);  // std::vector<Double_t>*
 
-		inputFile_tree_->SetBranchAddress("normGsfEles_e2x5Max", &normGsfEles_e2x5Max_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("normGsfEles_e5x5", &normGsfEles_e5x5_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_e2x5Max", &normGsfEles_e2x5Max_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("normGsfEles_e5x5", &normGsfEles_e5x5_); // std::vector<Double_t>*
 	}
 	//*** Branches containing heep::Ele method values for norm eles ***
 	//kinematic and geometric methods
-	inputFile_tree_->SetBranchAddress("normHEEPEles_et", &normHEEPEles_et_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_gsfEt", &normHEEPEles_gsfEt_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_scEt", &normHEEPEles_scEt_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_energy", &normHEEPEles_energy_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_gsfEnergy",0);									//	inputFile_tree_->SetBranchAddress("normHEEPEles_gsfEnergy", &normHEEPEles_gsfEnergy_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_caloEnergy", &normHEEPEles_caloEnergy_);
-//	inputFile_tree_->SetBranchAddress("normHEEPEles_ecalEnergyError", &normHEEPEles_ecalEnergyError_);			/* TEMP v1f/g FIX */
-	inputFile_tree_->SetBranchAddress("normHEEPEles_eta", &normHEEPEles_eta_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_scEta", &normHEEPEles_scEta_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_detEta",0);										//	inputFile_tree_->SetBranchAddress("normHEEPEles_detEta", &normHEEPEles_detEta_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_detEtaAbs",0);									//	inputFile_tree_->SetBranchAddress("normHEEPEles_detEtaAbs", &normHEEPEles_detEtaAbs_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_phi", &normHEEPEles_phi_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_scPhi", &normHEEPEles_scPhi_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_detPhi",0);										//	inputFile_tree_->SetBranchAddress("normHEEPEles_detPhi", &normHEEPEles_detPhi_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_zVtx",0);											//	inputFile_tree_->SetBranchAddress("normHEEPEles_zVtx", &normHEEPEles_zVtx_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_p4ptr", &normHEEPEles_p4ptr_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_gsfP4ptr", &normHEEPEles_gsfP4ptr_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_et", &normHEEPEles_et_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_gsfEt", &normHEEPEles_gsfEt_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_scEt", &normHEEPEles_scEt_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_energy", &normHEEPEles_energy_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_gsfEnergy",0);									//	inputFilesTChain_->SetBranchAddress("normHEEPEles_gsfEnergy", &normHEEPEles_gsfEnergy_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_caloEnergy", &normHEEPEles_caloEnergy_);
+//	inputFilesTChain_->SetBranchAddress("normHEEPEles_ecalEnergyError", &normHEEPEles_ecalEnergyError_);			/* TEMP v1f/g FIX */
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_eta", &normHEEPEles_eta_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_scEta", &normHEEPEles_scEta_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_detEta",0);										//	inputFilesTChain_->SetBranchAddress("normHEEPEles_detEta", &normHEEPEles_detEta_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_detEtaAbs",0);									//	inputFilesTChain_->SetBranchAddress("normHEEPEles_detEtaAbs", &normHEEPEles_detEtaAbs_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_phi", &normHEEPEles_phi_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_scPhi", &normHEEPEles_scPhi_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_detPhi",0);										//	inputFilesTChain_->SetBranchAddress("normHEEPEles_detPhi", &normHEEPEles_detPhi_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_zVtx",0);											//	inputFilesTChain_->SetBranchAddress("normHEEPEles_zVtx", &normHEEPEles_zVtx_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_p4ptr", &normHEEPEles_p4ptr_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_gsfP4ptr", &normHEEPEles_gsfP4ptr_);
 
 	//classification (couldnt they have just named it 'type')
-	inputFile_tree_->SetBranchStatus("normHEEPEles_classification",0);							//	inputFile_tree_->SetBranchAddress("normHEEPEles_classification", &normHEEPEles_classification_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_isEcalDriven", &normHEEPEles_isEcalDriven_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_isTrackerDriven",0);							//	inputFile_tree_->SetBranchAddress("normHEEPEles_isTrackerDriven", &normHEEPEles_isTrackerDriven_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_isEB", &normHEEPEles_isEB_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_isEE", &normHEEPEles_isEE_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_classification",0);							//	inputFilesTChain_->SetBranchAddress("normHEEPEles_classification", &normHEEPEles_classification_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_isEcalDriven", &normHEEPEles_isEcalDriven_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_isTrackerDriven",0);							//	inputFilesTChain_->SetBranchAddress("normHEEPEles_isTrackerDriven", &normHEEPEles_isTrackerDriven_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_isEB", &normHEEPEles_isEB_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_isEE", &normHEEPEles_isEE_);
 
 	//track methods
-	inputFile_tree_->SetBranchAddress("normHEEPEles_charge", &normHEEPEles_charge_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_trkCharge",0);									//	inputFile_tree_->SetBranchAddress("normHEEPEles_trkCharge", &normHEEPEles_trkCharge_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_pVtx",0);											//	inputFile_tree_->SetBranchAddress("normHEEPEles_pVtx", &normHEEPEles_pVtx_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_pCalo",0);										//	inputFile_tree_->SetBranchAddress("normHEEPEles_pCalo", &normHEEPEles_pCalo_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_ptVtx", &normHEEPEles_ptVtx_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_ptCalo", &normHEEPEles_ptCalo_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_pt",  &normHEEPEles_closestCtfTrk_pt_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_eta", &normHEEPEles_closestCtfTrk_eta_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_phi", &normHEEPEles_closestCtfTrk_phi_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_innerPt",0);  // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPt",  &normHEEPEles_closestCtfTrk_innerPt_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_innerEta",0); // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerEta", &normHEEPEles_closestCtfTrk_innerEta_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_innerPhi",0); // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPhi", &normHEEPEles_closestCtfTrk_innerPhi_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_outerPt",0);  // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPt",  &normHEEPEles_closestCtfTrk_outerPt_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_outerEta",0); // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerEta", &normHEEPEles_closestCtfTrk_outerEta_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_closestCtfTrk_outerPhi",0); // inputFile_tree_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPhi", &normHEEPEles_closestCtfTrk_outerPhi_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_charge", &normHEEPEles_charge_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_trkCharge",0);									//	inputFilesTChain_->SetBranchAddress("normHEEPEles_trkCharge", &normHEEPEles_trkCharge_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_pVtx",0);											//	inputFilesTChain_->SetBranchAddress("normHEEPEles_pVtx", &normHEEPEles_pVtx_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_pCalo",0);										//	inputFilesTChain_->SetBranchAddress("normHEEPEles_pCalo", &normHEEPEles_pCalo_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_ptVtx", &normHEEPEles_ptVtx_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_ptCalo", &normHEEPEles_ptCalo_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_closestCtfTrk_pt",  &normHEEPEles_closestCtfTrk_pt_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_closestCtfTrk_eta", &normHEEPEles_closestCtfTrk_eta_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_closestCtfTrk_phi", &normHEEPEles_closestCtfTrk_phi_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_closestCtfTrk_innerPt",0);  // inputFilesTChain_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPt",  &normHEEPEles_closestCtfTrk_innerPt_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_closestCtfTrk_innerEta",0); // inputFilesTChain_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerEta", &normHEEPEles_closestCtfTrk_innerEta_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_closestCtfTrk_innerPhi",0); // inputFilesTChain_->SetBranchAddress("normHEEPEles_closestCtfTrk_innerPhi", &normHEEPEles_closestCtfTrk_innerPhi_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_closestCtfTrk_outerPt",0);  // inputFilesTChain_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPt",  &normHEEPEles_closestCtfTrk_outerPt_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_closestCtfTrk_outerEta",0); // inputFilesTChain_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerEta", &normHEEPEles_closestCtfTrk_outerEta_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_closestCtfTrk_outerPhi",0); // inputFilesTChain_->SetBranchAddress("normHEEPEles_closestCtfTrk_outerPhi", &normHEEPEles_closestCtfTrk_outerPhi_);
 
 	//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
-	inputFile_tree_->SetBranchAddress("normHEEPEles_hOverE", &normHEEPEles_hOverE_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_dEtaIn", &normHEEPEles_dEtaIn_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_dPhiIn", &normHEEPEles_dPhiIn_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_dPhiOut",0);										//	inputFile_tree_->SetBranchAddress("normHEEPEles_dPhiOut", &normHEEPEles_dPhiOut_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_epIn", &normHEEPEles_epIn_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_epOut", &normHEEPEles_epOut_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_fbrem",0);										//	inputFile_tree_->SetBranchAddress("normHEEPEles_fbrem", &normHEEPEles_fbrem_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_bremFrac",0);									//	inputFile_tree_->SetBranchAddress("normHEEPEles_bremFrac", &normHEEPEles_bremFrac_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_invEOverInvP", &normHEEPEles_invEOverInvP_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_hOverE", &normHEEPEles_hOverE_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_dEtaIn", &normHEEPEles_dEtaIn_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_dPhiIn", &normHEEPEles_dPhiIn_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_dPhiOut",0);										//	inputFilesTChain_->SetBranchAddress("normHEEPEles_dPhiOut", &normHEEPEles_dPhiOut_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_epIn", &normHEEPEles_epIn_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_epOut", &normHEEPEles_epOut_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_fbrem",0);										//	inputFilesTChain_->SetBranchAddress("normHEEPEles_fbrem", &normHEEPEles_fbrem_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_bremFrac",0);									//	inputFilesTChain_->SetBranchAddress("normHEEPEles_bremFrac", &normHEEPEles_bremFrac_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_invEOverInvP", &normHEEPEles_invEOverInvP_);
 
 	//shower shape variables
-	inputFile_tree_->SetBranchStatus("normHEEPEles_sigmaEtaEta",0);								//	inputFile_tree_->SetBranchAddress("normHEEPEles_sigmaEtaEta", &normHEEPEles_sigmaEtaEta_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_sigmaEtaEtaUnCorr",0);						//	inputFile_tree_->SetBranchAddress("normHEEPEles_sigmaEtaEtaUnCorr", &normHEEPEles_sigmaEtaEtaUnCorr_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_sigmaIEtaIEta", &normHEEPEles_sigmaIEtaIEta_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_e1x5",0);											//	inputFile_tree_->SetBranchAddress("normHEEPEles_e1x5", &normHEEPEles_e1x5_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_e2x5Max",0);										//	inputFile_tree_->SetBranchAddress("normHEEPEles_e2x5Max", &normHEEPEles_e2x5Max_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_e5x5",0);											//	inputFile_tree_->SetBranchAddress("normHEEPEles_e5x5", &normHEEPEles_e5x5_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_e1x5Over5x5", &normHEEPEles_e1x5Over5x5_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_e2x5MaxOver5x5", &normHEEPEles_e2x5MaxOver5x5_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_sigmaEtaEta",0);								//	inputFilesTChain_->SetBranchAddress("normHEEPEles_sigmaEtaEta", &normHEEPEles_sigmaEtaEta_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_sigmaEtaEtaUnCorr",0);						//	inputFilesTChain_->SetBranchAddress("normHEEPEles_sigmaEtaEtaUnCorr", &normHEEPEles_sigmaEtaEtaUnCorr_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_sigmaIEtaIEta", &normHEEPEles_sigmaIEtaIEta_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_e1x5",0);											//	inputFilesTChain_->SetBranchAddress("normHEEPEles_e1x5", &normHEEPEles_e1x5_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_e2x5Max",0);										//	inputFilesTChain_->SetBranchAddress("normHEEPEles_e2x5Max", &normHEEPEles_e2x5Max_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_e5x5",0);											//	inputFilesTChain_->SetBranchAddress("normHEEPEles_e5x5", &normHEEPEles_e5x5_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_e1x5Over5x5", &normHEEPEles_e1x5Over5x5_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_e2x5MaxOver5x5", &normHEEPEles_e2x5MaxOver5x5_);
 
 	//isolation, we use cone of 0.3
-	inputFile_tree_->SetBranchAddress("normHEEPEles_isolEm", &normHEEPEles_isolEm_);
-	inputFile_tree_->SetBranchStatus("normHEEPEles_isolHad",0);										//	inputFile_tree_->SetBranchAddress("normHEEPEles_isolHad", &normHEEPEles_isolHad_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_isolHadDepth1", &normHEEPEles_isolHadDepth1_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_isolHadDepth2", &normHEEPEles_isolHadDepth2_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_isolPtTrks", &normHEEPEles_isolPtTrks_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_isolEmHadDepth1", &normHEEPEles_isolEmHadDepth1_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_isolEm", &normHEEPEles_isolEm_);
+	inputFilesTChain_->SetBranchStatus("normHEEPEles_isolHad",0);										//	inputFilesTChain_->SetBranchAddress("normHEEPEles_isolHad", &normHEEPEles_isolHad_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_isolHadDepth1", &normHEEPEles_isolHadDepth1_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_isolHadDepth2", &normHEEPEles_isolHadDepth2_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_isolPtTrks", &normHEEPEles_isolPtTrks_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_isolEmHadDepth1", &normHEEPEles_isolEmHadDepth1_);
 
-//	inputFile_tree_->SetBranchAddress("normHEEPEles_SCposn_eta", &normHEEPEles_SCposn_eta_);								/* TEMP v1f/g FIX */
-//	inputFile_tree_->SetBranchAddress("normHEEPEles_SCposn_phi", &normHEEPEles_SCposn_phi_);								/* TEMP v1f/g FIX */
-//	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_rawEnergy", &normHEEPEles_SC_rawEnergy_);							/* TEMP v1f/g FIX */
-	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_recHits_Et",  &normHEEPEles_SC_recHits_Et_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_recHits_eta", &normHEEPEles_SC_recHits_eta_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_recHits_phi", &normHEEPEles_SC_recHits_phi_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_recHits_isFromEB", &normHEEPEles_SC_recHits_isFromEB_);
-//	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_totEnergyRecHits", &normHEEPEles_SC_totEnergyRecHits_);		/* TEMP v1f/g FIX */
-//	inputFile_tree_->SetBranchAddress("normHEEPEles_SC_totNumRecHits", &normHEEPEles_SC_totNumRecHits_);				/* TEMP v1f/g FIX */
+//	inputFilesTChain_->SetBranchAddress("normHEEPEles_SCposn_eta", &normHEEPEles_SCposn_eta_);								/* TEMP v1f/g FIX */
+//	inputFilesTChain_->SetBranchAddress("normHEEPEles_SCposn_phi", &normHEEPEles_SCposn_phi_);								/* TEMP v1f/g FIX */
+//	inputFilesTChain_->SetBranchAddress("normHEEPEles_SC_rawEnergy", &normHEEPEles_SC_rawEnergy_);							/* TEMP v1f/g FIX */
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_SC_recHits_Et",  &normHEEPEles_SC_recHits_Et_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_SC_recHits_eta", &normHEEPEles_SC_recHits_eta_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_SC_recHits_phi", &normHEEPEles_SC_recHits_phi_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_SC_recHits_isFromEB", &normHEEPEles_SC_recHits_isFromEB_);
+//	inputFilesTChain_->SetBranchAddress("normHEEPEles_SC_totEnergyRecHits", &normHEEPEles_SC_totEnergyRecHits_);		/* TEMP v1f/g FIX */
+//	inputFilesTChain_->SetBranchAddress("normHEEPEles_SC_totNumRecHits", &normHEEPEles_SC_totNumRecHits_);				/* TEMP v1f/g FIX */
 
-	inputFile_tree_->SetBranchAddress("normHEEPEles_gsfTrk_eta", &normHEEPEles_gsfTrk_eta_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_gsfTrk_phi", &normHEEPEles_gsfTrk_phi_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_gsfTrk_vz", &normHEEPEles_gsfTrk_vz_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_gsfTrk_eta", &normHEEPEles_gsfTrk_eta_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_gsfTrk_phi", &normHEEPEles_gsfTrk_phi_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_gsfTrk_vz", &normHEEPEles_gsfTrk_vz_);
 
-	inputFile_tree_->SetBranchAddress("normHEEPEles_innerIsoConeTrks_pt",  &normHEEPEles_innerIsoConeTrks_pt_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_innerIsoConeTrks_eta", &normHEEPEles_innerIsoConeTrks_eta_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_innerIsoConeTrks_phi", &normHEEPEles_innerIsoConeTrks_phi_);
-	inputFile_tree_->SetBranchAddress("normHEEPEles_innerIsoConeTrks_vz",  &normHEEPEles_innerIsoConeTrks_vz_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_innerIsoConeTrks_pt",  &normHEEPEles_innerIsoConeTrks_pt_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_innerIsoConeTrks_eta", &normHEEPEles_innerIsoConeTrks_eta_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_innerIsoConeTrks_phi", &normHEEPEles_innerIsoConeTrks_phi_);
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_innerIsoConeTrks_vz",  &normHEEPEles_innerIsoConeTrks_vz_);
 
-	inputFile_tree_->SetBranchAddress("normHEEPEles_numMissInnerHits", &normHEEPEles_numMissInnerHits_);				/* TEMP v1f/g FIX */
+	inputFilesTChain_->SetBranchAddress("normHEEPEles_numMissInnerHits", &normHEEPEles_numMissInnerHits_);				/* TEMP v1f/g FIX */
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	//Setting up the pointer links for the special reconstruction GSF electron branches ...
 	if(readInBstdEles_){
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_number", &bstdGsfEles_number_); //unsigned int
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_p4ptr_", &bstdGsfEles_OLDp4_  ); // std::vector<ROOT::Math::XYZTVector>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_charge", &bstdGsfEles_charge_); //std::vector<Int_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_number", &bstdGsfEles_number_); //unsigned int
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_p4ptr_", &bstdGsfEles_OLDp4_  ); // std::vector<ROOT::Math::XYZTVector>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_charge", &bstdGsfEles_charge_); //std::vector<Int_t>*
 
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_Et",      &bstdGsfEles_Et_     );           // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_HEEP_Et", &bstdGsfEles_HEEP_Et_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_Eta",     &bstdGsfEles_Eta_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_scEta",   &bstdGsfEles_scEta_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_ecalDriven",     &bstdGsfEles_ecalDriven_);         // std::vector<bool>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_ecalDrivenSeed", &bstdGsfEles_ecalDrivenSeed_); // std::vector<bool>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_Et",      &bstdGsfEles_Et_     );           // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_HEEP_Et", &bstdGsfEles_HEEP_Et_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_Eta",     &bstdGsfEles_Eta_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_scEta",   &bstdGsfEles_scEta_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_ecalDriven",     &bstdGsfEles_ecalDriven_);         // std::vector<bool>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_ecalDrivenSeed", &bstdGsfEles_ecalDrivenSeed_); // std::vector<bool>*
 
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_HEEP_dEtaIn", & bstdGsfEles_HEEP_dEtaIn_);    // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_HEEP_dPhiIn", &bstdGsfEles_HEEP_dPhiIn_);     // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_HoverE", &bstdGsfEles_HoverE_);               // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_sigmaIetaIeta", &bstdGsfEles_sigmaIetaIeta_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_scSigmaIetaIeta", &bstdGsfEles_scSigmaIetaIeta_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_HEEP_dEtaIn", & bstdGsfEles_HEEP_dEtaIn_);    // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_HEEP_dPhiIn", &bstdGsfEles_HEEP_dPhiIn_);     // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_HoverE", &bstdGsfEles_HoverE_);               // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_sigmaIetaIeta", &bstdGsfEles_sigmaIetaIeta_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_scSigmaIetaIeta", &bstdGsfEles_scSigmaIetaIeta_); // std::vector<Double_t>*
 
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_dr03EmIsoEt", &bstdGsfEles_dr03EmIsoEt_);             // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_dr03HadDepth1IsoEt", &bstdGsfEles_dr03HadDepth1IsoEt_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_dr03HadDepth2IsoEt", &bstdGsfEles_dr03HadDepth2IsoEt_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_dr03TkIsoPt", &bstdGsfEles_dr03TkIsoPt_);  // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_dr03EmIsoEt", &bstdGsfEles_dr03EmIsoEt_);             // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_dr03HadDepth1IsoEt", &bstdGsfEles_dr03HadDepth1IsoEt_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_dr03HadDepth2IsoEt", &bstdGsfEles_dr03HadDepth2IsoEt_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_dr03TkIsoPt", &bstdGsfEles_dr03TkIsoPt_);  // std::vector<Double_t>*
 
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_e2x5Max", &bstdGsfEles_e2x5Max_); // std::vector<Double_t>*
-		inputFile_tree_->SetBranchAddress("bstdGsfEles_e5x5", &bstdGsfEles_e5x5_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_e2x5Max", &bstdGsfEles_e2x5Max_); // std::vector<Double_t>*
+		inputFilesTChain_->SetBranchAddress("bstdGsfEles_e5x5", &bstdGsfEles_e5x5_); // std::vector<Double_t>*
 
 		//*** Branches containing heep::Ele method values for special reco'n eles ***
 		//kinematic and geometric methods
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_et", &bstdHEEPEles_et_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_gsfEt", &bstdHEEPEles_gsfEt_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_scEt", &bstdHEEPEles_scEt_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_energy", &bstdHEEPEles_energy_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_gsfEnergy", &bstdHEEPEles_gsfEnergy_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_caloEnergy", &bstdHEEPEles_caloEnergy_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_eta", &bstdHEEPEles_eta_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_scEta", &bstdHEEPEles_scEta_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_detEta", &bstdHEEPEles_detEta_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_detEtaAbs", &bstdHEEPEles_detEtaAbs_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_phi", &bstdHEEPEles_phi_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_scPhi", &bstdHEEPEles_scPhi_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_detPhi", &bstdHEEPEles_detPhi_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_zVtx", &bstdHEEPEles_zVtx_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_p4ptr", &bstdHEEPEles_p4ptr_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_gsfP4ptr", &bstdHEEPEles_gsfP4ptr_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_et", &bstdHEEPEles_et_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_gsfEt", &bstdHEEPEles_gsfEt_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_scEt", &bstdHEEPEles_scEt_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_energy", &bstdHEEPEles_energy_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_gsfEnergy", &bstdHEEPEles_gsfEnergy_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_caloEnergy", &bstdHEEPEles_caloEnergy_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_eta", &bstdHEEPEles_eta_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_scEta", &bstdHEEPEles_scEta_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_detEta", &bstdHEEPEles_detEta_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_detEtaAbs", &bstdHEEPEles_detEtaAbs_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_phi", &bstdHEEPEles_phi_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_scPhi", &bstdHEEPEles_scPhi_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_detPhi", &bstdHEEPEles_detPhi_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_zVtx", &bstdHEEPEles_zVtx_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_p4ptr", &bstdHEEPEles_p4ptr_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_gsfP4ptr", &bstdHEEPEles_gsfP4ptr_);
 
 		//classification (couldnt they have just named it 'type')
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_classification", &bstdHEEPEles_classification_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isEcalDriven", &bstdHEEPEles_isEcalDriven_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isTrackerDriven", &bstdHEEPEles_isTrackerDriven_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isEB", &bstdHEEPEles_isEB_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isEE", &bstdHEEPEles_isEE_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_classification", &bstdHEEPEles_classification_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isEcalDriven", &bstdHEEPEles_isEcalDriven_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isTrackerDriven", &bstdHEEPEles_isTrackerDriven_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isEB", &bstdHEEPEles_isEB_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isEE", &bstdHEEPEles_isEE_);
 
 		//track methods
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_charge", &bstdHEEPEles_charge_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_trkCharge", &bstdHEEPEles_trkCharge_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_pVtx", &bstdHEEPEles_pVtx_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_pCalo", &bstdHEEPEles_pCalo_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_ptVtx", &bstdHEEPEles_ptVtx_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_ptCalo", &bstdHEEPEles_ptCalo_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_charge", &bstdHEEPEles_charge_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_trkCharge", &bstdHEEPEles_trkCharge_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_pVtx", &bstdHEEPEles_pVtx_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_pCalo", &bstdHEEPEles_pCalo_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_ptVtx", &bstdHEEPEles_ptVtx_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_ptCalo", &bstdHEEPEles_ptCalo_);
 
 		//abreviations of overly long GsfElectron methods, I'm sorry but if you cant figure out what hOverE() means, you shouldnt be using this class
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_hOverE", &bstdHEEPEles_hOverE_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_dEtaIn", &bstdHEEPEles_dEtaIn_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_dPhiIn", &bstdHEEPEles_dPhiIn_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_dPhiOut", &bstdHEEPEles_dPhiOut_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_epIn", &bstdHEEPEles_epIn_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_epOut", &bstdHEEPEles_epOut_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_fbrem", &bstdHEEPEles_fbrem_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_bremFrac", &bstdHEEPEles_bremFrac_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_invEOverInvP", &bstdHEEPEles_invEOverInvP_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_hOverE", &bstdHEEPEles_hOverE_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_dEtaIn", &bstdHEEPEles_dEtaIn_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_dPhiIn", &bstdHEEPEles_dPhiIn_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_dPhiOut", &bstdHEEPEles_dPhiOut_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_epIn", &bstdHEEPEles_epIn_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_epOut", &bstdHEEPEles_epOut_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_fbrem", &bstdHEEPEles_fbrem_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_bremFrac", &bstdHEEPEles_bremFrac_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_invEOverInvP", &bstdHEEPEles_invEOverInvP_);
 
 		//shower shape variables
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_sigmaEtaEta", &bstdHEEPEles_sigmaEtaEta_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_sigmaEtaEtaUnCorr", &bstdHEEPEles_sigmaEtaEtaUnCorr_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_sigmaIEtaIEta", &bstdHEEPEles_sigmaIEtaIEta_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_e1x5", &bstdHEEPEles_e1x5_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_e2x5Max", &bstdHEEPEles_e2x5Max_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_e5x5", &bstdHEEPEles_e5x5_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_e1x5Over5x5", &bstdHEEPEles_e1x5Over5x5_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_e2x5MaxOver5x5", &bstdHEEPEles_e2x5MaxOver5x5_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_sigmaEtaEta", &bstdHEEPEles_sigmaEtaEta_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_sigmaEtaEtaUnCorr", &bstdHEEPEles_sigmaEtaEtaUnCorr_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_sigmaIEtaIEta", &bstdHEEPEles_sigmaIEtaIEta_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_e1x5", &bstdHEEPEles_e1x5_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_e2x5Max", &bstdHEEPEles_e2x5Max_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_e5x5", &bstdHEEPEles_e5x5_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_e1x5Over5x5", &bstdHEEPEles_e1x5Over5x5_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_e2x5MaxOver5x5", &bstdHEEPEles_e2x5MaxOver5x5_);
 
 		//isolation, we use cone of 0.3
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isolEm", &bstdHEEPEles_isolEm_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isolHad", &bstdHEEPEles_isolHad_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isolHadDepth1", &bstdHEEPEles_isolHadDepth1_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isolHadDepth2", &bstdHEEPEles_isolHadDepth2_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isolPtTrks", &bstdHEEPEles_isolPtTrks_);
-		inputFile_tree_->SetBranchAddress("bstdHEEPEles_isolEmHadDepth1", &bstdHEEPEles_isolEmHadDepth1_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isolEm", &bstdHEEPEles_isolEm_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isolHad", &bstdHEEPEles_isolHad_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isolHadDepth1", &bstdHEEPEles_isolHadDepth1_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isolHadDepth2", &bstdHEEPEles_isolHadDepth2_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isolPtTrks", &bstdHEEPEles_isolPtTrks_);
+		inputFilesTChain_->SetBranchAddress("bstdHEEPEles_isolEmHadDepth1", &bstdHEEPEles_isolEmHadDepth1_);
 	}
 	else
-		inputFile_tree_->SetBranchStatus("bstd*",0);
+		inputFilesTChain_->SetBranchStatus("bstd*",0);
 
-	std::cout << "   pointer links for branch read-out now set up." << std::endl;
 }
 
 //==============================================================
@@ -3259,776 +3211,262 @@ void BstdZeeFirstAnalyser::SetupEMuMethodTrees(){
 }
 
 
-//-----------------------------------------------------------------------------------------//
-//----- Methods called by the destructor (i.e. deletion of heap-based objects)...     -----//
-//-----------------------------------------------------------------------------------------//
-void BstdZeeFirstAnalyser::DeleteReconValidationHistos(){
-	/*delete hist_normEles_number_;
-	delete hist_normEles_charge_;
-	delete hist_normEles_Et_;
-	delete hist_normEles_heepEt_;
-	delete hist_normEles_Eta_;
-	delete hist_normEles_scEta_;
-	delete hist_normEles_ecalDriven_;
-	delete hist_normEles_ecalDrivenSeed_;
-
-	delete hist_normEles_heepdEtaIn_;
-	delete hist_normEles_heepdPhiIn_;
-	delete hist_normEles_HoverE_;
-	delete hist_normEles_sigmaIetaIeta_;
-	delete hist_normEles_scSigmaIetaIeta_;
-
-	delete hist_normEles_dr03EmIsoEt_;
-	delete hist_normEles_dr03Had1IsoEt_;
-	delete hist_normEles_dr03Had2IsoEt_;
-	delete hist_normEles_dr03TkIsoPt_;
-	delete hist_normEles_e2x5Max_;
-	delete hist_normEles_e5x5_;*/
-}
-
 //=====================================================================================================
 //-----------------------------------------------------------------------------------------------------
 
-int main()
+int main(int argc, char* argv[])
 {
-	bool testClass = true;
-	
-	if(testClass){
-		gROOT->ProcessLine("#include <vector>"); //Without this line, the std::vector<bool> branches are not linked correctly(???), giving 'dictionary for class...' errors
+	gROOT->ProcessLine("#include <vector>"); //Without this line, the std::vector<bool> branches are not linked correctly(???), giving 'dictionary for class...' errors
 				//upon running of ZEventAnalyser program, and accessing these branches results in nonsensical results (e.g. methods such as size()).
 
+	// -=-=-=-=-=-=-=-=-=-=-=-=-=-=- // 
+	// PART 1: COMMAND LINE OPTIONS  //
 
-//		TString inFilePrefix = "/home/ppd/nnd85574/Work/BstdZee/CMSSW_4_2_8_patch7/src/NTupler/BstdZeeNTupler/";
-		TString inFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/NTuples/42Xv1x/ModIsoStudies_2012-05-07/";
-		TString outFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/AnaTuples/ModIsoStudies_2012-05-16tests/";
-		std::vector<BstdZeeFirstAnalyser> myAnalysers; myAnalysers.clear();
-		std::vector<TString> inFile; inFile.clear();
-		std::vector<TString> outFile; outFile.clear();
-		std::vector<bool> isMCflag; isMCflag.clear();
-		std::vector<int>  nEvents; nEvents.clear();
-		std::vector<Double_t> intLumiPerEvent; intLumiPerEvent.clear(); // in inv fb !!
-		Double_t desiredIntLumi = 3.917;  // in inv fb !!
+	// Alias the boost::program_options namespace ...
+	namespace bProgOpts = boost::program_options;
+	
+	// Declare variables that store the options
+   int maxEvents = 0;
+   bool isMC = false;
+   double xSection = -1.0;
+   double desiredIntLumi = -1.0;
+   std::vector<std::string> inputFilesVecFromCmdLine;
+   unsigned int numFilesSkip;
+   int numFilesRunOver;
+	std::string outputFile;
+	
+	// Declare the supported options
+	bProgOpts::options_description cmdLineOptions("Allowed options");
+	cmdLineOptions.add_options()
+		("help",            "print help message")
+		("maxEvents",       bProgOpts::value<int>(&maxEvents)->default_value(-1), "number of events to run over" )
+      ("mc",              "flag for specifying that input file is MC")
+      ("xSection",        bProgOpts::value<double>(&xSection)->default_value(-1.0), "cross section of sample (in fb)")
+      ("scaleToLumi",     bProgOpts::value<double>(&desiredIntLumi)->default_value(-1.0), "integrated lumi for scaling events to (in inverse fb)" )
+		("input-file,i",    bProgOpts::value<std::vector<std::string> >(&inputFilesVecFromCmdLine), "names of input files (Either specify as normal / positional options.)")
+      ("from-list,l",     "flags that specified 'input file' is a list of files.")
+      ("num-files-skip",  bProgOpts::value<unsigned int>(&numFilesSkip)->default_value(0), "number of input files to skip")
+      ("num-files-proc",  bProgOpts::value<int>(&numFilesRunOver)->default_value(-1), "number of input files that are run over")
+		("output-file,o",   bProgOpts::value<std::string>(&outputFile), "name of output file")
+		;
+   
+	bProgOpts::positional_options_description cmdLinePositionalOpts;
+	cmdLinePositionalOpts.add("input-file", -1);
 
-		std::vector<std::string> giMasses;
-		giMasses.push_back("2000");
+	// Parse options given by the user
+	bProgOpts::variables_map optionValueMap;
+	try{
+		bProgOpts::store(bProgOpts::command_line_parser(argc, argv).options(cmdLineOptions).positional(cmdLinePositionalOpts).run(),
+     			optionValueMap);
+      bProgOpts::notify(optionValueMap);
+	}
+   catch( const bProgOpts::unknown_option& e){
+      std::cout << std::endl << "   * ERROR during parsing (and storing) command line options  [Exception thrown.]" 
+                << std::endl << "   * The option '" << e.get_option_name() << "' has not been recognised ; program will now exit early ..." 
+                << std::endl << std::endl << cmdLineOptions << std::endl;
+      return 1;         
+   }
+   catch( const bProgOpts::multiple_occurrences& e){
+      std::cout << std::endl << "   * ERROR during parsing (and storing) command line options  [Exception thrown.]" 
+                << std::endl << "   * There were several occurrences of the option '" << e.get_option_name() << "', but only one occurrence is expected !"
+                << std::endl << "   * The program will now exit early ..." 
+                << std::endl << std::endl << cmdLineOptions << std::endl;
+      return 1;         
+   }
+   catch( bProgOpts::invalid_option_value ){
+      std::cout << std::endl << "   * ERROR during parsing (and storing) command line options  [Exception thrown.]" 
+                << std::endl << "   * An invalid value was given for one of the options ; the program will now exit early ..." 
+                << std::endl << std::endl << cmdLineOptions << std::endl;
+      return 1;         
+   }
+   catch( bProgOpts::error ){
+      std::cout << std::endl << "   * ERROR during parsing (and storing) command line options  [Exception thrown.]"
+                << std::endl << "   * Program will now exit early ..." 
+                << std::endl << std::endl << cmdLineOptions << std::endl;
+      return 1;         
+   }
 
-		for(std::vector<std::string>::const_iterator giMassIt = giMasses.begin(); giMassIt != giMasses.end(); giMassIt++){
-			inFile.push_back("mcNTuple_42Xv1x_QstarGI-M"+(*giMassIt)+"--Fall11-PUS6_2012-05-07.root"); isMCflag.push_back(true);
-			outFile.push_back("QstarGI-M"+(*giMassIt)+"--Fall11-PUS6_2012-05-16test1");
-			nEvents.push_back( -1 );
-			intLumiPerEvent.push_back( -1.0 ); // in inv fb
+	// Take action based on values
+	if(optionValueMap.count("help")){
+		std::cout << cmdLineOptions << std::endl ;//<< cmdLinePositionalOpts << std::endl;
+		return 1;
+	}
+   
+   if(optionValueMap.count("mc")!=0)
+      isMC = true;
+   
+   if(optionValueMap.count("input-file")==0){
+      std::cout << "  No input files have been entered; program is exiting early ... " << std::endl;
+      return 1;
+   }
+   
+   if(optionValueMap.count("output-file")==0){
+      std::cout << "  No name has been given for the output file; program is exiting early ... " << std::endl;
+      return 1;
+   }
+   
+      
+   if(optionValueMap.count("from-list")){
+      std::cout << "  Detected that specified input file is a list of input files" << std::endl;
+      if(inputFilesVecFromCmdLine.size()!=1){
+         std::cout << "     * ERROR : There is (zero or) > one input file, and yet you used the 'from-list' flag" << std::endl
+                   << "               Only one input file list can be used when running the analyser exe at the moment ..." << std::endl
+                   << "               The program will now exit early!" << std::endl;
+         return 1;
+      }
+      else{
+         std::cout << "  File being read for input ROOT files is '" << inputFilesVecFromCmdLine.at(0) << "'" << std::endl; 
+         ifstream theFile(inputFilesVecFromCmdLine.at(0).c_str());
+         inputFilesVecFromCmdLine.clear();
+         
+         std::string lineContent;
+         if(theFile.is_open()){
+            while( ! theFile.eof() ){
+               if(theFile.fail()){
+                  std::cout << "     * ERROR : Failure when reading the text file listing the names of the input files. " << std::endl
+                            << "               The program will now exit early!" << std::endl;
+                  return 1;
+               }            
+               getline(theFile, lineContent);
+               std::cout << lineContent << std::endl; 
+            }
+         }
+         else{
+            std::cout << "     * ERROR : Could not open the specified file" << std::endl
+                      << "               The program will now exit early!" << std::endl;
+            return 1;
+         }
+      }// End:if-else: 1 or multiple files specified on cmd line
+   }// End: if from-list option used
+   
+   
+   std::vector<std::string> inputFilesVecToRunOver;
+   for(unsigned int idx=0; idx<inputFilesVecFromCmdLine.size(); idx++)
+      if(idx>=numFilesSkip && (numFilesRunOver<0 || idx<(numFilesSkip+numFilesRunOver)) )
+         inputFilesVecToRunOver.push_back( inputFilesVecFromCmdLine.at(idx) );
+   
+             
+   // Finally repeat the parsed options back to the user ...
+   std::cout << " The specified options are ..." << std::endl 
+             << "    + maxEvents      = " << maxEvents << std::endl
+             << "    + mc             = " << isMC << std::endl
+             << "    + xSection       = " << xSection << std::endl
+             << "    + scaleToLumi    = " << desiredIntLumi << std::endl
+             << "    + from-list      = " << (optionValueMap.count("from-list")!=0 ? "true" : "false") << std::endl
+             << "    + num-files-skip = " << numFilesSkip << std::endl 
+             << "    + num-files-proc = " << numFilesRunOver << std::endl
+             << "    + output-file    = " << outputFile << std::endl
+             << " ... the input files specified on command line are:" << std::endl;
+   for(std::vector<std::string>::const_iterator inFileIt = inputFilesVecFromCmdLine.begin();
+               inFileIt != inputFilesVecFromCmdLine.end(); inFileIt++)
+      std::cout << "        * " << (*inFileIt) << std::endl;
+   std::cout << " ... and the input files that I will run over are:" << std::endl;
+   for(std::vector<std::string>::const_iterator inFileIt = inputFilesVecToRunOver.begin();
+               inFileIt != inputFilesVecToRunOver.end(); inFileIt++)
+      std::cout << "        * " << (*inFileIt) << std::endl;
+   
+	// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- //	
+	// PART XX: ACTUALLY RUN THE ANALYSER  //
+
+	BstdZeeFirstAnalyser theAnalyser(0, maxEvents, isMC, inputFilesVecToRunOver, outputFile, -1, 80, 55, 1100.0);
+
+	TStopwatch watch;
+	watch.Start();
+
+	if( !isMC || xSection<=0.0 || desiredIntLumi<=0.0 )
+		theAnalyser.DoAnalysis(1.0);
+	else{
+		double scaleFactor = (desiredIntLumi * xSection)/static_cast<double>(theAnalyser.GetNumEvtsRunOver());
+		theAnalyser.DoAnalysis(scaleFactor);
+	}
+
+	watch.Stop();
+	double cpuTimeInMins  = watch.CpuTime()/60.0;
+	double realTimeInMins = watch.RealTime()/60.0;
+	double nEvtsRunOver = static_cast<double>( theAnalyser.GetNumEvtsRunOver() );
+	std::cout << " -=-=- TIMING INFO -=-=-" << std::endl
+				 << "   Total: " << std::endl
+				 << "      " << watch.CpuTime()/60.0 << " mins (CPU);  " << watch.RealTime()/60.0 << " mins (real)" << std::endl
+				 << "   Per million events: " << std::endl
+				 << "      " << cpuTimeInMins/nEvtsRunOver << " mins (CPU);  " << realTimeInMins/nEvtsRunOver << " mins (real)" << std::endl
+				 << std::endl;
+
+	// -=-=-=-=-=-=-=-=-=-=-=-=-=-=- //
+	// *** ----- OLD CODE  ----- *** //
+	
+	/*//		TString inFilePrefix = "/home/ppd/nnd85574/Work/BstdZee/CMSSW_4_2_8_patch7/src/NTupler/BstdZeeNTupler/";
+	TString inFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/NTuples/42Xv1x/ModIsoStudies_2012-05-07/";
+	TString outFilePrefix = "/opt/ppd/newscratch/williams/Datafiles/AnaTuples/ModIsoStudies_2012-05-16tests/";
+	std::vector<BstdZeeFirstAnalyser> myAnalysers; myAnalysers.clear();
+	std::vector<TString> inFile; inFile.clear();
+	std::vector<TString> outFile; outFile.clear();
+	std::vector<bool> isMCflag; isMCflag.clear();
+	std::vector<int>  nEvents; nEvents.clear();
+	std::vector<Double_t> intLumiPerEvent; intLumiPerEvent.clear(); // in inv fb !!
+	Double_t desiredIntLumi = 3.917;  // in inv fb !!
+
+	std::vector<std::string> giMasses;
+	giMasses.push_back("2000");
+
+	for(std::vector<std::string>::const_iterator giMassIt = giMasses.begin(); giMassIt != giMasses.end(); giMassIt++){
+		inFile.push_back("mcNTuple_42Xv1x_QstarGI-M"+(*giMassIt)+"--Fall11-PUS6_2012-05-07.root"); isMCflag.push_back(true);
+		outFile.push_back("QstarGI-M"+(*giMassIt)+"--Fall11-PUS6_2012-05-16test1");
+		nEvents.push_back( -1 );
+		intLumiPerEvent.push_back( -1.0 ); // in inv fb
+	}
+
+	std::vector<std::string> ciMasses;
+
+	for(std::vector<std::string>::const_iterator ciMassIt = ciMasses.begin(); ciMassIt != ciMasses.end(); ciMassIt++){
+		inFile.push_back("mcNTuple_42Xv1x_QstarCI-M"+(*ciMassIt)+"--Fall11-PUS6_2012-05-16test1.root"); isMCflag.push_back(true);
+		outFile.push_back("QstarCI-M"+(*ciMassIt)+"--Fall11-PUS6_2012-05-07");
+		nEvents.push_back( -1 );
+		intLumiPerEvent.push_back( -1.0 ); // in inv fb
+	}
+
+	// Doing the analysis ...
+	for(unsigned int idx=0; idx<inFile.size(); idx++){
+		TStopwatch watch;
+		watch.Start();
+		std::cout << std::endl << "***--- NEW FILE (no " << idx+1 << "/" << inFile.size() << ") ---***" << std::endl;
+		std::cout << " * Input:  " << inFile.at(idx) << std::endl;
+		std::cout << " * Output: " << outFile.at(idx) << std::endl;
+		BstdZeeFirstAnalyser myAnalysers = BstdZeeFirstAnalyser(0, nEvents.at(idx), isMCflag.at(idx), inFilePrefix+inFile.at(idx), outFilePrefix+outFile.at(idx), -1, 80, 55, 1100.0);
+		std::cout << " * (" << myAnalysers.GetNumEvtsRunOver() << " events will be run over; " << nEvents.at(idx)  << " requested.)" << std::endl;
+
+		if(outFile.at(idx).Contains("-highMCZpT_")){
+			myAnalysers.SkipEvtIfMCZpTBelow(160.0);
+			std::cout << "   (Low pT events will be skipped!)" << std::endl;
 		}
-
-		std::vector<std::string> ciMasses;
-
-		for(std::vector<std::string>::const_iterator ciMassIt = ciMasses.begin(); ciMassIt != ciMasses.end(); ciMassIt++){
-			inFile.push_back("mcNTuple_42Xv1x_QstarCI-M"+(*ciMassIt)+"--Fall11-PUS6_2012-05-16test1.root"); isMCflag.push_back(true);
-			outFile.push_back("QstarCI-M"+(*ciMassIt)+"--Fall11-PUS6_2012-05-07");
-			nEvents.push_back( -1 );
-			intLumiPerEvent.push_back( -1.0 ); // in inv fb
+		if(outFile.at(idx).Contains("-lowMCZpT_")){
+			myAnalysers.SkipEvtIfMCZpTAbove(160.0);
+			std::cout << "   (High pT events will be skipped!)" << std::endl;
 		}
-
-		////////////////////
-		// Data - Photon
-
-//		// May10ReReco
-//		inFile.push_back("42Xv1f/data/Photon-May10ReReco_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("Photon-May10ReReco_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-//
-//		// Aug05 ReReco
-//		inFile.push_back("42Xv1f/data/Photon-Aug05ReReco_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("Photon-Aug05ReReco_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-//
-//		// Prompt-v4
-//		inFile.push_back("42Xv1f/data/Photon-PromptReco-v4_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("Photon-PromptReco-v4_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-//
-//		// Prompt-v6
-//		inFile.push_back("42Xv1f/data/Photon-PromptReco-v6_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("Photon-PromptReco-v6_2011-10-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-//
-//		// Run11B-Prompt-v1
-//		inFile.push_back("42Xv1f/data/Photon-Run11B-PromptReco-v1_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("Photon-Run11B-PromptReco-v1_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-
-//		// full 42Xv1g Run11B-Prompt-v1
-//		inFile.push_back("42Xv1g/data/Photon-Run11B-PromptReco-v1_NTuple-42Xv1g_2011-11-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("Photon-FULL-Run11B-PromptReco-v1_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-
-//		////////////////////
-//		// Data - MuEG
-//
-//		// May10ReReco
-//		inFile.push_back("42Xv1f/data/MuEG-May10ReReco_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("MuEG-May10ReReco_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-//
-//		// Aug05 ReReco
-//		inFile.push_back("42Xv1f/data/MuEG-Aug05ReReco_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("MuEG-Aug05ReReco_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-//
-//		// Prompt-v4
-//		inFile.push_back("42Xv1f/data/MuEG-PromptReco-v4_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("MuEG-PromptReco-v4_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-//
-//		// Prompt-v6
-//		inFile.push_back("42Xv1f/data/MuEG-PromptReco-v6_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("MuEG-PromptReco-v6_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-//
-//		// Run11B-Prompt-v1
-//		inFile.push_back("42Xv1f/data/MuEG-Run11B-PromptReco-v1_NTuple-42Xv1f_2011-10-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("MuEG-Run11B-PromptReco-v1_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-//
-//		// full 42Xv1g Run11B-Prompt-v1
-//		inFile.push_back("42Xv1g/data/MuEG-Run11B-PromptReco-v1_NTuple-42Xv1g_2011-11-23.root"); isMCflag.push_back(false);
-//		outFile.push_back("MuEG-FULL-Run11B-PromptReco-v1_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1 ); // in inv fb
-
-
-//
-//		////////////////////
-//		// Background MC
-//
-//		// DYJetsToLL
-//		inFile.push_back("42Xv1e/mc/DYJetsToLL_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(true);
-//		outFile.push_back("DYJetsToLL_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/2475000.0 ); // in inv fb
-//
-//		// DYJetsToLL-ee
-//		inFile.push_back("42Xv1e/mc/DYJetsToLL-ee_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(true);
-//		outFile.push_back("DYJetsToLL-ee_2011-10-23");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/(2475000.0/3.0) ); // in inv fb
-//
-//		// DYJetsToLL-ee-lowMCZpT
-//		inFile.push_back("42Xv1e/mc/DYJetsToLL-ee_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(true);
-//		outFile.push_back("DYJetsToLL-ee-lowMCZpT_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/(2475000.0/3.0) ); // in inv fb
-//
-//		// DYJetsToLL-ZpT100-ee
-//		inFile.push_back("42Xv1e/mc/DYJetsToLL-ZpT100-ee_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(true);
-//		outFile.push_back("DYJetsToLL-ZpT100-ee_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/(25100.0/3.0) ); // in inv fb
-//
-//		// DYJetsToLL-ZpT100-ee-highMCZpT
-//		inFile.push_back("42Xv1e/mc/DYJetsToLL-ZpT100-ee_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(true);
-//		outFile.push_back("DYJetsToLL-ZpT100-ee-highMCZpT_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/(25100.0/3.0) ); // in inv fb
-
-//		// DYToEE-powheg-M20
-//		inFile.push_back("42Xv1e/mc/DYToEE-powheg-M20_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(true);
-//		outFile.push_back("DYToEE-powheg-M20_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/1628000.0 ); // in inv fb
-//
-//		// DYJetsToLL-TauTau
-//		inFile.push_back("42Xv1e/mc/DYJetsToLL-TauTau_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(true);
-//		outFile.push_back("DYJetsToLL-TauTau_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/(2475000.0/3.0) ); // in inv fb
-//
-//		// TTbar
-//		inFile.push_back("42Xv1e/mc/TTbar-pythia_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("TTbar-pythia_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/157500.0 ); // in inv fb // intLumiPerEvent.push_back( 1.0/94000.0 ); // in inv fb
-//
-//		// TTbarJets
-//		inFile.push_back("42Xv1e/mc/TTbarJets_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("TTbarJets_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/157500.0 ); // in inv fb // intLumiPerEvent.push_back( 1.0/94760.0 ); // in inv fb
-//
-//		// TW
-//		inFile.push_back("42Xv1e/mc/TW_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("TW_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/7870.0 ); // in inv fb // intLumiPerEvent.push_back( 1.0/7466.0 ); // in inv fb
-//
-//		// TbarW
-//		inFile.push_back("42Xv1e/mc/TbarW_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("TbarW_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/7870.0 ); // in inv fb // intLumiPerEvent.push_back( 1.0/7460.0 ); // in inv fb
-//
-//		// WWTo2L2Nu
-//		inFile.push_back("42Xv1e/mc/WWTo2L2Nu_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("WWTo2L2Nu_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/2927.0 ); // in inv fb
-//
-//		// WZTo3LNu
-//		inFile.push_back("42Xv1e/mc/WZTo3LNu_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("WZTo3LNu_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/339.4 ); // in inv fb
-//
-//		// ZGamma
-//		inFile.push_back("42Xv1e/mc/ZGamma_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("ZGamma_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/34160.0 ); // in inv fb
-//
-//		// ZZ
-//		inFile.push_back("42Xv1e/mc/ZZ_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("ZZ_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/4287.0 ); // in inv fb
-//
-//		// QCD-dblEM
-//		inFile.push_back("42Xv1e/mc/QCD-dblEM_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("QCD-dblEM_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/43571000.0 ); // in inv fb
-
-//		// WJetsToLNu
-//		inFile.push_back("42Xv1e/mc/WJetsToLNu_NTuple-42Xv1e_2011-10-14.root"); isMCflag.push_back(false);
-//		outFile.push_back("WJets_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/27770000.0 ); // in inv fb
-
-
-//		////////////////////
-//		// Signal MC
-//
-//		// SigMC - 0.75TeVq*
-//		inFile.push_back("42Xv1f/local/0-75TeVq_NTuple-42Xv1f_2011-11-03.root"); isMCflag.push_back(true);
-//		outFile.push_back("0-75TeVq_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/925.0 ); // in inv fb
-//
-//		// SigMC - 1.00TeVq*
-//		inFile.push_back("42Xv1f/local/1-00TeVq_NTuple-42Xv1f_2011-11-03.root"); isMCflag.push_back(true);
-//		outFile.push_back("1-00TeVq_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/110.0 ); // in inv fb
-//
-//		// SigMC - 2.00TeVq*
-//		inFile.push_back("42Xv1f/local/2-00TeVq_NTuple-42Xv1f_2011-11-03.root"); isMCflag.push_back(true);
-//		outFile.push_back("2-00TeVq_2011-11-22");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( 1.0/1.2 ); // in inv fb
-
-
-//		// SigMC - 1.00TeVq*
-//		inFile.push_back("../nextVersion/1-00TeVq_NTuple-42Xv1g-Pre_2011-11-17.root"); isMCflag.push_back(true);
-////		inFile.push_back("testNTuple.root"); isMCflag.push_back(true);
-//		outFile.push_back("histos_1-00TeVq_2011-11-17");
-//		nEvents.push_back( -1 );
-//		intLumiPerEvent.push_back( -1.0 ); // intLumiPerEvent.push_back( 1.0/110.0 ); // in inv fb
-
-
-//		// SigMC - 0.75TeVu*
-//		inFile.push_back("sigMC_0-75TeVu_2e33NTuple_42Xv1d_2kEvts_2011-08-30.root"); isMCflag.push_back(false);
-//		outFile.push_back("histos_0-75TeVu_2011-08-30_2e33");
-//		nEvents.push_back( 2000 );
-//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/925.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb		// SigMC - 0.75TeVu*
-//		inFile.push_back("sigMC_0-75TeVu_2e33noCaloIdL-NTuple_42Xv1d_2kEvts_2011-08-30.root"); isMCflag.push_back(false);
-//		outFile.push_back("histos_0-75TeVu_2011-08-30_2e33noCaloIdL");
-//		nEvents.push_back( 2000 );
-//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/925.0 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
-//		// SigMC - 2.00TeVu*
-//		inFile.push_back("sigMC_2-00TeVu_2e33NTuple_42Xv1d_2kEvts_2011-08-30.root"); isMCflag.push_back(false);
-//		outFile.push_back("histos_2-00TeVu_2011-08-30_2e33");
-//		nEvents.push_back( 2000 );
-//		intLumiPerEvent.push_back( -1.0 ); //intLumiPerEvent.push_back( 1.0/1.2 ); //intLumiPerEvent.push_back( -1.0 ); // in inv fb
-
-
-
-//		// Test
-//		BstdZeeFirstAnalyser myAnalyser = BstdZeeFirstAnalyser(0, 10, true, "../../NTupler/BstdZeeNTupler/testNTuple_2-00TeVu.root", "testOut.root", 6, 80, 55, 1100.0);
-//		myAnalyser.DoAnalysis(  1.0  );
-
-		// Doing the analysis ...
-		for(unsigned int idx=0; idx<inFile.size(); idx++){
-			TStopwatch watch;
-			watch.Start();
-			std::cout << std::endl << "***--- NEW FILE (no " << idx+1 << "/" << inFile.size() << ") ---***" << std::endl;
-			std::cout << " * Input:  " << inFile.at(idx) << std::endl;
-			std::cout << " * Output: " << outFile.at(idx) << std::endl;
-			BstdZeeFirstAnalyser myAnalysers = BstdZeeFirstAnalyser(0, nEvents.at(idx), isMCflag.at(idx), inFilePrefix+inFile.at(idx), outFilePrefix+outFile.at(idx), -1, 80, 55, 1100.0);
-			std::cout << " * (" << myAnalysers.GetNumEvtsRunOver() << " events will be run over; " << nEvents.at(idx)  << " requested.)" << std::endl;
-
-			if(outFile.at(idx).Contains("-highMCZpT_")){
-				myAnalysers.SkipEvtIfMCZpTBelow(160.0);
-				std::cout << "   (Low pT events will be skipped!)" << std::endl;
-			}
-			if(outFile.at(idx).Contains("-lowMCZpT_")){
-				myAnalysers.SkipEvtIfMCZpTAbove(160.0);
-				std::cout << "   (High pT events will be skipped!)" << std::endl;
-			}
-			std::cout << " Running the DoAnalysis method ..." << std::endl;
+		std::cout << " Running the DoAnalysis method ..." << std::endl;
 //			if(inFile.at(idx).find("mcZpTleq100GeV")!=inFile.at(idx).length()){
 //				myAnalysers.RemoveEventsWithMcZpTGreaterThan(100.0);
 //			}
-			if(intLumiPerEvent.at(idx)>=0)
-				myAnalysers.DoAnalysis(  desiredIntLumi/( static_cast<double>(myAnalysers.GetNumEvtsRunOver())*intLumiPerEvent.at(idx))  ); //myAnalyser.DoAnalysis( 1.0*(2321000.0/2530516.0) );
-			else
-				myAnalysers.DoAnalysis(  1.0  ); //myAnalyser.DoAnalysis( 1.0*(2321000.0/2530516.0) );
-			//delete myAnalysers;
-			//myAnalysers = NULL;
-			watch.Stop();
-			std::cout << " * " << myAnalysers.GetNumEvtsRunOver() << " events analysed in " << watch.RealTime() << " seconds (" << watch.CpuTime() << " sec of CPU time)." << std::endl;
-			std::cout << " * [i.e. " << 1000000.0*watch.RealTime()/static_cast<double>(myAnalysers.GetNumEvtsRunOver()) << "sec/million events. (" << 1000000.0*watch.CpuTime()/static_cast<double>(nEvents.at(idx)) << " sec/event in CPU time.)]" << std::endl;
-			//delete myAnalysers.at(idx);
-		}
-
-		/*for(unsigned int i=0; i<sigInputFilenames.size()-1; i++){
-			std::cout << std::endl << std::endl;
-			std::cout << "  ***-------------------------------***" << std::endl;
-			std::cout << "  *** Signal analysis #" << i << " ..." << std::endl;
-			sigAnalysers.push_back( BstdZeeFirstAnalyser(0, 20000, false, sigInputFilenames.at(i), sigOutputFilenames.at(i), -1) );
-			std::cout << " Running the DoAnalysis method ..." << std::endl;
-			sigAnalysers.at(i).DoAnalysis(1.0);
-		}*/
-	}
-	else
-	{
-	/*	std::cout << "BstdZeeFirstAnalyser program is starting..." << std::endl;
-		gROOT->ProcessLine("#include <vector>"); //Without this line, the std::vector<bool> branches are not linked correctly(???), giving 'dictionary for class...' errors
-		//upon running of ZEventAnalyser program, and accessing these branches results in nonsensical results (e.g. methods such as size()).
-
-		//Variable declarations
-		int vFlg = 1;
-		int num_evts = 20;
-		Double_t evtWeight = 1.0;
-		//Double_t crossSection = -999.9; //in *fb*
-		int sampleType = 3; //1 for 0.75TeV u*, 2 for 1.00TeVu*, and 3 for 2.00TeVu*
-
-		TString inputFileName("tmpFileName");
-		TString outputFileName("tmpFileName");
-	 */
-		/*if(sampleType==1){
-			inputFileName = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_3_11_0/src/MCNTupler/BstdZeeMCTruthNTupler/MCTruthEventData_0-75TeVu_2011-03-16_1000evts.root";
-			outputFileName = "BstdZeeMCTruthHistos_0-75TeVu_2011-03-16.root";
-			//crossSection = 2.5*1000.0*1000.0; //in fb
-		}
-		else if(sampleType==2){
-			inputFileName = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_3_11_0/src/MCNTupler/BstdZeeMCTruthNTupler/MCTruthEventData_1-00TeVu_2011-03-16_1000evts.root";
-			outputFileName = "BstdZeeMCTruthHistos_1-00TeVu_2011-03-16.root";
-			//crossSection = *1000.0*1000.0; //in fb
-		}
-		else if(sampleType==3){
-			inputFileName = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_3_11_0/src/MCNTupler/BstdZeeMCTruthNTupler/MCTruthEventData_2-00TeVu_2011-03-16_1000evts.root";
-			outputFileName = "BstdZeeMCTruthHistos_2-00TeVu_2011-03-16.root";
-			//crossSection = 2.5*1000.0*1000.0; //in fb
-		}
+		if(intLumiPerEvent.at(idx)>=0)
+			myAnalysers.DoAnalysis(  desiredIntLumi/( static_cast<double>(myAnalysers.GetNumEvtsRunOver())*intLumiPerEvent.at(idx))  ); //myAnalyser.DoAnalysis( 1.0*(2321000.0/2530516.0) );
 		else
-			return 0;*/
-	/*
-		inputFileName  = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_4_1_4_patch2/src/NTupler/BstdZeeNTupler/eventData_ntuple.root";
-		outputFileName = "/opt/ppd/scratch/williams/EDAnalysers/BstdZee/CMSSW_4_1_4_patch2/src/BstdZeeFirst/Analyser/testOutputHists.root";
-		//evtWeight = (crossSection*1.0)/static_cast<double>(num_evts);
-		evtWeight = 1.0/static_cast<double>(num_evts);
-	
-		//------------------------------------------------
-		//Variables that will be filled with branch data...
-		unsigned int mc_numFinalStateEles = 0;
-	
-		Int_t mcEles_HighestEt_charge = -999;
-		Int_t mcEles_HighestEt_PDGid  = -999;
-		Int_t mcEles_HighestEt_status = -999;
-		Double_t mcEles_HighestEt_pt  = -999.9;
-		//ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >
-		ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >* mcEles_HighestEt_OLDp4_ptr = 0; //NB: These pointers have to be initialised!! (Initialisation to 0 is fine...)
-		TLorentzVector mcEles_HighestEt_p4(0.0,0.0,0.0,0.0);
-	
-		Int_t mcEles_2ndHighestEt_charge = -999;
-		Int_t mcEles_2ndHighestEt_PDGid  = -999;
-		Int_t mcEles_2ndHighestEt_status = -999;
-		Double_t mcEles_2ndHighestEt_pt  = -999.9;
-		ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >* mcEles_2ndHighestEt_OLDp4_ptr = 0; //NB: These pointers have to be initialised!! (Initialisation to 0 is fine...)
-		TLorentzVector mcEles_2ndHighestEt_p4(0.0,0.0,0.0,0.0);
-	
-		Double_t mcZcandidate_pt  = -999.9;
-		Double_t mcZcandidate_eta = -999.9;
-		Double_t mcZcandidate_phi = -999.9;
-		Double_t mcZcandidate_mass= -999.9;
-		ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >* mcZcandidate_OLDp4_ptr = 0; //ROOT::Math::XYZTVector
-																															//NB: These pointers have to be initialised!! (Initialisation to 0 is fine...)
-		TLorentzVector mcZcandidate_p4(0.0,0.0,0.0,0.0);
-		Double_t mcZcandidate_dEtaEles = -999.9;
-		Double_t mcZcandidate_dPhiEles = -999.9;
-		Double_t mcZcandidate_dREles   = -999.9;
-		Double_t mcZcandidate_openingAngle = -999.9;
-	
-		Bool_t hltPathA_decision = false; // Bool_t
-		std::string *hltPathA_name_ptr = 0;     // std::string hltPathA_
-	
-		//std::vector<Double_t> *ele_SCs_Et = 0;
-		//std::vector<bool> *ele_ecalDrivenFlags = 0;
-		//ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > diele_p4(0.0,0.0,0.0,0.0); // N.B. ROOT::Math::XYZTVector is typedef for ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >
-	
-		Int_t numBins_PtZ = 24;
-		Double_t min_PtZ = 0.0;
-		Double_t max_PtZ = 1200.0;
-		
-		Double_t ptBinLims_Z[21];
-		Int_t numBins_LogPtZ = 20;
-		//std::cout << std::endl <<"ptBinLims_Z:" << std::endl;
-		for(int idx=0; idx<=numBins_LogPtZ; idx++){
-			ptBinLims_Z[idx] = 0.1*pow(10.0,static_cast<double>(idx)/5.0);
-			//std::cout << "    " << ptBinLims_Z[idx] << std::endl;
-		}
-		
-		Int_t numBins_PtEle = 25;
-		Double_t min_PtEle  = 0.0;
-		Double_t max_PtEle  = 1000.0;
+			myAnalysers.DoAnalysis(  1.0  ); //myAnalyser.DoAnalysis( 1.0*(2321000.0/2530516.0) );
+		//delete myAnalysers;
+		//myAnalysers = NULL;
+		watch.Stop();
+		std::cout << " * " << myAnalysers.GetNumEvtsRunOver() << " events analysed in " << watch.RealTime() << " seconds (" << watch.CpuTime() << " sec of CPU time)." << std::endl;
+		std::cout << " * [i.e. " << 1000000.0*watch.RealTime()/static_cast<double>(myAnalysers.GetNumEvtsRunOver()) << "sec/million events. (" << 1000000.0*watch.CpuTime()/static_cast<double>(nEvents.at(idx)) << " sec/event in CPU time.)]" << std::endl;
+		//delete myAnalysers.at(idx);
+	}*/
 
-		Double_t ptBinLims_ele[21];
-		Int_t numBins_LogPtEle = 20;
-		//std::cout << std::endl <<"ptBinLims_Z:" << std::endl;
-		for(int idx=0; idx<=numBins_LogPtEle; idx++){
-			ptBinLims_ele[idx] = 5.0*pow(10.0,static_cast<double>(idx)/10.0);
-			//std::cout << "    " << ptBinLims_Z[idx] << std::endl;
-		}
-		double value_pi = 3.14159265;
+	/*for(unsigned int i=0; i<sigInputFilenames.size()-1; i++){
+		std::cout << std::endl << std::endl;
+		std::cout << "  ***-------------------------------***" << std::endl;
+		std::cout << "  *** Signal analysis #" << i << " ..." << std::endl;
+		sigAnalysers.push_back( BstdZeeFirstAnalyser(0, 20000, false, sigInputFilenames.at(i), sigOutputFilenames.at(i), -1) );
+		std::cout << " Running the DoAnalysis method ..." << std::endl;
+		sigAnalysers.at(i).DoAnalysis(1.0);
+	}*/
 
-		//Histogram creation...
-		TH1D* mcHighestEtEle_PtHist            = new TH1D("mcHighestEtEle_PtHist", "p_{T} distribution of highest p_{T} electron; electron p_{T} /GeVc^{-1}; Fraction per 40GeV", numBins_PtEle, min_PtEle, max_PtEle);
-		TH1D* mcHighestEtEle_LogPtHist         = new TH1D("mcHighestEtEle_LogPtHist", "p_{T} distribution of highest p_{T} electron; electron p_{T} /GeVc^{-1}; Fraction per 0.2 in log_{10}(p_{T}/GeVc^{-1})", numBins_LogPtEle, ptBinLims_ele);
-		TH1D* mcHighestEtEle_PostTrigPtHist    = new TH1D("mcHighestEtEle_PostTrigPtHist", "p_{T} distribution of highest p_{T} electron in triggered events; electron p_{T} /GeVc^{-1}; Fraction per 40GeV", numBins_PtEle, min_PtEle, max_PtEle);
-		TH1D* mcHighestEtEle_PostTrigLogPtHist = new TH1D("mcHighestEtEle_PostTrigLogPtHist", "p_{T} distribution of highest p_{T} electron in triggered events; electron p_{T} /GeVc^{-1}; Fraction per 0.2 in log_{10}(p_{T}/GeVc^{-1})", numBins_LogPtEle, ptBinLims_ele);
-		TH1D* mcHighestEtEle_EtaHist         = new TH1D("mcHighestEtEle_EtaHist"        , "#eta distribution of the highest p_{T} electron; Electron pseudorapidity, #eta; Fraction per 0.3", 20, -3.0, +3.0);
-		TH1D* mcHighestEtEle_PostTrigEtaHist = new TH1D("mcHighestEtEle_PostTrigEtaHist", "#eta distribution of the highest p_{T} electron in triggered events; Electron pseudorapidity, #eta; Fraction per 0.3", 20, -3.0, +3.0);
-		TH1D* mcHighestEtEle_PhiHist         = new TH1D("mcHighestEtEle_PhiHist"        , "#phi distribution of the highest p_{T} electron; #phi /radians; Fraction per 0.3", 20, -value_pi, +value_pi);
-		TH1D* mcHighestEtEle_PostTrigPhiHist = new TH1D("mcHighestEtEle_PostTrigPhiHist", "#phi distribution of the highest p_{T} electron in triggered events; #phi /radians; Fraction per 0.3", 20, -value_pi, +value_pi);
-		//TrigEffi hists...
-		TH1D* mcHighestEtEle_PtTrigEffi            = new TH1D("mcHighestEtEle_PtTrigEffi"   , "Trigger efficiency in p_{T} distribution of the highest p_{T} electron; electron p_{T} /GeVc^{-1}; Trigger efficiency", numBins_PtEle, min_PtEle, max_PtEle);
-		TH1D* mcHighestEtEle_LogPtTrigEffi         = new TH1D("mcHighestEtEle_LogPtTrigEffi", "Trigger efficiency in p_{T} of the highest p_{T} electron; electron p_{T} /GeVc^{-1}; Trigger efficiency", numBins_LogPtEle, ptBinLims_ele);
-		TH1D* mcHighestEtEle_EtaTrigEffi           = new TH1D("mcHighestEtEle_EtaTrigEffi"  , "Trigger efficiency in #eta of the highest p_{T} electron; Electron pseudorapidity, #eta; Trigger efficiency", 20, -3.0, +3.0);
-		TH1D* mcHighestEtEle_PhiTrigEffi           = new TH1D("mcHighestEtEle_PhiTrigEffi"  , "Trigger efficiency in #phi of the highest p_{T} electron; #phi /radians; Trigger efficiency", 20, -value_pi, +value_pi);
-
-		//
-		// 2nd highest Et ele hists...
-		TH1D* mc2ndHighestEtEle_PtHist            = new TH1D("mc2ndHighestEtEle_PtHist",         "p_{T} distribution of 2nd highest p_{T} electron; electron p_{T} /GeVc^{-1}; Fraction per 40GeV", numBins_PtEle, min_PtEle, max_PtEle);
-		TH1D* mc2ndHighestEtEle_LogPtHist         = new TH1D("mc2ndHighestEtEle_LogPtHist",      "p_{T} distribution of 2nd highest p_{T} electron; electron p_{T} /GeVc^{-1}; Fraction per 0.2 in log_{10}(p_{T}/GeVc^{-1})", numBins_LogPtEle, ptBinLims_ele);
-		TH1D* mc2ndHighestEtEle_PostTrigPtHist    = new TH1D("mc2ndHighestEtEle_PostTrigPtHist", "p_{T} distribution of 2nd highest p_{T} electron in triggered events; electron p_{T} /GeVc^{-1}; Fraction per 40GeV", numBins_PtEle, min_PtEle, max_PtEle);
-		TH1D* mc2ndHighestEtEle_PostTrigLogPtHist = new TH1D("mc2ndHighestEtEle_PostTrigLogPtHist", "p_{T} distribution of 2nd highest p_{T} electron in triggered events; electron p_{T} /GeVc^{-1}; Fraction per 0.2 in log_{10}(p_{T}/GeVc^{-1})", numBins_LogPtEle, ptBinLims_ele);
-		TH1D* mc2ndHighestEtEle_EtaHist         = new TH1D("mc2ndHighestEtEle_EtaHist"        , "#eta distribution of the 2nd highest p_{T} electron; Electron pseudorapidity, #eta; Fraction per 0.3", 20, -3.0, +3.0);
-		TH1D* mc2ndHighestEtEle_PostTrigEtaHist = new TH1D("mc2ndHighestEtEle_PostTrigEtaHist", "#eta distribution of the 2nd highest p_{T} electron in triggered events; Electron pseudorapidity, #eta; Fraction per 0.3", 20, -3.0, +3.0);
-		TH1D* mc2ndHighestEtEle_PhiHist         = new TH1D("mc2ndHighestEtEle_PhiHist"        , "#phi distribution of the 2nd highest p_{T} electron; #phi /radians; Fraction per 0.3", 20, -value_pi, +value_pi);
-		TH1D* mc2ndHighestEtEle_PostTrigPhiHist = new TH1D("mc2ndHighestEtEle_PostTrigPhiHist", "#phi distribution of the 2nd highest p_{T} electron in triggered events; #phi /radians; Fraction per 0.3", 20, -value_pi, +value_pi);
-		//TrigEffi hists...
-		TH1D* mc2ndHighestEtEle_PtTrigEffi            = new TH1D("mc2ndHighestEtEle_PtTrigEffi"   , "Trigger efficiency in p_{T} distribution of the 2nd highest p_{T} electron; electron p_{T} /GeVc^{-1}; Trigger efficiency", numBins_PtEle, min_PtEle, max_PtEle);
-		TH1D* mc2ndHighestEtEle_LogPtTrigEffi         = new TH1D("mc2ndHighestEtEle_LogPtTrigEffi", "Trigger efficiency in p_{T} of the 2nd highest p_{T} electron; electron p_{T} /GeVc^{-1}; Trigger efficiency", numBins_LogPtEle, ptBinLims_ele);
-		TH1D* mc2ndHighestEtEle_EtaTrigEffi           = new TH1D("mc2ndHighestEtEle_EtaTrigEffi"  , "Trigger efficiency in #eta of the 2nd highest p_{T} electron; Electron pseudorapidity, #eta; Trigger efficiency", 20, -3.0, +3.0);
-		TH1D* mc2ndHighestEtEle_PhiTrigEffi           = new TH1D("mc2ndHighestEtEle_PhiTrigEffi"  , "Trigger efficiency in #phi of the 2nd highest p_{T} electron; #phi /radians; Trigger efficiency", 20, -value_pi, +value_pi);
-
-		//
-		// Z candidate hists...
-		TH1D* mcZcandidate_PtHist      = new TH1D("mcZcandidate_PtHist",   "p_{T} distribution of the Z candidate; transverse momentum, p_{T, Z} /GeVc^{-1}; Fraction per 50GeVc^{-1}", numBins_PtZ, min_PtZ, max_PtZ);
-		TH1D* mcZcandidate_LogPtHist   = new TH1D("mcZcandidate_LogPtHist",   "p_{T} distribution of the Z candidate; transverse momentum, p_{T, Z} /GeVc^{-1}; Fraction per 0.2 in log_{10}(p_{T})", numBins_LogPtZ, ptBinLims_Z);
-		TH1D* mcZcandidate_EtaHist     = new TH1D("mcZcandidate_EtaHist",  "#eta distribution of the Z candidate; #eta_{Z} /radians; Fraction per 0.3", 20, -3.0, +3.0);
-		TH1D* mcZcandidate_PhiHist     = new TH1D("mcZcandidate_PhiHist",  "#phi distribution of the Z candidate; #phi_{Z} /radians; Fraction per #pi/20", 20, -value_pi, +value_pi);
-		TH1D* mcZcandidate_MassHist    = new TH1D("mcZcandidate_MassHist", "Invariant mass distribution of the Z candidate; Invariant mass of dielectron system, M_{ee} /GeVc^{-2}; Fraction per 5GeVc^{-2}", 20, 40.0, 140.0);
-		TH1D* mcZcandidate_dEtaHist    = new TH1D("mcZcandidate_dEtaHist", "#Delta#eta_{ee} distribution of the Z candidate; #Delta#eta_{ee}; Fraction per 0.2", 20, 0.0, 4.0);
-		TH1D* mcZcandidate_dPhiHist    = new TH1D("mcZcandidate_dPhiHist", "#Delta#phi_{ee} distribution of the Z candidate; #Delta#phi_{ee} /radians; Fraction per 0.1", 20, 0.0, 2.0);
-		TH1D* mcZcandidate_dRHist      = new TH1D("mcZcandidate_dRHist",   "#DeltaR_{ee} distribution of the Z candidate; #DeltaR_{ee}; Fraction per 0.1", 20, 0.0, 2.0);
-		TH1D* mcZcandidate_openingAngleHist = new TH1D("mcZcandidate_openingAngleHist", "Opening angle distribution of the Z candidate; dielectron opening angle, #theta_{ee} /radians; Fraction per 0.1", 20, 0.0, 2.0);
-
-		TH1D* mcZcandidate_PostTrigPtHist      = new TH1D("mcZcandidate_PostTrigPtHist",   "p_{T} distribution of the Z candidate in triggered events; transverse momentum, p_{T, Z} /GeVc^{-1}; Fraction per 50GeVc^{-1}", numBins_PtZ, min_PtZ, max_PtZ);
-		TH1D* mcZcandidate_PostTrigLogPtHist   = new TH1D("mcZcandidate_PostTrigLogPtHist",   "p_{T} distribution of the Z candidate in triggered events; transverse momentum, p_{T, Z} /GeVc^{-1}; Fraction per 0.2 in log_{10}(p_{T})", numBins_LogPtZ, ptBinLims_Z);
-		TH1D* mcZcandidate_PostTrigEtaHist     = new TH1D("mcZcandidate_PostTrigEtaHist",  "#eta distribution of the Z candidate in triggered events; #eta_{Z} /radians; Fraction per 0.3", 20, -3.0, +3.0);
-		TH1D* mcZcandidate_PostTrigPhiHist     = new TH1D("mcZcandidate_PostTrigPhiHist",  "#phi distribution of the Z candidate in triggered events; #phi_{Z} /radians; Fraction per #pi/20", 20, -value_pi, +value_pi);
-		TH1D* mcZcandidate_PostTrigMassHist    = new TH1D("mcZcandidate_PostTrigMassHist", "Invariant mass distribution of the Z candidate in triggered events; Invariant mass of dielectron system, M_{ee} /GeVc^{-2}; Fraction per 5GeVc^{-2}", 20, 40.0, 140.0);
-		TH1D* mcZcandidate_PostTrigdEtaHist    = new TH1D("mcZcandidate_PostTrigdEtaHist", "#Delta#eta_{ee} distribution of the Z candidate in triggered events; #Delta#eta_{ee}; Fraction per 0.2", 20, 0.0, 4.0);
-		TH1D* mcZcandidate_PostTrigdPhiHist    = new TH1D("mcZcandidate_PostTrigdPhiHist", "#Delta#phi_{ee} distribution of the Z candidate in triggered events; #Delta#phi_{ee} /radians; Fraction per 0.1", 20, 0.0, 2.0);
-		TH1D* mcZcandidate_PostTrigdRHist      = new TH1D("mcZcandidate_PostTrigdRHist",   "#DeltaR_{ee} distribution of the Z candidate in triggered events; #DeltaR_{ee}; Fraction per 0.1", 20, 0.0, 2.0);
-		TH1D* mcZcandidate_PostTrigopeningAngleHist = new TH1D("mcZcandidate_PostTrigopeningAngleHist", "Opening angle distribution of the Z candidate in triggered events; dielectron opening angle, #theta_{ee} /radians; Fraction per 0.1", 20, 0.0, 2.0);
-
-		TH1D* mcZcandidate_PtTrigEffi      = new TH1D("mcZcandidate_PtTrigEffi",   "Trigger efficiency in p_{T} of the Z candidate; transverse momentum, p_{T, Z} /GeVc^{-1}; Trigger efficiency", numBins_PtZ, min_PtZ, max_PtZ);
-		TH1D* mcZcandidate_LogPtTrigEffi   = new TH1D("mcZcandidate_LogPtTrigEffi","Trigger efficiency in p_{T} of the Z candidate; transverse momentum, p_{T, Z} /GeVc^{-1}; Trigger efficiency", numBins_LogPtZ, ptBinLims_Z);
-		TH1D* mcZcandidate_EtaTrigEffi     = new TH1D("mcZcandidate_EtaTrigEffi",  "Trigger efficiency in #eta of the Z candidate; #eta_{Z} /radians; Trigger efficiency", 20, -3.0, +3.0);
-		TH1D* mcZcandidate_PhiTrigEffi     = new TH1D("mcZcandidate_PhiTrigEffi",  "Trigger efficiency in #phi of the Z candidate; #phi_{Z} /radians; Trigger efficiency", 20, -value_pi, +value_pi);
-		TH1D* mcZcandidate_MassTrigEffi    = new TH1D("mcZcandidate_MassTrigEffi", "Trigger efficiency in the Z candidate invariant mass; Invariant mass of dielectron system, M_{ee} /GeVc^{-2}; Trigger efficiency", 20, 40.0, 140.0);
-		TH1D* mcZcandidate_dEtaTrigEffi    = new TH1D("mcZcandidate_dEtaTrigEffi", "Trigger efficiency in #Delta#eta_{ee} of the Z candidate; #Delta#eta_{ee}; Trigger efficiency", 20, 0.0, 4.0);
-		TH1D* mcZcandidate_dPhiTrigEffi    = new TH1D("mcZcandidate_dPhiTrigEffi", "Trigger efficiency in #Delta#phi_{ee} of the Z candidate; #Delta#phi_{ee} /radians; Trigger efficiency", 20, 0.0, 2.0);
-		TH1D* mcZcandidate_dRTrigEffi      = new TH1D("mcZcandidate_dRTrigEffi",   "Trigger efficiency in #DeltaR_{ee} of the Z candidate; #DeltaR_{ee}; Trigger efficiency", 20, 0.0, 2.0);
-		TH1D* mcZcandidate_openingAngleTrigEffi = new TH1D("mcZcandidate_openingAngleTrigEffi", "Trigger efficiency in the opening angle of the Z candidate; dielectron opening angle, #theta_{ee} /radians; Trigger efficiency", 20, 0.0, 2.0);
-
-		//-----------------------
-		//Opening the datafile(s)
-		std::cout << "Opening the ntuple datafile..." << std::endl;
-		TFile *f = TFile::Open(inputFileName,"READ");
-		if(!f)
-			return 0;
-		else
-			std::cout << "   file opened successfully." << std::endl;
-
-		//Setting up reading of the tree data from file...
-		std::cout << "Beginning to analyse the event data..." << std::endl;
-		f->cd("demo");
-		std::cout << "   changed 'folder' within the ntuple successfully" << std::endl;
-		TTree *dataTree = (TTree*)gDirectory->Get("EventDataTree");
-		std::cout << "   got the 'EventDataTree' object successfully" << std::endl;
-
-		dataTree->SetBranchAddress("mcEles_number",          &mc_numFinalStateEles      );
-		dataTree->SetBranchAddress("mcEles_HighestEt_charge",&mcEles_HighestEt_charge   );
-		dataTree->SetBranchAddress("mcEles_HighestEt_PDGid", &mcEles_HighestEt_PDGid    );
-		dataTree->SetBranchAddress("mcEles_HighestEt_status",&mcEles_HighestEt_status   );
-		dataTree->SetBranchAddress("mcEles_HighestEt_pt",    &mcEles_HighestEt_pt       );
-		dataTree->SetBranchAddress("mcEles_HighestEt_p4",    &mcEles_HighestEt_OLDp4_ptr);
-		std::cout << "   dealt with the highest Et ele branches successfully" << std::endl;
-
-		dataTree->SetBranchAddress("mcEles_2ndHighestEt_charge", &mcEles_2ndHighestEt_charge   );
-		dataTree->SetBranchAddress("mcEles_2ndHighestEt_PDGid",  &mcEles_2ndHighestEt_PDGid    );
-		dataTree->SetBranchAddress("mcEles_2ndHighestEt_status", &mcEles_2ndHighestEt_status   );
-		dataTree->SetBranchAddress("mcEles_2ndHighestEt_pt",     &mcEles_2ndHighestEt_pt       );
-		dataTree->SetBranchAddress("mcEles_2ndHighestEt_p4",     &mcEles_2ndHighestEt_OLDp4_ptr);
-		//std::cout << "   dealt with the 2nd highest Et ele branches successfully" << std::endl;
-
-		dataTree->SetBranchAddress("mcZcandidate_pt",      &mcZcandidate_pt  ); //Double_t
-		dataTree->SetBranchAddress("mcZcandidate_eta",     &mcZcandidate_eta ); //Double_t
-		dataTree->SetBranchAddress("mcZcandidate_phi",     &mcZcandidate_phi ); //Double_t
-		dataTree->SetBranchAddress("mcZcandidate_mass",    &mcZcandidate_mass); //Double_t
-		dataTree->SetBranchAddress("mcZcandidate_p4",           &mcZcandidate_OLDp4_ptr   ); //ROOT::Math::XYZTLorentzVector
-		dataTree->SetBranchAddress("mcZcandidate_dEtaEles",     &mcZcandidate_dEtaEles    ); //Double_t
-		dataTree->SetBranchAddress("mcZcandidate_dPhiEles",     &mcZcandidate_dPhiEles    ); //Double_t
-		dataTree->SetBranchAddress("mcZcandidate_dREles",       &mcZcandidate_dREles      ); //Double_t
-		dataTree->SetBranchAddress("mcZcandidate_openingAngle", &mcZcandidate_openingAngle); //Double_t
-		std::cout << "   dealt with the Z candidate branches successfully" << std::endl;
-
-		dataTree->SetBranchAddress("trg_PathA_decision", &hltPathA_decision); // Bool_t
-		dataTree->SetBranchAddress("trg_PathA_name",     &hltPathA_name_ptr);     // std::string hltPathA_
-		std::cout << "   dealt with the trigger branches successfully" << std::endl;
-
-		//---------------------------------------
-		//Running over the data event-by-event...
-		for(Int_t i = 0; i < num_evts; i++){
-			//Loading this event's information from the TTree
-			Long64_t dataTreeEntry = dataTree->LoadTree(i);
-			dataTree->GetEntry(dataTreeEntry);
-
-			if(vFlg>1){std::cout << " Analysing event no. " << i << " (run .., lumi .., evt ..): " << std::endl;}
-
-			//Setting up the TLorentzVector 4momenta...
-			//mcEles_HighestEt_p4.SetPxPyPzE(mcEles_HighestEt_OLDp4_ptr->Px(),mcEles_HighestEt_OLDp4_ptr->Py(),mcEles_HighestEt_OLDp4_ptr->Pz(),mcEles_HighestEt_OLDp4_ptr->E());
-			mcEles_HighestEt_p4 = ConvertToTLorentzVector(mcEles_HighestEt_OLDp4_ptr);
-			mcEles_2ndHighestEt_p4 = ConvertToTLorentzVector(mcEles_2ndHighestEt_OLDp4_ptr);
-			mcZcandidate_p4 = ConvertToTLorentzVector(mcZcandidate_OLDp4_ptr);
-	
-			//Printing the properties of the 2 highest Et eles and the Z candidate, along with the trigger info, to screen...
-			if(vFlg>1){
-				if(hltPathA_decision)
-					std::cout << "  ->This event passed HLT trigger path A (i.e. " << *hltPathA_name_ptr << ")" << std::endl;
-				else
-					std::cout << "  ->This event did *NOT* pass HLT trigger path A (i.e. " << *hltPathA_name_ptr << ")" << std::endl;
-
-				std::cout << "  ->For the highest Et ele in the event..." << std::endl;
-				std::cout << "       charge=" << mcEles_HighestEt_charge << "; PDGid=" << mcEles_HighestEt_PDGid << "; status=" << mcEles_HighestEt_status << std::endl;
-				std::cout << "       P=" << mcEles_HighestEt_OLDp4_ptr->P() << "=" << mcEles_HighestEt_p4.P() << "?; pt=" << mcEles_HighestEt_pt << "=" << mcEles_HighestEt_OLDp4_ptr->Pt() << "=" << mcEles_HighestEt_p4.Pt() <<"?" << std::endl;
-				std::cout << "       eta=" << mcEles_HighestEt_OLDp4_ptr->Eta() << "=" << mcEles_HighestEt_p4.Eta() << "?; phi=" << mcEles_HighestEt_OLDp4_ptr->Phi() << "=" << mcEles_HighestEt_p4.Phi() << "?" << std::endl;
-	
-				std::cout << "  ->For the 2nd highest Et ele in the event..." << std::endl;
-				std::cout << "       charge=" << mcEles_2ndHighestEt_charge << "; PDGid=" << mcEles_2ndHighestEt_PDGid << "; status=" << mcEles_2ndHighestEt_status << std::endl;
-				std::cout << "       P=" << mcEles_2ndHighestEt_OLDp4_ptr->P() << "=" << mcEles_2ndHighestEt_p4.P() << "?; pt=" << mcEles_2ndHighestEt_pt << "=" << mcEles_2ndHighestEt_OLDp4_ptr->Pt() << "=" << mcEles_2ndHighestEt_p4.Pt() <<"?" << std::endl;
-				std::cout << "       eta=" << mcEles_2ndHighestEt_OLDp4_ptr->Eta() << "=" << mcEles_2ndHighestEt_p4.Eta() << "?; phi=" << mcEles_2ndHighestEt_OLDp4_ptr->Phi() << "=" << mcEles_2ndHighestEt_p4.Phi() << "?" << std::endl;
-	
-				std::cout << "  ->For the Z candidate formed from the highest two Et final state electrons in this event..." << std::endl;
-				std::cout << "       P=" << mcZcandidate_OLDp4_ptr->P() << "=" << mcZcandidate_p4.P() << "?; Pt=" << mcZcandidate_pt << "=" << mcZcandidate_p4.Pt() << "; inv mass=" << mcZcandidate_p4.M() << std::endl;
-				std::cout << "       eta=" << mcZcandidate_eta << "=" << mcZcandidate_p4.Eta() << "?; phi=" << mcZcandidate_phi << "=" << mcZcandidate_p4.Phi() << std::endl;
-				std::cout << "       dEta=" << mcZcandidate_dEtaEles << "; dPhi=" << mcZcandidate_dPhiEles << "; dR=" << mcZcandidate_dREles << std::endl;
-				std::cout << "       lab frame opening angle = " << mcZcandidate_openingAngle << "=" << mcEles_HighestEt_p4.Angle(mcEles_2ndHighestEt_p4.Vect()) << std::endl;
-			}
-
-			//Filling histograms for highest Et ele quantities...
-			mcHighestEtEle_PtHist->Fill(mcEles_HighestEt_pt,evtWeight);
-			mcHighestEtEle_LogPtHist->Fill(mcEles_HighestEt_pt,evtWeight);
-			mcHighestEtEle_EtaHist->Fill(mcEles_HighestEt_p4.Eta(),evtWeight);
-			mcHighestEtEle_PhiHist->Fill(mcEles_HighestEt_p4.Phi(),evtWeight);
-			if(hltPathA_decision){
-				mcHighestEtEle_PostTrigPtHist->Fill(mcEles_HighestEt_pt,evtWeight);
-				mcHighestEtEle_PostTrigLogPtHist->Fill(mcEles_HighestEt_pt,evtWeight);
-				mcHighestEtEle_PostTrigEtaHist->Fill(mcEles_HighestEt_p4.Eta(),evtWeight);
-				mcHighestEtEle_PostTrigPhiHist->Fill(mcEles_HighestEt_p4.Phi(),evtWeight);
-			}
-			//Filling histograms for 2nd highest Et ele quantities...
-			mc2ndHighestEtEle_PtHist->Fill(   mcEles_2ndHighestEt_pt,      evtWeight);
-			mc2ndHighestEtEle_LogPtHist->Fill(mcEles_2ndHighestEt_pt,      evtWeight);
-			mc2ndHighestEtEle_EtaHist->Fill(  mcEles_2ndHighestEt_p4.Eta(),evtWeight);
-			mc2ndHighestEtEle_PhiHist->Fill(  mcEles_2ndHighestEt_p4.Phi(),evtWeight);
-			if(hltPathA_decision){
-				mc2ndHighestEtEle_PostTrigPtHist->Fill(   mcEles_2ndHighestEt_pt,     evtWeight);
-				mc2ndHighestEtEle_PostTrigLogPtHist->Fill(mcEles_2ndHighestEt_pt,     evtWeight);
-				mc2ndHighestEtEle_PostTrigEtaHist->Fill(  mcEles_2ndHighestEt_p4.Eta(),evtWeight);
-				mc2ndHighestEtEle_PostTrigPhiHist->Fill(  mcEles_2ndHighestEt_p4.Phi(),evtWeight);
-			}
-
-			mcZcandidate_PtHist->Fill(mcZcandidate_pt,evtWeight);
-			mcZcandidate_LogPtHist->Fill(mcZcandidate_pt,evtWeight);
-			mcZcandidate_EtaHist->Fill(mcZcandidate_eta,evtWeight);
-			mcZcandidate_PhiHist->Fill(mcZcandidate_phi,evtWeight);
-			mcZcandidate_MassHist->Fill(mcZcandidate_mass,evtWeight);
-			mcZcandidate_dEtaHist->Fill(mcZcandidate_dEtaEles,evtWeight);
-			mcZcandidate_dPhiHist->Fill(mcZcandidate_dPhiEles,evtWeight);
-			mcZcandidate_dRHist->Fill(  mcZcandidate_dREles,evtWeight);
-			mcZcandidate_openingAngleHist->Fill(mcZcandidate_openingAngle,evtWeight);
-			if(hltPathA_decision){
-				mcZcandidate_PostTrigPtHist->Fill(mcZcandidate_pt,evtWeight);
-				mcZcandidate_PostTrigLogPtHist->Fill(mcZcandidate_pt,evtWeight);
-				mcZcandidate_PostTrigEtaHist->Fill(mcZcandidate_eta,evtWeight);
-				mcZcandidate_PostTrigPhiHist->Fill(mcZcandidate_phi,evtWeight);
-				mcZcandidate_PostTrigMassHist->Fill(mcZcandidate_mass,evtWeight);
-				mcZcandidate_PostTrigdEtaHist->Fill(mcZcandidate_dEtaEles,evtWeight);
-				mcZcandidate_PostTrigdPhiHist->Fill(mcZcandidate_dPhiEles,evtWeight);
-				mcZcandidate_PostTrigdRHist->Fill(  mcZcandidate_dREles,evtWeight);
-				mcZcandidate_PostTrigopeningAngleHist->Fill(mcZcandidate_openingAngle,evtWeight);
-			}
-			if(vFlg>1){std::cout << std::endl;}
-		}
-
-		std::cout << "   done." << std::endl;
-	
-		//Calculating errors on historgrams...
-		SetPoissonErrorsOnHist(mcHighestEtEle_PtHist, evtWeight);
-		SetPoissonErrorsOnHist(mcHighestEtEle_LogPtHist, evtWeight);
-		//SetBinomialErrorsOnNumerator(mcHighestEtEle_PostTrigPtHist, mcHighestEtEle_PtHist);
-		//SetBinomialErrorsOnNumerator(mcHighestEtEle_PostTrigLogPtHist,mcHighestEtEle_LogPtHist);
-		SetPoissonErrorsOnHist(mcHighestEtEle_EtaHist, evtWeight);
-		//SetBinomialErrorsOnNumerator(mcHighestEtEle_PostTrigEtaHist, mcHighestEtEle_EtaHist);
-		SetPoissonErrorsOnHist(mcHighestEtEle_PhiHist, evtWeight);
-		//SetBinomialErrorsOnNumerator(mcHighestEtEle_PostTrigPhiHist, mcHighestEtEle_PhiHist);
-	
-		SetPoissonErrorsOnHist(mc2ndHighestEtEle_PtHist, evtWeight);
-		SetPoissonErrorsOnHist(mc2ndHighestEtEle_LogPtHist, evtWeight);
-		//SetBinomialErrorsOnNumerator(mc2ndHighestEtEle_PostTrigPtHist, mc2ndHighestEtEle_PtHist);
-		//SetBinomialErrorsOnNumerator(mc2ndHighestEtEle_PostTrigLogPtHist, mc2ndHighestEtEle_LogPtHist);
-		SetPoissonErrorsOnHist(mc2ndHighestEtEle_EtaHist, evtWeight);
-		//SetBinomialErrorsOnNumerator(mc2ndHighestEtEle_PostTrigEtaHist, mc2ndHighestEtEle_EtaHist);
-		SetPoissonErrorsOnHist(mc2ndHighestEtEle_PhiHist, evtWeight);
-		//SetBinomialErrorsOnNumerator(mc2ndHighestEtEle_PostTrigPhiHist, mc2ndHighestEtEle_PhiHist);
-
-		SetPoissonErrorsOnHist(mcZcandidate_PtHist, evtWeight);
-		SetPoissonErrorsOnHist(mcZcandidate_LogPtHist, evtWeight);
-		SetPoissonErrorsOnHist(mcZcandidate_EtaHist, evtWeight);
-		SetPoissonErrorsOnHist(mcZcandidate_PhiHist, evtWeight);
-		SetPoissonErrorsOnHist(mcZcandidate_MassHist, evtWeight);
-		SetPoissonErrorsOnHist(mcZcandidate_dEtaHist, evtWeight);
-		SetPoissonErrorsOnHist(mcZcandidate_dPhiHist, evtWeight);
-		SetPoissonErrorsOnHist(mcZcandidate_dRHist, evtWeight);
-		SetPoissonErrorsOnHist(mcZcandidate_openingAngleHist, evtWeight);
-
-		//SetBinomialErrorsOnNumerator(mcZcandidate_PostTrigPtHist,    mcZcandidate_PtHist);
-		//SetBinomialErrorsOnNumerator(mcZcandidate_PostTrigLogPtHist, mcZcandidate_LogPtHist);
-		//SetBinomialErrorsOnNumerator(mcZcandidate_PostTrigEtaHist,   mcZcandidate_EtaHist);
-		//SetBinomialErrorsOnNumerator(mcZcandidate_PostTrigPhiHist,   mcZcandidate_PhiHist);
-		//SetBinomialErrorsOnNumerator(mcZcandidate_PostTrigMassHist,  mcZcandidate_MassHist);
-		//SetBinomialErrorsOnNumerator(mcZcandidate_PostTrigdEtaHist,  mcZcandidate_dEtaHist);
-		//SetBinomialErrorsOnNumerator(mcZcandidate_PostTrigdPhiHist,  mcZcandidate_dPhiHist);
-		//SetBinomialErrorsOnNumerator(mcZcandidate_PostTrigdRHist,    mcZcandidate_dRHist);
-		//SetBinomialErrorsOnNumerator(mcZcandidate_PostTrigopeningAngleHist, mcZcandidate_openingAngleHist);
-	
-
-		//Calculating values and errors (binomial) for TrigEffi hists...
-		CalcPreWeightEffiHist(mcHighestEtEle_PtTrigEffi,   mcHighestEtEle_PostTrigPtHist,    mcHighestEtEle_PtHist,    evtWeight);
-		CalcPreWeightEffiHist(mcHighestEtEle_LogPtTrigEffi,mcHighestEtEle_PostTrigLogPtHist, mcHighestEtEle_LogPtHist, evtWeight);
-		CalcPreWeightEffiHist(mcHighestEtEle_EtaTrigEffi,  mcHighestEtEle_PostTrigEtaHist,   mcHighestEtEle_EtaHist,   evtWeight);
-		CalcPreWeightEffiHist(mcHighestEtEle_PhiTrigEffi,  mcHighestEtEle_PostTrigPhiHist,   mcHighestEtEle_PhiHist,   evtWeight);
-	
-		CalcPreWeightEffiHist(mc2ndHighestEtEle_PtTrigEffi,   mc2ndHighestEtEle_PostTrigPtHist,    mc2ndHighestEtEle_PtHist,    evtWeight);
-		CalcPreWeightEffiHist(mc2ndHighestEtEle_LogPtTrigEffi,mc2ndHighestEtEle_PostTrigLogPtHist, mc2ndHighestEtEle_LogPtHist, evtWeight);
-		CalcPreWeightEffiHist(mc2ndHighestEtEle_EtaTrigEffi,  mc2ndHighestEtEle_PostTrigEtaHist,   mc2ndHighestEtEle_EtaHist,   evtWeight);
-		CalcPreWeightEffiHist(mc2ndHighestEtEle_PhiTrigEffi,  mc2ndHighestEtEle_PostTrigPhiHist,   mc2ndHighestEtEle_PhiHist,   evtWeight);
-
-		CalcPreWeightEffiHist(mcZcandidate_PtTrigEffi,    mcZcandidate_PostTrigPtHist,    mcZcandidate_PtHist,    evtWeight);
-		CalcPreWeightEffiHist(mcZcandidate_LogPtTrigEffi, mcZcandidate_PostTrigLogPtHist, mcZcandidate_LogPtHist, evtWeight);
-		CalcPreWeightEffiHist(mcZcandidate_EtaTrigEffi,   mcZcandidate_PostTrigEtaHist,   mcZcandidate_EtaHist,   evtWeight);
-		CalcPreWeightEffiHist(mcZcandidate_PhiTrigEffi,   mcZcandidate_PostTrigPhiHist,   mcZcandidate_PhiHist,   evtWeight);
-		CalcPreWeightEffiHist(mcZcandidate_MassTrigEffi,  mcZcandidate_PostTrigMassHist,  mcZcandidate_MassHist,  evtWeight);
-		CalcPreWeightEffiHist(mcZcandidate_dEtaTrigEffi,  mcZcandidate_PostTrigdEtaHist,  mcZcandidate_dEtaHist,  evtWeight);
-		CalcPreWeightEffiHist(mcZcandidate_dPhiTrigEffi,  mcZcandidate_PostTrigdPhiHist,  mcZcandidate_dPhiHist,  evtWeight);
-		CalcPreWeightEffiHist(mcZcandidate_dRTrigEffi,    mcZcandidate_PostTrigdRHist,    mcZcandidate_dRHist,    evtWeight);
-		CalcPreWeightEffiHist(mcZcandidate_openingAngleTrigEffi, mcZcandidate_PostTrigopeningAngleHist, mcZcandidate_openingAngleHist, evtWeight);
-
-
-		//Output file creation...
-		f->Close();
-
-		TFile f_histos(outputFileName,"RECREATE");
-	
-		f_histos.Write();
-	
-		mcHighestEtEle_PtHist->Write();
-		mcHighestEtEle_LogPtHist->Write();
-		mcHighestEtEle_EtaHist->Write();
-		mcHighestEtEle_PhiHist->Write();
-		mcHighestEtEle_PostTrigPtHist->Write();
-		mcHighestEtEle_PostTrigLogPtHist->Write();
-		mcHighestEtEle_PostTrigEtaHist->Write();
-		mcHighestEtEle_PostTrigPhiHist->Write();
-		mcHighestEtEle_PtTrigEffi->Write();
-		mcHighestEtEle_LogPtTrigEffi->Write();
-		mcHighestEtEle_EtaTrigEffi->Write();
-		mcHighestEtEle_PhiTrigEffi->Write();
-
-		mc2ndHighestEtEle_PtHist->Write();
-		mc2ndHighestEtEle_LogPtHist->Write();
-		mc2ndHighestEtEle_EtaHist->Write();
-		mc2ndHighestEtEle_PhiHist->Write();
-		mc2ndHighestEtEle_PostTrigPtHist->Write();
-		mc2ndHighestEtEle_PostTrigLogPtHist->Write();
-		mc2ndHighestEtEle_PostTrigEtaHist->Write();
-		mc2ndHighestEtEle_PostTrigPhiHist->Write();
-
-		mcZcandidate_PtHist->Write();
-		mcZcandidate_LogPtHist->Write();
-		mcZcandidate_EtaHist->Write();
-		mcZcandidate_PhiHist->Write();
-		mcZcandidate_MassHist->Write();
-		mcZcandidate_dEtaHist->Write();
-		mcZcandidate_dPhiHist->Write();
-		mcZcandidate_dRHist->Write();
-		mcZcandidate_openingAngleHist->Write();
-
-		mcZcandidate_PostTrigPtHist->Write();
-		mcZcandidate_PostTrigLogPtHist->Write();
-		mcZcandidate_PostTrigEtaHist->Write();
-		mcZcandidate_PostTrigPhiHist->Write();
-		mcZcandidate_PostTrigMassHist->Write();
-		mcZcandidate_PostTrigdEtaHist->Write();
-		mcZcandidate_PostTrigdPhiHist->Write();
-		mcZcandidate_PostTrigdRHist->Write();
-		mcZcandidate_PostTrigopeningAngleHist->Write();
-	
-		mcZcandidate_PtTrigEffi->Write();
-		mcZcandidate_LogPtTrigEffi->Write();
-		mcZcandidate_EtaTrigEffi->Write();
-		mcZcandidate_PhiTrigEffi->Write();
-		mcZcandidate_MassTrigEffi->Write();
-		mcZcandidate_dEtaTrigEffi->Write();
-		mcZcandidate_dPhiTrigEffi->Write();
-		mcZcandidate_dRTrigEffi->Write();
-		mcZcandidate_openingAngleTrigEffi->Write();
-	
-		f_histos.Close();*/
-	}
 	
 	return 1;
 }
