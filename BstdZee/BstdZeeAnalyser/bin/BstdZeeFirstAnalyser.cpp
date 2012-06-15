@@ -108,8 +108,7 @@ namespace tsw{
 			treeVar_trgNamePtr_ = &treeVar_trgName_;
 			abcdTree_->Branch("weight",      &treeVar_weight_, "weight/D");
 
-			abcdTree_->Branch("diEle_p4",   &treeVar_p4Ptr_);
-			treeVar_p4Ptr_ = &treeVar_p4_;
+			treeVar_p4Ptr_ = &treeVar_p4_;  abcdTree_->Branch("diEle_p4",   &treeVar_p4Ptr_);
 			abcdTree_->Branch("diEle_mass", &treeVar_mass_,   "mass/D");
 			abcdTree_->Branch("diEle_pT",   &treeVar_pT_,     "pT/D");
 			abcdTree_->Branch("diEle_passHEEPNoIso",  &treeVar_passHEEPNoIso_,  "diEle_passHEEPNoIso/O");
@@ -118,14 +117,12 @@ namespace tsw{
 			abcdTree_->Branch("diEle_passModEmHad1Iso", &treeVar_passModEmHad1Iso_, "diEle_passModEmHad1Iso/O");
 
 			// Setting up the branches for each electron ...
-			abcdTree_->Branch("eleA_p4",     &treeVar_eleA_p4Ptr_);
-			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;
+			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;  abcdTree_->Branch("eleA_p4",     &treeVar_eleA_p4Ptr_);
 			abcdTree_->Branch("eleA_charge",   &treeVar_eleA_charge_,   "eleA_charge/I"); //Int_t
 			abcdTree_->Branch("eleA_EOverP", &treeVar_eleA_EOverP_, "eleA_EOverP/D"); //Double_t
 			abcdTree_->Branch("eleA_passHEEPNoIso", &treeVar_eleA_passHEEPNoIso_, "eleA_passHEEPNoIso/O");
 
-			abcdTree_->Branch("eleB_p4",     &treeVar_eleB_p4Ptr_);
-			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;
+			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;   abcdTree_->Branch("eleB_p4",     &treeVar_eleB_p4Ptr_);
 			abcdTree_->Branch("eleB_charge",   &treeVar_eleB_charge_,   "eleB_charge/I"); //Int_t
 			abcdTree_->Branch("eleB_EOverP", &treeVar_eleB_EOverP_, "eleB_EOverP/D"); //Double_t
 			abcdTree_->Branch("eleB_passHEEPNoIso", &treeVar_eleB_passHEEPNoIso_, "eleB_passHEEPNoIso/O");
@@ -205,7 +202,7 @@ namespace tsw{
 	public:
 		DiEleTree(std::string treeName="zBosonTree")
 		{
-			diEleTree_ = new TTree(treeName.c_str(), "Tree of Z candidates");
+			diEleTree_ = new TTree(treeName.c_str(), ("Tree of Z candidates ("+treeName+")").c_str());
 			diEleTree_->SetDirectory(0); // This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
 			/* Error is as follows:
 			 * Error in <TTree::Fill>: Failed filling branch:myTree.mass, nbytes=-1, entry=3990
@@ -229,7 +226,7 @@ namespace tsw{
 
 			diEleTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
 
-			diEleTree_->Branch("Zp4",   &treeVar_Zp4Ptr_); treeVar_Zp4Ptr_ = &treeVar_Zp4_;
+			treeVar_Zp4Ptr_ = &treeVar_Zp4_; diEleTree_->Branch("Zp4",   &treeVar_Zp4Ptr_);
 			diEleTree_->Branch("ZpT",   &treeVar_ZpT_,     "ZpT/D");
 			diEleTree_->Branch("Zmass", &treeVar_Zmass_,   "Zmass/D");
 			diEleTree_->Branch("dR",    &treeVar_dR_,      "dR/D");
@@ -1304,8 +1301,8 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
    isMC_(isMC),
 	readInBstdEles_(false),
    inputFileNamesVec_(inFileNamesVec),
-   inputFilesTChain_(new TChain("demo/EventDataTree")),
-   outputFileName_(outFileName),
+   inputFilesTChain_( new TChain("demo/EventDataTree") ),
+   outputFileName_( outFileName.rfind(".root")==(outFileName.length()-5) ? outFileName.substr(0, outFileName.length()-5) : outFileName ),
    //
 	skipFlg_highMCZpTEvts_(false),
 	skipThr_highMCZpTEvts_(99999.9),
@@ -3383,12 +3380,12 @@ int main(int argc, char* argv[])
 	watch.Stop();
 	double cpuTimeInMins  = watch.CpuTime()/60.0;
 	double realTimeInMins = watch.RealTime()/60.0;
-	double nEvtsRunOver = static_cast<double>( theAnalyser.GetNumEvtsRunOver() );
+	double millionEvtsRunOver = static_cast<double>( theAnalyser.GetNumEvtsRunOver() )/1000000.0;
 	std::cout << " -=-=- TIMING INFO -=-=-" << std::endl
 				 << "   Total: " << std::endl
 				 << "      " << watch.CpuTime()/60.0 << " mins (CPU);  " << watch.RealTime()/60.0 << " mins (real)" << std::endl
 				 << "   Per million events: " << std::endl
-				 << "      " << cpuTimeInMins/nEvtsRunOver << " mins (CPU);  " << realTimeInMins/nEvtsRunOver << " mins (real)" << std::endl
+				 << "      " << cpuTimeInMins/millionEvtsRunOver << " mins (CPU);  " << realTimeInMins/millionEvtsRunOver << " mins (real)" << std::endl
 				 << std::endl;
 
 	// -=-=-=-=-=-=-=-=-=-=-=-=-=-=- //
