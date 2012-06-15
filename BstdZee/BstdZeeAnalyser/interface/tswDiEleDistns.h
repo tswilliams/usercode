@@ -90,7 +90,6 @@ namespace tsw{
 		diEleHist_regions_->GetXaxis()->SetBinLabel(3, "EE-EE");
 		diEleHist_regions_->GetXaxis()->SetBinLabel(4, "Other");
 		diEleHist_invMass_     = new TH1D(hNamePrefix + "invMass",   "Di-electron invariant mass distribution  (" + str_eleType_GSFeles_cutsPhrase + "); M_{ee} /GeVc^{-2};" + str_NoOfDiEles + " per GeV", hNBins_mass, 50.0, 130.0);
-		Double_t hMax_DiEleEt = 1200.0;
 		diEleHist_sumEt_       = new TH1D(hNamePrefix + "sumEt",     "Di-electron p_{T} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); p_{T, ee} /GeVc^{-1};" + str_NoOfDiEles, hNBins_pt, 0.0, hMax_pt);
 
 		Int_t    hNBins_ptCoarse = 8;

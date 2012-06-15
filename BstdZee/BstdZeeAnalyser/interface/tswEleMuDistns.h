@@ -52,7 +52,6 @@ namespace tsw{
 
 		//Initialise the di-ele histograms ...
 		eleMuHist_invMass_     = new TH1D(hNamePrefix + "invMass",   "e#mu mass distribution (" + str_eleType_GSFeles_cutsPhrase + "); M_{e#mu} /GeVc^{-2};" + str_NoOfEleMuObjs + " per 2.5GeV", hNBins_mass, 45.0, 135.0);
-		Double_t hMax_EleMuEt = 1200.0;
 		eleMuHist_sumEt_       = new TH1D(hNamePrefix + "sumEt",     "e#mu p_{T} distribution  (" + str_eleType_GSFeles_cutsPhrase + "); p_{T, e#mu} /GeVc^{-1};" + str_NoOfEleMuObjs, hNBins_pt, 0.0, hMax_pt);
 
 		Double_t hBinLims_ptLog[121]; hBinLims_ptLog[0] = 0.1;
