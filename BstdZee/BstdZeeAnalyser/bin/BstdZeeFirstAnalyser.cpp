@@ -59,6 +59,36 @@
 //=====================================================================================================
 //-----------------------------------------------------------------------------------------------------
 namespace tsw{
+
+	std::vector<std::string> AddPrefixesToFileNamesVec(const std::vector<std::string>& origFileNamesVec){
+		std::vector<std::string> newFileNamesVec;
+
+		for(std::vector<std::string>::const_iterator fileNameIt=origFileNamesVec.begin(); fileNameIt<origFileNamesVec.end(); fileNameIt++){
+			if(fileNameIt->find("/pnfs/pp.rl.ac.uk")==0)
+				newFileNamesVec.push_back("dcap://heplnx203.pp.rl.ac.uk" + (*fileNameIt) );
+			else if(fileNameIt->find("/store/")==0)
+				newFileNamesVec.push_back("dcap://heplnx203.pp.rl.ac.uk/pnfs/pp.rl.ac.uk/data/cms" + (*fileNameIt) );
+			else
+				newFileNamesVec.push_back(*fileNameIt);
+		}
+
+		return newFileNamesVec;
+	}
+
+	std::string TimeInfoString(TStopwatch& theStopwatch){
+		std::string theString;
+
+		std::ostringstream stream_cpuTime;
+		stream_cpuTime << theStopwatch.CpuTime();
+
+		std::ostringstream stream_realTime;
+		stream_realTime << theStopwatch.RealTime();
+
+		theString  = stream_cpuTime.str() +" secs (CPU);  ";
+		theString += stream_realTime.str()+" secs (real)";
+		return theString;
+	}
+
 	class ABCDMethodTree{
 	private:
 		// PRIVATE MEMBERS
@@ -1204,7 +1234,7 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
    vFlg_(vFlg),
 	numEvtsRequested_(numEvts),
    isMC_(isMC),
-   inputFileNamesVec_(inFileNamesVec),
+   inputFileNamesVec_( tsw::AddPrefixesToFileNamesVec(inFileNamesVec) ),
    inputFilesTChain_( new TChain("demo/EventDataTree") ),
    outputFileName_( outFileName.rfind(".root")==(outFileName.length()-5) ? outFileName.substr(0, outFileName.length()-5) : outFileName ),
    //
@@ -1345,7 +1375,8 @@ void BstdZeeFirstAnalyser::DoAnalysis(const Double_t weightFromXsec)
 {
 	std::cout << std::endl << "Now, running BstdZeeAnalyser with the following parameters ... " << std::endl
 			    << "   - input files: " << std::endl;
-	//TODO -- write list of input files to screen
+	for(unsigned int idx=0; idx<inputFileNamesVec_.size(); idx++)
+		std::cout << "        " << inputFileNamesVec_.at(idx) << std::endl;
 	std::cout << "   - output prefix: " << outputFileName_ << std::endl
 				 << "   - Events are " << (isMC_ ? "Monte-Carlo" : "real DATA") << std::endl
 				 << "   - Run mode : " << runMode_ << " ,  Verbosity flag = " << vFlg_ << std::endl
@@ -1380,17 +1411,39 @@ void BstdZeeFirstAnalyser::DoAnalysis(const Double_t weightFromXsec)
 		AnalyseEvent(weightFromXsec);
 	}
 	timer_AnalysingEvents.Stop();
-	timer_AnalysingEvents.Print();
-	std::cout << "*** For timer_DoAnalysis_readIn_:" << std::endl;
-	timer_DoAnalysis_readIn_.Print();
-	std::cout << "*** For timer_DoAnalysis_setup_:" << std::endl;
-	timer_DoAnalysis_setup_.Print();
-	std::cout << "*** For timer_DoAnalysis_FillHistograms_:" << std::endl;
-	timer_DoAnalysis_FillHistograms_.Print();
-	std::cout << "*** For timer_DoAnalysis_DoEMuMethod_:" << std::endl;
-	timer_DoAnalysis_DoEMuMethod_.Print();
 
-	FinishOffAnalysis(); //Output file is opened in here ...
+	// Now finish off the analysis (incl. opening output files) ...
+	TStopwatch timer_FinishOffAnalysis; timer_FinishOffAnalysis.Start();
+	FinishOffAnalysis();
+	timer_FinishOffAnalysis.Stop();
+
+	// Print out timing info
+	std::cout << std::endl
+				 << " -=-=- DETAILED TIMING INFO -=-=-" << std::endl
+				 << "   1. During event analysis:" << std::endl
+				 << "       + Total: " << std::endl
+				 << "            " << tsw::TimeInfoString(timer_AnalysingEvents) << std::endl
+				 << "       - ReadIn:" << std::endl
+				 << "            " << tsw::TimeInfoString(timer_DoAnalysis_readIn_) << std::endl
+				 << "       - In Setup:" << std::endl
+				 << "            " << tsw::TimeInfoString(timer_DoAnalysis_setup_) << std::endl
+				 << "       - In FillHistograms:" << std::endl
+				 << "            " << tsw::TimeInfoString(timer_DoAnalysis_FillHistograms_) << std::endl
+				 << "       - In DoEMuMethod:" << std::endl
+				 << "            " << tsw::TimeInfoString(timer_DoAnalysis_DoEMuMethod_) << std::endl
+				 << "   2. During FinishOffAnalysis:" << std::endl
+				 << "       + Overall: " << std::endl
+				 << "            " << tsw::TimeInfoString(timer_FinishOffAnalysis) << std::endl << std::endl;
+
+//	timer_AnalysingEvents.Print();
+//	std::cout << std::endl << "*** For timer_DoAnalysis_readIn_:" << std::endl;
+//	timer_DoAnalysis_readIn_.Print();
+//	std::cout << "*** For timer_DoAnalysis_setup_:" << std::endl;
+//	timer_DoAnalysis_setup_.Print();
+//	std::cout << "*** For timer_DoAnalysis_FillHistograms_:" << std::endl;
+//	timer_DoAnalysis_FillHistograms_.Print();
+//	std::cout << "*** For timer_DoAnalysis_DoEMuMethod_:" << std::endl;
+//	timer_DoAnalysis_DoEMuMethod_.Print();
 }
 
 //-------------------------------------------------------------------//
@@ -1733,12 +1786,12 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 	f_histos.Close();
 
 	// Open up eMu method files, save the appropriate tree, and then
-	TFile f_eleMuTree(("eleMuTree/" + outputFileName_ + "_eMuTree.root").c_str(),"RECREATE");
+	TFile f_eleMuTree((outputFileName_ + "_eMuTree.root").c_str(),"RECREATE");
 	eleMuTree_->Write();
 	f_eleMuTree.Close();
 	delete eleMuTree_;
 
-	TFile f_diEleTree(("diEleTree/" + outputFileName_ + "_diEleTree.root").c_str(),"RECREATE");
+	TFile f_diEleTree((outputFileName_ + "_diEleTree.root").c_str(),"RECREATE");
 	diEleTree_->Write();
 	f_diEleTree.Close();
 	delete diEleTree_;
@@ -2606,14 +2659,6 @@ void BstdZeeFirstAnalyser::SetupBranchLinks()
 		inputFilesTChain_->SetBranchAddress("mcZboson_daughterA_p4", &mcZ_daughterA_OLDp4_ptr_);
 		inputFilesTChain_->SetBranchAddress("mcZboson_daughterB_p4", &mcZ_daughterB_OLDp4_ptr_);
 	}
-	else{
-		inputFilesTChain_->SetBranchStatus("mcEles_number",0);
-		inputFilesTChain_->SetBranchStatus("mcEles_HighestEt_*",0);
-		inputFilesTChain_->SetBranchStatus("mcEles_2ndHighestEt_*",0);
-		inputFilesTChain_->SetBranchStatus("mcZcandidate_*",0);
-		inputFilesTChain_->SetBranchStatus("mcZboson_*",0);
-	}
-
 
 	inputFilesTChain_->SetBranchStatus("normGsfEles_*",0);
 	inputFilesTChain_->SetBranchStatus("normGsfEles_number",1);
