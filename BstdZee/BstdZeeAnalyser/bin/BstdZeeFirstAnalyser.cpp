@@ -89,10 +89,77 @@ namespace tsw{
 		return theString;
 	}
 
-	class ABCDMethodTree{
+	/*!
+	 * \class TreeHandlerBase
+	 * \brief Base class for tree handlers that implements all common functionality: saveToFile method, destruction of all trees
+	 */
+	class TreeHandlerBase{
+	public:
+		// CTOR & DTOR
+		TreeHandlerBase(const std::string& mainTreeName, const std::string& mainTreeDescription);
+		virtual ~TreeHandlerBase();
+
+		// PUBLIC METHODS
+		void setEventCounter(unsigned int nEvtsTotal){
+			totNumEvtsAnalyzed_ = nEvtsTotal;  numEvtsPass_ = mainAnaTree_->GetEntries(); }
+		void saveToFile(const std::string& fileName);
+
+	protected:
+		// PROTECTED MEMBERS
+		TTree* mainAnaTree_;
+
 	private:
 		// PRIVATE MEMBERS
-		TTree* abcdTree_;
+		TTree* eventCountTree_;
+
+		UInt_t numEvtsPass_;
+		UInt_t totNumEvtsAnalyzed_;
+
+	};
+
+	TreeHandlerBase::TreeHandlerBase(const std::string& mainTreeName, const std::string& mainTreeDescription) :
+		mainAnaTree_( new TTree(mainTreeName.c_str(), mainTreeDescription.c_str()) ),
+		eventCountTree_( new TTree("eventCountTree", "Tree containing orig event counts per file.") ),
+		numEvtsPass_(0), totNumEvtsAnalyzed_(0)
+	{
+		mainAnaTree_->SetDirectory(0);
+		eventCountTree_->SetDirectory(0);// This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
+		/* Error is as follows:
+		 * Error in <TTree::Fill>: Failed filling branch:myTree.mass, nbytes=-1, entry=3990
+		 *  This error is symptomatic of a Tree created as a memory-resident Tree
+		 *  Instead of doing:
+		 *     TTree *T = new TTree(...)
+		 *     TFile *f = new TFile(...)
+		 *  you should do:
+		 *     TFile *f = new TFile(...)
+		 *     TTree *T = new TTree(...)
+		 */
+
+		eventCountTree_->Branch("nEvtsPass", &numEvtsPass_, "nEvtsPass/i");
+		eventCountTree_->Branch("nEvtsRunOver", &totNumEvtsAnalyzed_, "nEvtsRunOver/i");
+	}
+	TreeHandlerBase::~TreeHandlerBase()
+	{
+		delete mainAnaTree_;
+		delete eventCountTree_;
+	}
+
+	void TreeHandlerBase::saveToFile(const std::string& fileName)
+	{
+		// Firstly fill eventCountTree_
+		eventCountTree_->Fill();
+
+		// Then, save TTrees to file ...
+		TFile theFile(fileName.c_str(),"RECREATE");
+		mainAnaTree_->Write();
+		eventCountTree_->Write();
+		theFile.Close();
+	}
+
+
+	class ABCDMethodTree : public TreeHandlerBase {
+	private:
+		// PRIVATE MEMBERS
 
 		// For the event & di-ele branches ...
 		Bool_t treeVar_trgDecision_;
@@ -119,47 +186,37 @@ namespace tsw{
 		Bool_t treeVar_eleB_passHEEPNoIso_;
 
 	public:
-		ABCDMethodTree(){
-			abcdTree_ = new TTree("abcdTree","ABCD method di-ele data");
-			abcdTree_->SetDirectory(0); // This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
-			/* Error is as follows:
-			 * Error in <TTree::Fill>: Failed filling branch:myTree.mass, nbytes=-1, entry=3990
-			 *  This error is symptomatic of a Tree created as a memory-resident Tree
-			 *  Instead of doing:
-			 *     TTree *T = new TTree(...)
-			 *     TFile *f = new TFile(...)
-			 *  you should do:
-			 *     TFile *f = new TFile(...)
-			 *     TTree *T = new TTree(...)
-			 */
+		ABCDMethodTree() :
+			TreeHandlerBase("abcdTree","ABCD method di-ele data")
+		{
 			// Setting up the event / di-ele branches ...
-			abcdTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
-			abcdTree_->Branch("trgName",     &treeVar_trgNamePtr_);
+			mainAnaTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
+			mainAnaTree_->Branch("trgName",     &treeVar_trgNamePtr_);
 			treeVar_trgNamePtr_ = &treeVar_trgName_;
-			abcdTree_->Branch("weight",      &treeVar_weight_, "weight/D");
+			mainAnaTree_->Branch("weight",      &treeVar_weight_, "weight/D");
 
-			treeVar_p4Ptr_ = &treeVar_p4_;  abcdTree_->Branch("diEle_p4",   &treeVar_p4Ptr_);
-			abcdTree_->Branch("diEle_mass", &treeVar_mass_,   "mass/D");
-			abcdTree_->Branch("diEle_pT",   &treeVar_pT_,     "pT/D");
-			abcdTree_->Branch("diEle_passHEEPNoIso",  &treeVar_passHEEPNoIso_,  "diEle_passHEEPNoIso/O");
-			abcdTree_->Branch("diEle_passModHEEPIso", &treeVar_passModHEEPIso_, "diEle_passModHEEPIso/O");
-			abcdTree_->Branch("diEle_passModTrkIso", &treeVar_passModTrkIso_, "diEle_passModTrkIso/O");
-			abcdTree_->Branch("diEle_passModEmHad1Iso", &treeVar_passModEmHad1Iso_, "diEle_passModEmHad1Iso/O");
+			treeVar_p4Ptr_ = &treeVar_p4_;  mainAnaTree_->Branch("diEle_p4",   &treeVar_p4Ptr_);
+			mainAnaTree_->Branch("diEle_mass", &treeVar_mass_,   "mass/D");
+			mainAnaTree_->Branch("diEle_pT",   &treeVar_pT_,     "pT/D");
+			mainAnaTree_->Branch("diEle_passHEEPNoIso",  &treeVar_passHEEPNoIso_,  "diEle_passHEEPNoIso/O");
+			mainAnaTree_->Branch("diEle_passModHEEPIso", &treeVar_passModHEEPIso_, "diEle_passModHEEPIso/O");
+			mainAnaTree_->Branch("diEle_passModTrkIso", &treeVar_passModTrkIso_, "diEle_passModTrkIso/O");
+			mainAnaTree_->Branch("diEle_passModEmHad1Iso", &treeVar_passModEmHad1Iso_, "diEle_passModEmHad1Iso/O");
 
 			// Setting up the branches for each electron ...
-			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;  abcdTree_->Branch("eleA_p4",     &treeVar_eleA_p4Ptr_);
-			abcdTree_->Branch("eleA_charge",   &treeVar_eleA_charge_,   "eleA_charge/I"); //Int_t
-			abcdTree_->Branch("eleA_EOverP", &treeVar_eleA_EOverP_, "eleA_EOverP/D"); //Double_t
-			abcdTree_->Branch("eleA_passHEEPNoIso", &treeVar_eleA_passHEEPNoIso_, "eleA_passHEEPNoIso/O");
+			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;  mainAnaTree_->Branch("eleA_p4",     &treeVar_eleA_p4Ptr_);
+			mainAnaTree_->Branch("eleA_charge",   &treeVar_eleA_charge_,   "eleA_charge/I"); //Int_t
+			mainAnaTree_->Branch("eleA_EOverP", &treeVar_eleA_EOverP_, "eleA_EOverP/D"); //Double_t
+			mainAnaTree_->Branch("eleA_passHEEPNoIso", &treeVar_eleA_passHEEPNoIso_, "eleA_passHEEPNoIso/O");
 
-			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;   abcdTree_->Branch("eleB_p4",     &treeVar_eleB_p4Ptr_);
-			abcdTree_->Branch("eleB_charge",   &treeVar_eleB_charge_,   "eleB_charge/I"); //Int_t
-			abcdTree_->Branch("eleB_EOverP", &treeVar_eleB_EOverP_, "eleB_EOverP/D"); //Double_t
-			abcdTree_->Branch("eleB_passHEEPNoIso", &treeVar_eleB_passHEEPNoIso_, "eleB_passHEEPNoIso/O");
+			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;   mainAnaTree_->Branch("eleB_p4",     &treeVar_eleB_p4Ptr_);
+			mainAnaTree_->Branch("eleB_charge",   &treeVar_eleB_charge_,   "eleB_charge/I"); //Int_t
+			mainAnaTree_->Branch("eleB_EOverP", &treeVar_eleB_EOverP_, "eleB_EOverP/D"); //Double_t
+			mainAnaTree_->Branch("eleB_passHEEPNoIso", &treeVar_eleB_passHEEPNoIso_, "eleB_passHEEPNoIso/O");
 		}
-		~ABCDMethodTree(){ delete abcdTree_; }
+		~ABCDMethodTree(){}
 
-		void FillTree(tsw::HEEPDiEle* diEle, std::string trgName, bool trgDecision, double evtWeight){
+		void fillTree(tsw::HEEPDiEle* diEle, std::string trgName, bool trgDecision, double evtWeight){
 			// Setting values of variables for eleA & eleB branches ...
 			tsw::HEEPEle diEle_eleA = diEle->eleA();
 			treeVar_eleA_p4_ = diEle_eleA.p4();
@@ -187,23 +244,16 @@ namespace tsw{
 			treeVar_passModHEEPIso_ = (treeVar_passModTrkIso_ && treeVar_passModEmHad1Iso_);
 
 			// And finally fill the tree ...
-			abcdTree_->Fill();
-		}
-		void SaveToFile(TString outFileName){
-			TFile f_tree(outFileName,"RECREATE");
-			abcdTree_->Write();
-			f_tree.Close();
+			mainAnaTree_->Fill();
 		}
 	};
 
 	///////////////////////////////////////////////////////////////////////////////
-	// EffiCalcTree: Simple class for generating trees containing small amount of selection cut & kinematic
-	//               info about Z candidates (plus event information)
+	// DiEleTree: Simple class for generating trees containing info about di-ele Z boson candidates
 	//
-	class DiEleTree{
+	class DiEleTree : public TreeHandlerBase {
 	private:
 		// PRIVATE MEMBERS
-		TTree* diEleTree_;
 
 		// For the event & kinematic branches ...
 		Double_t treeVar_weight_;
@@ -230,48 +280,37 @@ namespace tsw{
 		Int_t treeVar_eleB_modHeepCutCode_;
 
 	public:
-		DiEleTree(std::string treeName="zBosonTree")
+		DiEleTree(std::string treeName="zBosonTree") :
+			TreeHandlerBase(treeName, "Tree of Z candidates ("+treeName+")" )
 		{
-			diEleTree_ = new TTree(treeName.c_str(), ("Tree of Z candidates ("+treeName+")").c_str());
-			diEleTree_->SetDirectory(0); // This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
-			/* Error is as follows:
-			 * Error in <TTree::Fill>: Failed filling branch:myTree.mass, nbytes=-1, entry=3990
-			 *  This error is symptomatic of a Tree created as a memory-resident Tree
-			 *  Instead of doing:
-			 *     TTree *T = new TTree(...)
-			 *     TFile *f = new TFile(...)
-			 *  you should do:
-			 *     TFile *f = new TFile(...)
-			 *     TTree *T = new TTree(...)
-			 */
 			// Setting up the event / di-ele branches ...
-			diEleTree_->Branch("weight",     &treeVar_weight_,     "weight/D");
-			diEleTree_->Branch("genWeight",  &treeVar_genWeight_,  "genWeight/D");
-			diEleTree_->Branch("puWeight",   &treeVar_puWeight_,   "puWeight/D");
-			diEleTree_->Branch("xsecWeight", &treeVar_xsecWeight_, "xsecWeight/D");
+			mainAnaTree_->Branch("weight",     &treeVar_weight_,     "weight/D");
+			mainAnaTree_->Branch("genWeight",  &treeVar_genWeight_,  "genWeight/D");
+			mainAnaTree_->Branch("puWeight",   &treeVar_puWeight_,   "puWeight/D");
+			mainAnaTree_->Branch("xsecWeight", &treeVar_xsecWeight_, "xsecWeight/D");
 
-			diEleTree_->Branch("run",    &treeVar_runNum_,   "run/i");
-			diEleTree_->Branch("lumi",   &treeVar_lumiNum_,   "lumi/i");
-			diEleTree_->Branch("evtNum", &treeVar_evtNum_,   "evtNum/i");
+			mainAnaTree_->Branch("run",    &treeVar_runNum_,   "run/i");
+			mainAnaTree_->Branch("lumi",   &treeVar_lumiNum_,   "lumi/i");
+			mainAnaTree_->Branch("evtNum", &treeVar_evtNum_,   "evtNum/i");
 
-			diEleTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
+			mainAnaTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
 
-			treeVar_Zp4Ptr_ = &treeVar_Zp4_; diEleTree_->Branch("Zp4",   &treeVar_Zp4Ptr_);
-			diEleTree_->Branch("ZpT",   &treeVar_ZpT_,     "ZpT/D");
-			diEleTree_->Branch("Zmass", &treeVar_Zmass_,   "Zmass/D");
-			diEleTree_->Branch("dR",    &treeVar_dR_,      "dR/D");
-			diEleTree_->Branch("dEta",  &treeVar_dEta_,    "dEta/D");
-			diEleTree_->Branch("dPhi",  &treeVar_dPhi_,    "dPhi/D");
+			treeVar_Zp4Ptr_ = &treeVar_Zp4_; mainAnaTree_->Branch("Zp4",   &treeVar_Zp4Ptr_);
+			mainAnaTree_->Branch("ZpT",   &treeVar_ZpT_,     "ZpT/D");
+			mainAnaTree_->Branch("Zmass", &treeVar_Zmass_,   "Zmass/D");
+			mainAnaTree_->Branch("dR",    &treeVar_dR_,      "dR/D");
+			mainAnaTree_->Branch("dEta",  &treeVar_dEta_,    "dEta/D");
+			mainAnaTree_->Branch("dPhi",  &treeVar_dPhi_,    "dPhi/D");
 
-			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;  diEleTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);
-			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;  diEleTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);
+			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;  mainAnaTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);
+			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;  mainAnaTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);
 
-			diEleTree_->Branch("eleA_modHeepCutCode", &treeVar_eleA_modHeepCutCode_, "eleA_modHeepCutCode/I");
-			diEleTree_->Branch("eleB_modHeepCutCode", &treeVar_eleB_modHeepCutCode_, "eleB_modHeepCutCode/I");
+			mainAnaTree_->Branch("eleA_modHeepCutCode", &treeVar_eleA_modHeepCutCode_, "eleA_modHeepCutCode/I");
+			mainAnaTree_->Branch("eleB_modHeepCutCode", &treeVar_eleB_modHeepCutCode_, "eleB_modHeepCutCode/I");
 		}
-		~DiEleTree(){ delete diEleTree_; }
+		~DiEleTree(){}
 
-		void FillTree(const tsw::HEEPDiEle& diEle, const tsw::EventHelper& evtHelper, bool trigDecision)
+		void fillTree(const tsw::HEEPDiEle& diEle, const tsw::EventHelper& evtHelper, bool trigDecision)
 		{
 			treeVar_weight_     = evtHelper.totWeight();
 			treeVar_genWeight_  = evtHelper.genWeight();
@@ -298,12 +337,7 @@ namespace tsw{
 			treeVar_eleB_modHeepCutCode_ = diEle.eleB().heepIdModIsoCutCode(evtHelper);
 
 			// And finally fill the tree ...
-			diEleTree_->Fill();
-		}
-		void SaveToFile(TString outFileName){
-			TFile f_tree(outFileName,"RECREATE");
-			diEleTree_->Write();
-			f_tree.Close();
+			mainAnaTree_->Fill();
 		}
 	};
 
@@ -311,10 +345,9 @@ namespace tsw{
 	// EffiCalcTree: Simple class used to generate trees that are used in calculating
 	//               the efficiency of cuts on reconstruction of Z bosons
 	//
-	class EffiCalcTree{
+	class EffiCalcTree : public TreeHandlerBase {
 	private:
 		// PRIVATE MEMBERS
-		TTree* effiCalcTree_;
 
 		// Member variables for storing branch information (all are RECO-level unless otherwise specified in name) ...
 		unsigned int treeVar_runNum_;
@@ -424,131 +457,120 @@ namespace tsw{
 		Int_t treeVar_eleB_heepIdModIsoCutCode_;
 
 	public:
-		EffiCalcTree()
+		EffiCalcTree() :
+			TreeHandlerBase("zBosonEffiTree", "Tree of Z candidate information for signal MC effi calc'ns")
 		{
-			effiCalcTree_ = new TTree("zBosonEffiTree","Tree of Z candidate information for signal MC effi calc'ns");
-			effiCalcTree_->SetDirectory(0); // This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
-			/* Error is as follows:
-			 * Error in <TTree::Fill>: Failed filling branch:myTree.mass, nbytes=-1, entry=3990
-			 *  This error is symptomatic of a Tree created as a memory-resident Tree
-			 *  Instead of doing:
-			 *     TTree *T = new TTree(...)
-			 *     TFile *f = new TFile(...)
-			 *  you should do:
-			 *     TFile *f = new TFile(...)
-			 *     TTree *T = new TTree(...)
-			 */
 			// Setting up the event / di-ele branches ...
-			effiCalcTree_->Branch("weight",      &treeVar_weight_, "weight/D");
-			effiCalcTree_->Branch("mc_numVtx", &treeVar_mc_numVtx_, "mc_numVtx/f");
-			effiCalcTree_->Branch("run", &treeVar_runNum_, "run/i");
-			effiCalcTree_->Branch("lumi", &treeVar_lumiSec_, "lumi/i");
-			effiCalcTree_->Branch("evtNum", &treeVar_evtNum_, "evtNum/i");
+			mainAnaTree_->Branch("weight",      &treeVar_weight_, "weight/D");
+			mainAnaTree_->Branch("mc_numVtx", &treeVar_mc_numVtx_, "mc_numVtx/f");
+			mainAnaTree_->Branch("run", &treeVar_runNum_, "run/i");
+			mainAnaTree_->Branch("lumi", &treeVar_lumiSec_, "lumi/i");
+			mainAnaTree_->Branch("evtNum", &treeVar_evtNum_, "evtNum/i");
 
-			effiCalcTree_->Branch("mcZ_ele1_p4", &treeVar_mcZ_ele1_p4Ptr_);	treeVar_mcZ_ele1_p4Ptr_ = &treeVar_mcZ_ele1_p4_;
-			effiCalcTree_->Branch("mcZ_ele2_p4", &treeVar_mcZ_ele2_p4Ptr_);	treeVar_mcZ_ele2_p4Ptr_ = &treeVar_mcZ_ele2_p4_;
-			effiCalcTree_->Branch("mcAccept_pt",   &treeVar_ptAcc_, "mcAccept_pt/O");
-			effiCalcTree_->Branch("mcAccept_ebeb", &treeVar_ebebAcceptance_, "mcAccept_ebeb/O");
-			effiCalcTree_->Branch("mcAccept_ebee", &treeVar_ebeeAcceptance_, "mcAccept_ebee/O");
-			effiCalcTree_->Branch("mcAccept_eeee", &treeVar_eeeeAcceptance_, "mcAccept_eeee/O");
+			mainAnaTree_->Branch("mcZ_ele1_p4", &treeVar_mcZ_ele1_p4Ptr_);	treeVar_mcZ_ele1_p4Ptr_ = &treeVar_mcZ_ele1_p4_;
+			mainAnaTree_->Branch("mcZ_ele2_p4", &treeVar_mcZ_ele2_p4Ptr_);	treeVar_mcZ_ele2_p4Ptr_ = &treeVar_mcZ_ele2_p4_;
+			mainAnaTree_->Branch("mcAccept_pt",   &treeVar_ptAcc_, "mcAccept_pt/O");
+			mainAnaTree_->Branch("mcAccept_ebeb", &treeVar_ebebAcceptance_, "mcAccept_ebeb/O");
+			mainAnaTree_->Branch("mcAccept_ebee", &treeVar_ebeeAcceptance_, "mcAccept_ebee/O");
+			mainAnaTree_->Branch("mcAccept_eeee", &treeVar_eeeeAcceptance_, "mcAccept_eeee/O");
 
-			effiCalcTree_->Branch("bothRecod", &treeVar_bothRecod_, "bothRecod/O");
+			mainAnaTree_->Branch("bothRecod", &treeVar_bothRecod_, "bothRecod/O");
 
-			effiCalcTree_->Branch("ZpT", &treeVar_ZpT_,     "ZpT/D");
-			effiCalcTree_->Branch("ZdEta", &treeVar_ZdEta_,     "ZdEta/D");
-			effiCalcTree_->Branch("ZdPhi", &treeVar_ZdPhi_,     "ZdPhi/D");
-			effiCalcTree_->Branch("ZdR", &treeVar_ZdR_, "ZdR/D");
-			effiCalcTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);	treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;
-			effiCalcTree_->Branch("eleA_dRmc", &treeVar_eleA_dRmc_, "eleA_dRmc/D");
-			effiCalcTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);	treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;
-			effiCalcTree_->Branch("eleB_dRmc", &treeVar_eleB_dRmc_, "eleB_dRmc/D");
+			mainAnaTree_->Branch("ZpT", &treeVar_ZpT_,     "ZpT/D");
+			mainAnaTree_->Branch("ZdEta", &treeVar_ZdEta_,     "ZdEta/D");
+			mainAnaTree_->Branch("ZdPhi", &treeVar_ZdPhi_,     "ZdPhi/D");
+			mainAnaTree_->Branch("ZdR", &treeVar_ZdR_, "ZdR/D");
+			mainAnaTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);	treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;
+			mainAnaTree_->Branch("eleA_dRmc", &treeVar_eleA_dRmc_, "eleA_dRmc/D");
+			mainAnaTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);	treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;
+			mainAnaTree_->Branch("eleB_dRmc", &treeVar_eleB_dRmc_, "eleB_dRmc/D");
 
 
-			effiCalcTree_->Branch("cut_both_fiducial", &treeVar_cut_both_fiducial_, "cut_both_fiducial/O");
-			effiCalcTree_->Branch("cut_both_ecalDriven", &treeVar_cut_both_ecalDriven_, "cut_both_ecalDriven/O");
-			effiCalcTree_->Branch("cut_both_dEta", &treeVar_cut_both_dEta_, "cut_both_dEta/O");
-			effiCalcTree_->Branch("cut_both_dPhi", &treeVar_cut_both_dPhi_, "cut_both_dPhi/O");
-			effiCalcTree_->Branch("cut_both_hOverE", &treeVar_cut_both_hOverE_, "cut_both_hOverE/O");
-			effiCalcTree_->Branch("cut_both_showerShape", &treeVar_cut_both_showerShape_, "cut_both_showerShape/O");
-			effiCalcTree_->Branch("cut_both_heepId", &treeVar_cut_both_heepId_, "cut_both_heepId/O");
+			mainAnaTree_->Branch("cut_both_fiducial", &treeVar_cut_both_fiducial_, "cut_both_fiducial/O");
+			mainAnaTree_->Branch("cut_both_ecalDriven", &treeVar_cut_both_ecalDriven_, "cut_both_ecalDriven/O");
+			mainAnaTree_->Branch("cut_both_dEta", &treeVar_cut_both_dEta_, "cut_both_dEta/O");
+			mainAnaTree_->Branch("cut_both_dPhi", &treeVar_cut_both_dPhi_, "cut_both_dPhi/O");
+			mainAnaTree_->Branch("cut_both_hOverE", &treeVar_cut_both_hOverE_, "cut_both_hOverE/O");
+			mainAnaTree_->Branch("cut_both_showerShape", &treeVar_cut_both_showerShape_, "cut_both_showerShape/O");
+			mainAnaTree_->Branch("cut_both_heepId", &treeVar_cut_both_heepId_, "cut_both_heepId/O");
 
-			effiCalcTree_->Branch("cut_eleA_stdTrkIso", &treeVar_cut_eleA_stdTrkIso_, "cut_eleA_stdTrkIso/O");
-			effiCalcTree_->Branch("cut_eleB_stdTrkIso", &treeVar_cut_eleB_stdTrkIso_, "cut_eleB_stdTrkIso/O");
-			effiCalcTree_->Branch("eleA_stdTrkIso", &treeVar_eleA_stdTrkIso_, "eleA_stdTrkIso/D");
-			effiCalcTree_->Branch("eleB_stdTrkIso", &treeVar_eleB_stdTrkIso_, "eleB_stdTrkIso/D");
-			effiCalcTree_->Branch("cut_eleA_stdEmH1Iso", &treeVar_cut_eleA_stdEmH1Iso_, "cut_eleA_stdEmH1Iso/O");
-			effiCalcTree_->Branch("cut_eleB_stdEmH1Iso", &treeVar_cut_eleB_stdEmH1Iso_, "cut_eleB_stdEmH1Iso/O");
-			effiCalcTree_->Branch("eleA_stdEmH1Iso", &treeVar_eleA_stdEmH1Iso_, "eleA_stdEmH1Iso/D");
-			effiCalcTree_->Branch("eleB_stdEmH1Iso", &treeVar_eleB_stdEmH1Iso_, "eleB_stdEmH1Iso/D");
+			mainAnaTree_->Branch("cut_eleA_stdTrkIso", &treeVar_cut_eleA_stdTrkIso_, "cut_eleA_stdTrkIso/O");
+			mainAnaTree_->Branch("cut_eleB_stdTrkIso", &treeVar_cut_eleB_stdTrkIso_, "cut_eleB_stdTrkIso/O");
+			mainAnaTree_->Branch("eleA_stdTrkIso", &treeVar_eleA_stdTrkIso_, "eleA_stdTrkIso/D");
+			mainAnaTree_->Branch("eleB_stdTrkIso", &treeVar_eleB_stdTrkIso_, "eleB_stdTrkIso/D");
+			mainAnaTree_->Branch("cut_eleA_stdEmH1Iso", &treeVar_cut_eleA_stdEmH1Iso_, "cut_eleA_stdEmH1Iso/O");
+			mainAnaTree_->Branch("cut_eleB_stdEmH1Iso", &treeVar_cut_eleB_stdEmH1Iso_, "cut_eleB_stdEmH1Iso/O");
+			mainAnaTree_->Branch("eleA_stdEmH1Iso", &treeVar_eleA_stdEmH1Iso_, "eleA_stdEmH1Iso/D");
+			mainAnaTree_->Branch("eleB_stdEmH1Iso", &treeVar_eleB_stdEmH1Iso_, "eleB_stdEmH1Iso/D");
 
-			effiCalcTree_->Branch("eleA_nTrksInnerVeto", &treeVar_eleA_nTrksInnerVeto_, "eleA_nTrksInnerVeto/i");
-			effiCalcTree_->Branch("eleB_nTrksInnerVeto", &treeVar_eleB_nTrksInnerVeto_, "eleB_nTrksInnerVeto/i");
+			mainAnaTree_->Branch("eleA_nTrksInnerVeto", &treeVar_eleA_nTrksInnerVeto_, "eleA_nTrksInnerVeto/i");
+			mainAnaTree_->Branch("eleB_nTrksInnerVeto", &treeVar_eleB_nTrksInnerVeto_, "eleB_nTrksInnerVeto/i");
 
-			effiCalcTree_->Branch("cut_eleA_modTrkIso", &treeVar_cut_eleA_modTrkIso_, "cut_eleA_modTrkIso/O");
-			effiCalcTree_->Branch("cut_eleB_modTrkIso", &treeVar_cut_eleB_modTrkIso_, "cut_eleB_modTrkIso/O");
-			effiCalcTree_->Branch("eleA_modTrkIso", &treeVar_eleA_modTrkIso_, "eleA_modTrkIso/D");
-			effiCalcTree_->Branch("eleB_modTrkIso", &treeVar_eleB_modTrkIso_, "eleB_modTrkIso/D");
-			effiCalcTree_->Branch("cut_eleA_scModEmH1Iso", &treeVar_cut_eleA_scModEmH1Iso_, "cut_eleA_scModEmH1Iso/O");
-			effiCalcTree_->Branch("cut_eleB_scModEmH1Iso", &treeVar_cut_eleB_scModEmH1Iso_, "cut_eleB_scModEmH1Iso/O");
-			effiCalcTree_->Branch("eleA_scModEmH1Iso", &treeVar_eleA_scModEmH1Iso_, "eleA_scModEmH1Iso/D");
-			effiCalcTree_->Branch("eleB_scModEmH1Iso", &treeVar_eleB_scModEmH1Iso_, "eleB_scModEmH1Iso/D");
+			mainAnaTree_->Branch("cut_eleA_modTrkIso", &treeVar_cut_eleA_modTrkIso_, "cut_eleA_modTrkIso/O");
+			mainAnaTree_->Branch("cut_eleB_modTrkIso", &treeVar_cut_eleB_modTrkIso_, "cut_eleB_modTrkIso/O");
+			mainAnaTree_->Branch("eleA_modTrkIso", &treeVar_eleA_modTrkIso_, "eleA_modTrkIso/D");
+			mainAnaTree_->Branch("eleB_modTrkIso", &treeVar_eleB_modTrkIso_, "eleB_modTrkIso/D");
+			mainAnaTree_->Branch("cut_eleA_scModEmH1Iso", &treeVar_cut_eleA_scModEmH1Iso_, "cut_eleA_scModEmH1Iso/O");
+			mainAnaTree_->Branch("cut_eleB_scModEmH1Iso", &treeVar_cut_eleB_scModEmH1Iso_, "cut_eleB_scModEmH1Iso/O");
+			mainAnaTree_->Branch("eleA_scModEmH1Iso", &treeVar_eleA_scModEmH1Iso_, "eleA_scModEmH1Iso/D");
+			mainAnaTree_->Branch("eleB_scModEmH1Iso", &treeVar_eleB_scModEmH1Iso_, "eleB_scModEmH1Iso/D");
 
-			effiCalcTree_->Branch("combThr_EmH1", &treeVar_combThr_EmH1_, "combThr_EmH1/D");
+			mainAnaTree_->Branch("combThr_EmH1", &treeVar_combThr_EmH1_, "combThr_EmH1/D");
 
-			effiCalcTree_->Branch("eleA_isoDep_stdTrk",      &treeVar_eleA_isoDep_stdTrk_,  "eleA_isoDep_stdTrk/D");
-			effiCalcTree_->Branch("eleB_isoDep_stdTrk",      &treeVar_eleB_isoDep_stdTrk_, "eleB_isoDep_stdTrk/D");
-			effiCalcTree_->Branch("eleA_isoDep_stdEmH1",     &treeVar_eleA_isoDep_stdEmH1_, "eleA_isoDep_stdEmH1/D");
-			effiCalcTree_->Branch("eleB_isoDep_stdEmH1",     &treeVar_eleB_isoDep_stdEmH1_, "eleB_isoDep_stdEmH1/D");
-			effiCalcTree_->Branch("cut_eleA_isoDep_stdEmH1", &treeVar_cut_eleA_isoDep_stdEmH1_, "cut_eleA_isoDep_stdEmH1/D");
-			effiCalcTree_->Branch("cut_eleB_isoDep_stdEmH1", &treeVar_cut_eleB_isoDep_stdEmH1_, "cut_eleB_isoDep_stdEmH1/D");
-			effiCalcTree_->Branch("eleA_isoDep_inrVetoModTrk",     &treeVar_eleA_isoDep_inrVetoModTrk_, "eleA_isoDep_inrVetoModTrk/D");
-			effiCalcTree_->Branch("eleB_isoDep_inrVetoModTrk",     &treeVar_eleB_isoDep_inrVetoModTrk_, "eleB_isoDep_inrVetoModTrk/D");
-			effiCalcTree_->Branch("eleA_isoDep_inrVetoModEmH1",    &treeVar_eleA_isoDep_inrVetoModEmH1_, "eleA_isoDep_inrVetoModEmH1/D");
-			effiCalcTree_->Branch("eleB_isoDep_inrVetoModEmH1",    &treeVar_eleB_isoDep_inrVetoModEmH1_, "eleB_isoDep_inrVetoModEmH1/D");
-			effiCalcTree_->Branch("cut_eleA_isoDep_inrVetoModEmH1", &treeVar_cut_eleA_isoDep_inrVetoModEmH1_, "cut_eleA_isoDep_inrVetoModEmH1/O");
-			effiCalcTree_->Branch("cut_eleB_isoDep_inrVetoModEmH1", &treeVar_cut_eleB_isoDep_inrVetoModEmH1_, "cut_eleB_isoDep_inrVetoModEmH1/O");
+			mainAnaTree_->Branch("eleA_isoDep_stdTrk",      &treeVar_eleA_isoDep_stdTrk_,  "eleA_isoDep_stdTrk/D");
+			mainAnaTree_->Branch("eleB_isoDep_stdTrk",      &treeVar_eleB_isoDep_stdTrk_, "eleB_isoDep_stdTrk/D");
+			mainAnaTree_->Branch("eleA_isoDep_stdEmH1",     &treeVar_eleA_isoDep_stdEmH1_, "eleA_isoDep_stdEmH1/D");
+			mainAnaTree_->Branch("eleB_isoDep_stdEmH1",     &treeVar_eleB_isoDep_stdEmH1_, "eleB_isoDep_stdEmH1/D");
+			mainAnaTree_->Branch("cut_eleA_isoDep_stdEmH1", &treeVar_cut_eleA_isoDep_stdEmH1_, "cut_eleA_isoDep_stdEmH1/D");
+			mainAnaTree_->Branch("cut_eleB_isoDep_stdEmH1", &treeVar_cut_eleB_isoDep_stdEmH1_, "cut_eleB_isoDep_stdEmH1/D");
+			mainAnaTree_->Branch("eleA_isoDep_inrVetoModTrk",     &treeVar_eleA_isoDep_inrVetoModTrk_, "eleA_isoDep_inrVetoModTrk/D");
+			mainAnaTree_->Branch("eleB_isoDep_inrVetoModTrk",     &treeVar_eleB_isoDep_inrVetoModTrk_, "eleB_isoDep_inrVetoModTrk/D");
+			mainAnaTree_->Branch("eleA_isoDep_inrVetoModEmH1",    &treeVar_eleA_isoDep_inrVetoModEmH1_, "eleA_isoDep_inrVetoModEmH1/D");
+			mainAnaTree_->Branch("eleB_isoDep_inrVetoModEmH1",    &treeVar_eleB_isoDep_inrVetoModEmH1_, "eleB_isoDep_inrVetoModEmH1/D");
+			mainAnaTree_->Branch("cut_eleA_isoDep_inrVetoModEmH1", &treeVar_cut_eleA_isoDep_inrVetoModEmH1_, "cut_eleA_isoDep_inrVetoModEmH1/O");
+			mainAnaTree_->Branch("cut_eleB_isoDep_inrVetoModEmH1", &treeVar_cut_eleB_isoDep_inrVetoModEmH1_, "cut_eleB_isoDep_inrVetoModEmH1/O");
 
-			effiCalcTree_->Branch("eleA_inrXSVetoModTrk", &treeVar_eleA_inrXSVetoModTrk_, "eleA_inrXSVetoModTrk/D");
-			effiCalcTree_->Branch("eleA_inrSVetoModTrk",  &treeVar_eleA_inrSVetoModTrk_,  "eleA_inrSVetoModTrk/D");
-			effiCalcTree_->Branch("eleA_inrMVetoModTrk",  &treeVar_eleA_inrMVetoModTrk_,  "eleA_inrMVetoModTrk/D");
-			effiCalcTree_->Branch("eleA_inrLVetoModTrk",  &treeVar_eleA_inrLVetoModTrk_,  "eleA_inrLVetoModTrk/D");
-			effiCalcTree_->Branch("eleA_inrXLVetoModTrk", &treeVar_eleA_inrXLVetoModTrk_, "eleA_inrXLVetoModTrk/D");
+			mainAnaTree_->Branch("eleA_inrXSVetoModTrk", &treeVar_eleA_inrXSVetoModTrk_, "eleA_inrXSVetoModTrk/D");
+			mainAnaTree_->Branch("eleA_inrSVetoModTrk",  &treeVar_eleA_inrSVetoModTrk_,  "eleA_inrSVetoModTrk/D");
+			mainAnaTree_->Branch("eleA_inrMVetoModTrk",  &treeVar_eleA_inrMVetoModTrk_,  "eleA_inrMVetoModTrk/D");
+			mainAnaTree_->Branch("eleA_inrLVetoModTrk",  &treeVar_eleA_inrLVetoModTrk_,  "eleA_inrLVetoModTrk/D");
+			mainAnaTree_->Branch("eleA_inrXLVetoModTrk", &treeVar_eleA_inrXLVetoModTrk_, "eleA_inrXLVetoModTrk/D");
 
-			effiCalcTree_->Branch("eleB_inrXSVetoModTrk", &treeVar_eleB_inrXSVetoModTrk_, "eleB_inrXSVetoModTrk/D");
-			effiCalcTree_->Branch("eleB_inrSVetoModTrk",  &treeVar_eleB_inrSVetoModTrk_,  "eleB_inrSVetoModTrk/D");
-			effiCalcTree_->Branch("eleB_inrMVetoModTrk",  &treeVar_eleB_inrMVetoModTrk_,  "eleB_inrMVetoModTrk/D");
-			effiCalcTree_->Branch("eleB_inrLVetoModTrk",  &treeVar_eleB_inrLVetoModTrk_,  "eleB_inrLVetoModTrk/D");
-			effiCalcTree_->Branch("eleB_inrXLVetoModTrk", &treeVar_eleB_inrXLVetoModTrk_, "eleB_inrXLVetoModTrk/D");
+			mainAnaTree_->Branch("eleB_inrXSVetoModTrk", &treeVar_eleB_inrXSVetoModTrk_, "eleB_inrXSVetoModTrk/D");
+			mainAnaTree_->Branch("eleB_inrSVetoModTrk",  &treeVar_eleB_inrSVetoModTrk_,  "eleB_inrSVetoModTrk/D");
+			mainAnaTree_->Branch("eleB_inrMVetoModTrk",  &treeVar_eleB_inrMVetoModTrk_,  "eleB_inrMVetoModTrk/D");
+			mainAnaTree_->Branch("eleB_inrLVetoModTrk",  &treeVar_eleB_inrLVetoModTrk_,  "eleB_inrLVetoModTrk/D");
+			mainAnaTree_->Branch("eleB_inrXLVetoModTrk", &treeVar_eleB_inrXLVetoModTrk_, "eleB_inrXLVetoModTrk/D");
 
-			effiCalcTree_->Branch("eleA_inrXSVetoModEmH1", &treeVar_eleA_inrXSVetoModEmH1_, "eleA_inrXSVetoModEmH1/D");
-			effiCalcTree_->Branch("eleA_inrSVetoModEmH1",  &treeVar_eleA_inrSVetoModEmH1_,  "eleA_inrSVetoModEmH1/D");
-			effiCalcTree_->Branch("eleA_inrMVetoModEmH1",  &treeVar_eleA_inrMVetoModEmH1_,  "eleA_inrMVetoModEmH1/D");
-			effiCalcTree_->Branch("eleA_inrLVetoModEmH1",  &treeVar_eleA_inrLVetoModEmH1_,  "eleA_inrLVetoModEmH1/D");
-			effiCalcTree_->Branch("eleA_inrXLVetoModEmH1", &treeVar_eleA_inrXLVetoModEmH1_, "eleA_inrXLVetoModEmH1/D");
+			mainAnaTree_->Branch("eleA_inrXSVetoModEmH1", &treeVar_eleA_inrXSVetoModEmH1_, "eleA_inrXSVetoModEmH1/D");
+			mainAnaTree_->Branch("eleA_inrSVetoModEmH1",  &treeVar_eleA_inrSVetoModEmH1_,  "eleA_inrSVetoModEmH1/D");
+			mainAnaTree_->Branch("eleA_inrMVetoModEmH1",  &treeVar_eleA_inrMVetoModEmH1_,  "eleA_inrMVetoModEmH1/D");
+			mainAnaTree_->Branch("eleA_inrLVetoModEmH1",  &treeVar_eleA_inrLVetoModEmH1_,  "eleA_inrLVetoModEmH1/D");
+			mainAnaTree_->Branch("eleA_inrXLVetoModEmH1", &treeVar_eleA_inrXLVetoModEmH1_, "eleA_inrXLVetoModEmH1/D");
 
-			effiCalcTree_->Branch("eleB_inrXSVetoModEmH1", &treeVar_eleB_inrXSVetoModEmH1_, "eleB_inrXSVetoModEmH1/D");
-			effiCalcTree_->Branch("eleB_inrSVetoModEmH1",  &treeVar_eleB_inrSVetoModEmH1_,  "eleB_inrSVetoModEmH1/D");
-			effiCalcTree_->Branch("eleB_inrMVetoModEmH1",  &treeVar_eleB_inrMVetoModEmH1_,  "eleB_inrMVetoModEmH1/D");
-			effiCalcTree_->Branch("eleB_inrLVetoModEmH1",  &treeVar_eleB_inrLVetoModEmH1_,  "eleB_inrLVetoModEmH1/D");
-			effiCalcTree_->Branch("eleB_inrXLVetoModEmH1", &treeVar_eleB_inrXLVetoModEmH1_, "eleB_inrXLVetoModEmH1/D");
+			mainAnaTree_->Branch("eleB_inrXSVetoModEmH1", &treeVar_eleB_inrXSVetoModEmH1_, "eleB_inrXSVetoModEmH1/D");
+			mainAnaTree_->Branch("eleB_inrSVetoModEmH1",  &treeVar_eleB_inrSVetoModEmH1_,  "eleB_inrSVetoModEmH1/D");
+			mainAnaTree_->Branch("eleB_inrMVetoModEmH1",  &treeVar_eleB_inrMVetoModEmH1_,  "eleB_inrMVetoModEmH1/D");
+			mainAnaTree_->Branch("eleB_inrLVetoModEmH1",  &treeVar_eleB_inrLVetoModEmH1_,  "eleB_inrLVetoModEmH1/D");
+			mainAnaTree_->Branch("eleB_inrXLVetoModEmH1", &treeVar_eleB_inrXLVetoModEmH1_, "eleB_inrXLVetoModEmH1/D");
 
-			effiCalcTree_->Branch("cut_eleA_inrMVetoModEmH1", &treeVar_cut_eleA_inrMVetoModEmH1_, "cut_eleA_inrMVetoModEmH1/O");
-			effiCalcTree_->Branch("cut_eleB_inrMVetoModEmH1", &treeVar_cut_eleB_inrMVetoModEmH1_, "cut_eleB_inrMVetoModEmH1/O");
+			mainAnaTree_->Branch("cut_eleA_inrMVetoModEmH1", &treeVar_cut_eleA_inrMVetoModEmH1_, "cut_eleA_inrMVetoModEmH1/O");
+			mainAnaTree_->Branch("cut_eleB_inrMVetoModEmH1", &treeVar_cut_eleB_inrMVetoModEmH1_, "cut_eleB_inrMVetoModEmH1/O");
 
-			effiCalcTree_->Branch("eleA_nGenHadronsDr04", &treeVar_eleA_nGenHadronsDr04_, "eleA_nGenHadronsDr04/i");
-			effiCalcTree_->Branch("eleB_nGenHadronsDr04", &treeVar_eleB_nGenHadronsDr04_, "eleB_nGenHadronsDr04/i");
-			effiCalcTree_->Branch("eleA_ptSumGenHadronsDr04", &treeVar_eleA_ptSumGenHadronsDr04_, "eleA_ptSumGenHadronsDr04/D");
-			effiCalcTree_->Branch("eleB_ptSumGenHadronsDr04", &treeVar_eleB_ptSumGenHadronsDr04_, "eleB_ptSumGenHadronsDr04/D");
+			mainAnaTree_->Branch("eleA_nGenHadronsDr04", &treeVar_eleA_nGenHadronsDr04_, "eleA_nGenHadronsDr04/i");
+			mainAnaTree_->Branch("eleB_nGenHadronsDr04", &treeVar_eleB_nGenHadronsDr04_, "eleB_nGenHadronsDr04/i");
+			mainAnaTree_->Branch("eleA_ptSumGenHadronsDr04", &treeVar_eleA_ptSumGenHadronsDr04_, "eleA_ptSumGenHadronsDr04/D");
+			mainAnaTree_->Branch("eleB_ptSumGenHadronsDr04", &treeVar_eleB_ptSumGenHadronsDr04_, "eleB_ptSumGenHadronsDr04/D");
 
-			effiCalcTree_->Branch("eleA_EmH1RhoCorrn", &treeVar_eleA_EmH1RhoCorrn_, "eleA_EmH1RhoCorrn_/D");
-			effiCalcTree_->Branch("eleB_EmH1RhoCorrn", &treeVar_eleB_EmH1RhoCorrn_, "eleB_EmH1RhoCorrn_/D");
+			mainAnaTree_->Branch("eleA_EmH1RhoCorrn", &treeVar_eleA_EmH1RhoCorrn_, "eleA_EmH1RhoCorrn_/D");
+			mainAnaTree_->Branch("eleB_EmH1RhoCorrn", &treeVar_eleB_EmH1RhoCorrn_, "eleB_EmH1RhoCorrn_/D");
 
-			effiCalcTree_->Branch("eleA_heepIdModIsoCutCode", &treeVar_eleA_heepIdModIsoCutCode_, "eleA_heepIdModIsoCutCode/I");
-			effiCalcTree_->Branch("eleB_heepIdModIsoCutCode", &treeVar_eleB_heepIdModIsoCutCode_, "eleB_heepIdModIsoCutCode/I");
+			mainAnaTree_->Branch("eleA_heepIdModIsoCutCode", &treeVar_eleA_heepIdModIsoCutCode_, "eleA_heepIdModIsoCutCode/I");
+			mainAnaTree_->Branch("eleB_heepIdModIsoCutCode", &treeVar_eleB_heepIdModIsoCutCode_, "eleB_heepIdModIsoCutCode/I");
 		}
-		~EffiCalcTree(){ delete effiCalcTree_; }
+		~EffiCalcTree(){ }
 
-		void FillTree(tsw::HEEPDiEle* diEle, const TLorentzVector& mcZboson_ele1, const TLorentzVector& mcZboson_ele2,
+		void fillTree(tsw::HEEPDiEle* diEle, const TLorentzVector& mcZboson_ele1, const TLorentzVector& mcZboson_ele2,
 				const unsigned int runNum, const unsigned int lumiNum, const unsigned int evtNum, const tsw::EventHelper& eventHelper)
 		{
 			treeVar_weight_  = eventHelper.totWeight();
@@ -686,10 +708,10 @@ namespace tsw{
 			treeVar_eleB_heepIdModIsoCutCode_ = diEle->eleB().heepIdModIsoCutCode_v40_v00(eventHelper);
 
 			// And finally fill the tree ...
-			effiCalcTree_->Fill();
+			mainAnaTree_->Fill();
 		}
 
-		void FillTree_NotReconstructed(const TLorentzVector& mcZboson_ele1, const TLorentzVector& mcZboson_ele2,
+		void fillTree_NotReconstructed(const TLorentzVector& mcZboson_ele1, const TLorentzVector& mcZboson_ele2,
 				const unsigned int runNum, const unsigned int lumiNum, const unsigned int evtNum, const tsw::EventHelper& eventHelper)
 		{
 			treeVar_weight_  = eventHelper.totWeight();
@@ -816,13 +838,7 @@ namespace tsw{
 			treeVar_eleB_heepIdModIsoCutCode_ = 0x01000-1;
 
 			// And finally fill the tree ...
-			effiCalcTree_->Fill();
-		}
-
-		void SaveToFile(TString outFileName){
-			TFile f_tree(outFileName,"RECREATE");
-			effiCalcTree_->Write();
-			f_tree.Close();
+			mainAnaTree_->Fill();
 		}
 	};
 
@@ -1348,20 +1364,31 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	SetupEMuMethodTrees();
 
 	// ----- SETTING UP TCHAIN AND ASSOCIATED BRANCH LINKS ----- //
-   
+	unsigned int inputTrees_numEvts = 0;
    std::vector<std::string>::const_iterator fileNameIt;
-   for( fileNameIt = inputFileNamesVec_.begin(); fileNameIt != inputFileNamesVec_.end(); fileNameIt++ )
+
+   TStopwatch nEntriesTimer; nEntriesTimer.Start();
+   for( fileNameIt = inputFileNamesVec_.begin(); fileNameIt != inputFileNamesVec_.end(); fileNameIt++ ){
       inputFilesTChain_->Add(fileNameIt->c_str());
+      TFile* theFile = TFile::Open(fileNameIt->c_str(), "READ");
+      if( TTree* treeThisFile = dynamic_cast<TTree*>(theFile->Get("demo/EventDataTree")) ){
+      	unsigned int nEvtsThisTree = treeThisFile->GetEntries();
+      	std::cout << nEvtsThisTree << ", ";
+      	inputTrees_numEvts += nEvtsThisTree;
+      }
+      else
+      	std::cerr << " ERROR : Could not get TTree from file '" << (*fileNameIt) << "'" << std::endl;
+      theFile->Close();
+   }
+   nEntriesTimer.Stop(); nEntriesTimer.Print();
 
-	SetupBranchLinks();
-
+   SetupBranchLinks();
 	inputFilesTChain_->SetCacheSize(10000000);
 	inputFilesTChain_->AddBranchToCache("*");
 
 	// Determine the number of events being run over ...
-	unsigned int inputTree_numEvts = inputFilesTChain_->GetEntries();
-	if( numEvtsRequested_<0 || (numEvtsRequested_>static_cast<int>(inputTree_numEvts)) )
-		numEvtsRunOver_ = inputTree_numEvts;
+	if( numEvtsRequested_<0 || (numEvtsRequested_>static_cast<int>(inputTrees_numEvts)) )
+		numEvtsRunOver_ = inputTrees_numEvts;
 	else
 		numEvtsRunOver_ = numEvtsRequested_;
 }
@@ -1800,9 +1827,14 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 //	frPreDiEleTree_.SaveToFile("/opt/ppd/newscratch/williams/Datafiles/abcdDiEleTrees/" + outputFile_name_ + "_abcdTree.root");
 
 	// Save the Z candidate di-ele tree ...
-	noIsoZCandDiEleTree_.SaveToFile(outputFileName_ + "_noIsoZCandTree.root");
-	modIsoZCandDiEleTree_.SaveToFile(outputFileName_ + "_modIsoZCandTree.root");
-	zCandEffiTree_.SaveToFile(outputFileName_ + "_zEffiTree.root");
+	noIsoZCandDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
+	noIsoZCandDiEleTree_.saveToFile(outputFileName_ + "_noIsoZCandTree.root");
+
+	modIsoZCandDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
+	modIsoZCandDiEleTree_.saveToFile(outputFileName_ + "_modIsoZCandTree.root");
+
+	zCandEffiTree_.setEventCounter( this->GetNumEvtsRunOver() );
+	zCandEffiTree_.saveToFile(outputFileName_ + "_zEffiTree.root");
 
 	// Output information to screen about diff ordering of cuts in QCD estimation
 	//numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_
@@ -2049,7 +2081,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 		if(normDiEle_EB_HEEPNoIso.isInZMassRange()){
 			normDiEle_EB_HEEPNoIso_MZ_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 
-			noIsoZCandDiEleTree_.FillTree(normDiEle_EB_HEEPNoIso, eventHelper_, trg_PathA_decision_);
+			noIsoZCandDiEleTree_.fillTree(normDiEle_EB_HEEPNoIso, eventHelper_, trg_PathA_decision_);
 			// Apply modified track isolation cut ...
 			if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
 				normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
@@ -2100,11 +2132,11 @@ void BstdZeeFirstAnalyser::FillHistograms()
 
 	if( tsw::HEEPDiEle* mcMatchedDiEle = getMcMatchedDiEle(mcZ_daughterA_p4_, mcZ_daughterB_p4_, normEles_) )
 	{
-		zCandEffiTree_.FillTree(mcMatchedDiEle, mcZ_daughterA_p4_, mcZ_daughterB_p4_, evt_runNum_, evt_lumiSec_, evt_evtNum_, eventHelper_);
+		zCandEffiTree_.fillTree(mcMatchedDiEle, mcZ_daughterA_p4_, mcZ_daughterB_p4_, evt_runNum_, evt_lumiSec_, evt_evtNum_, eventHelper_);
 		delete mcMatchedDiEle;
 	}
 	else
-		zCandEffiTree_.FillTree_NotReconstructed(mcZ_daughterA_p4_, mcZ_daughterB_p4_, evt_runNum_, evt_lumiSec_, evt_evtNum_, eventHelper_);
+		zCandEffiTree_.fillTree_NotReconstructed(mcZ_daughterA_p4_, mcZ_daughterB_p4_, evt_runNum_, evt_lumiSec_, evt_evtNum_, eventHelper_);
 
 	// ------------------------
 	// EB HEEPNoIso di-electrons...
@@ -2112,7 +2144,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 		tsw::HEEPDiEle heepIdModIsoEbDiEle( normEles_, normEles_EB_heepIdModIsoFlags);
 
 		if( heepIdModIsoEbDiEle.isInZMassRange() )
-			modIsoZCandDiEleTree_.FillTree(heepIdModIsoEbDiEle, eventHelper_, trg_PathA_decision_);
+			modIsoZCandDiEleTree_.fillTree(heepIdModIsoEbDiEle, eventHelper_, trg_PathA_decision_);
 
 	}
 
@@ -2938,7 +2970,8 @@ int main(int argc, char* argv[])
                   return 1;
                }            
                getline(theFile, lineContent);
-               std::cout << lineContent << std::endl; 
+               if(lineContent.find("#")!=0 && lineContent.length()>0)
+               	inputFilesVecFromCmdLine.push_back(lineContent);
             }
          }
          else{
