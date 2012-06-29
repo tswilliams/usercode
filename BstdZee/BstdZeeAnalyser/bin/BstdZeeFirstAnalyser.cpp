@@ -2931,7 +2931,7 @@ int main(int argc, char* argv[])
 	// Take action based on values
 	if(optionValueMap.count("help")){
 		std::cout << cmdLineOptions << std::endl ;//<< cmdLinePositionalOpts << std::endl;
-		return 1;
+		return 0;
 	}
    
    if(optionValueMap.count("mc")!=0)
@@ -3111,7 +3111,7 @@ int main(int argc, char* argv[])
 	}*/
 
 	
-	return 1;
+	return 0;
 }
 
 
