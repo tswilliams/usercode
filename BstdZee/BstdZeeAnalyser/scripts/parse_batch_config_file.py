@@ -32,6 +32,7 @@ for ithLine in configFile_lines:
    elif ithLine=="\n":
       continue
    ithLine = ithLine.rstrip("\n")
+   ithLine = ithLine.rstrip(" ")
    
    # Split line into different config params
    listOfCfgParams = re.split("\s*;\s*", ithLine)
