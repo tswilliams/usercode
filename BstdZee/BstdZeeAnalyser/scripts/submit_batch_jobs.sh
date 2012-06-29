@@ -26,7 +26,7 @@ echo "   ANR_OUTPUT_DIR  ="$ANR_OUTPUT_DIR
 echo "   ANR_CONFIG_FILE ="$ANR_CONFIG_FILE
 
 DATE_TIME_STRING=`date +%Y%m%d_%H%M%S`
-PARSED_CFG=batchJobs/parsed_cfg_$DATE_TIME_STRING.txt
+
 
 ######################################
 # 0. Copy my CMSSW libs & Analyser binary to /opt/newscratch in order to freeze them, and adapt LD_LIBRARY_PATH accordingly
