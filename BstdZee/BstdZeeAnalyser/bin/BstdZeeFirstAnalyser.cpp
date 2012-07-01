@@ -2873,8 +2873,8 @@ int main(int argc, char* argv[])
    double xSection = -1.0;
    double desiredIntLumi = -1.0;
    std::vector<std::string> inputFilesVecFromCmdLine;
-   unsigned int numFilesSkip;
-   int numFilesRunOver;
+   unsigned int numThisJob;
+   unsigned int totNumJobs;
 	std::string outputFile;
 	
 	// Declare the supported options
@@ -2887,8 +2887,8 @@ int main(int argc, char* argv[])
       ("scaleToLumi",     bProgOpts::value<double>(&desiredIntLumi)->default_value(-1.0), "integrated lumi for scaling events to (in inverse fb)" )
 		("input-file,i",    bProgOpts::value<std::vector<std::string> >(&inputFilesVecFromCmdLine), "names of input files (Either specify as normal / positional options.)")
       ("from-list,l",     "flags that specified 'input file' is a list of files.")
-      ("num-files-skip",  bProgOpts::value<unsigned int>(&numFilesSkip)->default_value(0), "number of input files to skip")
-      ("num-files-proc",  bProgOpts::value<int>(&numFilesRunOver)->default_value(-1), "number of input files that are run over")
+      ("num-this-job",    bProgOpts::value<unsigned int>(&numThisJob)->default_value(1), "Index of this job (valid range: 1 <= jobIndex <= totNumJobs)")
+      ("tot-num-jobs",    bProgOpts::value<unsigned int>(&totNumJobs)->default_value(1), "The total number of jobs being run over specified input files")
 		("output-file,o",   bProgOpts::value<std::string>(&outputFile), "name of output file")
 		;
    
@@ -2982,33 +2982,57 @@ int main(int argc, char* argv[])
       }// End:if-else: 1 or multiple files specified on cmd line
    }// End: if from-list option used
    
+   if(numThisJob==0 || numThisJob>totNumJobs){
+   	std::cerr << "  ERROR : The job no (" << numThisJob << ") specified by the user is not valid!" << std::endl
+   				 << "          It should be in the range 1 to tot-num-jobs (incl.)" << std::endl
+   				 << "          Program will now exit early" << std::endl;
+   	return 1;
+   }
    
+   if(totNumJobs==0){
+   	std::cerr << "  ERROR : The total number of jobs (0) specified by the user is not valid!" << std::endl
+   				 << "          It must be non-zero of course !! " << std::endl
+   				 << "          Program will now exit early" << std::endl;
+   	return 1;
+   }
+
+   // Now work which of the input files should be run over - given the job number ...
+   unsigned int numFilesFromCmdLine = inputFilesVecFromCmdLine.size();
+   unsigned int minNumFilesPerJob = numFilesFromCmdLine/totNumJobs;
+   unsigned int xtraNumFiles = (numFilesFromCmdLine % totNumJobs);
+
+   unsigned int startFileIdx = 0;
+   unsigned int numFilesThisJob = 0;
+
+   for(unsigned int iJob=1; iJob<=totNumJobs; iJob++){
+   	unsigned int numFilesInJobI = minNumFilesPerJob;
+   	if (xtraNumFiles!=0 && iJob<=xtraNumFiles)
+   		numFilesInJobI += 1;
+   	if(iJob==numThisJob){
+   		numFilesThisJob = numFilesInJobI; break; }
+  		startFileIdx += numFilesInJobI;
+   }
+
    std::vector<std::string> inputFilesVecToRunOver;
-   for(unsigned int idx=0; idx<inputFilesVecFromCmdLine.size(); idx++)
-      if(idx>=numFilesSkip && (numFilesRunOver<0 || idx<(numFilesSkip+numFilesRunOver)) )
-         inputFilesVecToRunOver.push_back( inputFilesVecFromCmdLine.at(idx) );
-   
+   for(unsigned int idx=startFileIdx; idx<(startFileIdx+numFilesThisJob) && idx<numFilesFromCmdLine; idx++)
+      inputFilesVecToRunOver.push_back( inputFilesVecFromCmdLine.at(idx) );
              
    // Finally repeat the parsed options back to the user ...
    std::cout << " The specified options are ..." << std::endl 
-             << "    + maxEvents      = " << maxEvents << std::endl
-             << "    + mc             = " << isMC << std::endl
-             << "    + xSection       = " << xSection << std::endl
-             << "    + scaleToLumi    = " << desiredIntLumi << std::endl
-             << "    + from-list      = " << (optionValueMap.count("from-list")!=0 ? "true" : "false") << std::endl
-             << "    + num-files-skip = " << numFilesSkip << std::endl 
-             << "    + num-files-proc = " << numFilesRunOver << std::endl
-             << "    + output-file    = " << outputFile << std::endl
-             << " ... the input files specified on command line are:" << std::endl;
-   for(std::vector<std::string>::const_iterator inFileIt = inputFilesVecFromCmdLine.begin();
-               inFileIt != inputFilesVecFromCmdLine.end(); inFileIt++)
-      std::cout << "        * " << (*inFileIt) << std::endl;
-   std::cout << " ... and the input files that I will run over are:" << std::endl;
-   for(std::vector<std::string>::const_iterator inFileIt = inputFilesVecToRunOver.begin();
-               inFileIt != inputFilesVecToRunOver.end(); inFileIt++)
-      std::cout << "        * " << (*inFileIt) << std::endl;
-   
-	// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- //	
+             << "    + maxEvents     = " << maxEvents << std::endl
+             << "    + mc            = " << isMC << std::endl
+             << "    + xSection      = " << xSection << std::endl
+             << "    + scaleToLumi   = " << desiredIntLumi << std::endl
+             << "    + from-list     = " << (optionValueMap.count("from-list")!=0 ? "true" : "false") << std::endl
+             << "    + num-this-job  = " << numThisJob << std::endl
+             << "    + tot-num-jobs  = " << totNumJobs << std::endl
+             << "    + output-file   = " << outputFile << std::endl
+             << "    + input files specified (incl. those for other jobs):" << std::endl;
+   for(unsigned int idx=0; idx<inputFilesVecFromCmdLine.size(); idx++)
+      std::cout << "         " << (idx+1) << ")  " << inputFilesVecFromCmdLine.at(idx) << std::endl;
+   std::cout << std::endl;
+
+   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- //
 	// PART XX: ACTUALLY RUN THE ANALYSER  //
 
 	BstdZeeFirstAnalyser theAnalyser(0, maxEvents, isMC, inputFilesVecToRunOver, outputFile, -1, 80, 55, 1100.0);
