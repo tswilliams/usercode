@@ -109,7 +109,7 @@ def WriteCrabOutputFileList(crabTaskDir):
 #      print "    +", fileName
 
    numOutFilesMissing = numJobs - len(nonDuplOutputFiles)
-   jobsWithoutOutputFiles = set(range(1,numJobs)) - set(jobsWithOutputFiles)
+   jobsWithoutOutputFiles = set(range(1,numJobs+1)) - set(jobsWithOutputFiles)
    jobsWithoutOutputFiles = list(jobsWithoutOutputFiles)
    jobsWithoutOutputFiles.sort()
    if numOutFilesMissing>0:
