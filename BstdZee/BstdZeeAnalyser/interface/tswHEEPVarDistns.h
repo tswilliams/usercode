@@ -218,12 +218,14 @@ namespace tsw{
 
 		// Set-up histograms so that errors are automatically calculated as the histos are filled
 		std::vector<TH1D*> ptrsToHists = GetPointersToHistos();
-		for(unsigned int iHist=0; iHist<ptrsToHists.size() ; iHist++)
+		for(unsigned int iHist=0; iHist<ptrsToHists.size() ; iHist++){
 			ptrsToHists.at(iHist)->Sumw2();
+			ptrsToHists.at(iHist)->SetDirectory(0);
+		}
 	}
 
 	HEEPVarDistns::~HEEPVarDistns(){
-		DeleteHistos();
+//		DeleteHistos();
 	}
 
 	void HEEPVarDistns::FillHistos(tsw::HEEPEle& ele, Double_t eleWeight){

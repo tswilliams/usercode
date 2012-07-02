@@ -65,8 +65,10 @@ namespace tsw{
 
 		// Set-up histograms so that errors are automatically calculated as the histos are filled
 		std::vector<TH1D*> ptrsToHists = GetPtrsToHistos();
-		for(unsigned int iHist=0; iHist<ptrsToHists.size() ; iHist++)
+		for(unsigned int iHist=0; iHist<ptrsToHists.size() ; iHist++){
 			ptrsToHists.at(iHist)->Sumw2();
+			ptrsToHists.at(iHist)->SetDirectory(0);
+		}
 	}
 
 	/////////////////////
