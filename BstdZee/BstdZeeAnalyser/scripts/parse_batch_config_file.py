@@ -71,8 +71,8 @@ for ithLine in configFile_lines:
       
    if numCfgParams>3:
       anrArgs_numJobs = int(listOfCfgParams[3])
-      if anrArgs_numJobs>1:
-         print " ERROR : parse_batch_config_file.py cannot cope with submitting multiple jobs per input set yet"
+      if anrArgs_numJobs<=0:
+         print " ERROR : Invalid 4th config param on current line (Total number of jobs '"+str(anrArgs_numJobs)+"' cannot be <=0)."
          print "         Line was '"+ithLine+"'"
          print "         Script exiting early !"
          sys.exit()
@@ -92,7 +92,6 @@ for ithLine in configFile_lines:
       anrArgsString = " "
    
    anrArgsString += " --from-list -i "+anrArgs_inputFileName
-   anrArgsString += " -o "+anrArgs_outputFileTag
    anrArgsString += " --maxEvents "+str(anrArgs_maxEvents)
    
    
@@ -100,8 +99,22 @@ for ithLine in configFile_lines:
    jobName = "BstdZAna_"+anrArgs_outputFileTag
    jobLogFile = baseOutputDir+"/"+anrArgs_outputFileTag+".log"
    
-   lineToPrint = jobName+" ; "+jobLogFile+" ; "+anrArgsString
-   print lineToPrint
+   for subSampleNo in range(1,anrArgs_numJobs+1):
+      ithJobName            = jobName
+      ithJobLogFile         = jobLogFile
+      ithAnrArgs_outFileTag = anrArgs_outputFileTag
+      ithAnrArgsString      = anrArgsString
+      
+      if anrArgs_numJobs != 1:
+         ithJobName += ("_"+str(subSampleNo))
+         ithJobLogFile = ithJobLogFile.replace(".log","_"+str(subSampleNo)+".log")
+         ithAnrArgs_outFileTag += ("_"+str(subSampleNo))
+         ithAnrArgsString += " -o "+ithAnrArgs_outFileTag+" --tot-num-jobs="+str(anrArgs_numJobs)+" --num-this-job="+str(subSampleNo)
+      else:
+         ithAnrArgsString += " -o "+ithAnrArgs_outFileTag
+         
+      lineToPrint = ithJobName+" ; "+ithJobLogFile+" ; "+ithAnrArgsString
+      print lineToPrint
    
    
       
