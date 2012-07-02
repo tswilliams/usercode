@@ -96,64 +96,54 @@ namespace tsw{
 	class TreeHandlerBase{
 	public:
 		// CTOR & DTOR
-		TreeHandlerBase(const std::string& mainTreeName, const std::string& mainTreeDescription);
+		TreeHandlerBase(const std::string& mainTreeName, const std::string& mainTreeDescription, const std::string& fileName);
 		virtual ~TreeHandlerBase();
 
 		// PUBLIC METHODS
 		void setEventCounter(unsigned int nEvtsTotal){
 			totNumEvtsAnalyzed_ = nEvtsTotal;  numEvtsPass_ = mainAnaTree_->GetEntries(); }
-		void saveToFile(const std::string& fileName);
-
-	protected:
-		// PROTECTED MEMBERS
-		TTree* mainAnaTree_;
+		void saveToFile();
 
 	private:
 		// PRIVATE MEMBERS
+		TFile* outputFile_;
 		TTree* eventCountTree_;
 
 		UInt_t numEvtsPass_;
 		UInt_t totNumEvtsAnalyzed_;
 
+	protected:
+		// PROTECTED MEMBERS
+		TTree* mainAnaTree_;
 	};
 
-	TreeHandlerBase::TreeHandlerBase(const std::string& mainTreeName, const std::string& mainTreeDescription) :
-		mainAnaTree_( new TTree(mainTreeName.c_str(), mainTreeDescription.c_str()) ),
+	TreeHandlerBase::TreeHandlerBase(const std::string& mainTreeName, const std::string& mainTreeDescription, const std::string& fileName) :
+		outputFile_( new TFile(fileName.c_str(), "RECREATE") ),
 		eventCountTree_( new TTree("eventCountTree", "Tree containing orig event counts per file.") ),
-		numEvtsPass_(0), totNumEvtsAnalyzed_(0)
+		numEvtsPass_(0), totNumEvtsAnalyzed_(0),
+		mainAnaTree_( new TTree(mainTreeName.c_str(), mainTreeDescription.c_str()) )
 	{
-		mainAnaTree_->SetDirectory(0);
-		eventCountTree_->SetDirectory(0);// This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
-		/* Error is as follows:
-		 * Error in <TTree::Fill>: Failed filling branch:myTree.mass, nbytes=-1, entry=3990
-		 *  This error is symptomatic of a Tree created as a memory-resident Tree
-		 *  Instead of doing:
-		 *     TTree *T = new TTree(...)
-		 *     TFile *f = new TFile(...)
-		 *  you should do:
-		 *     TFile *f = new TFile(...)
-		 *     TTree *T = new TTree(...)
-		 */
+		mainAnaTree_->SetDirectory( outputFile_ );
+		eventCountTree_->SetDirectory( outputFile_ );
 
 		eventCountTree_->Branch("nEvtsPass", &numEvtsPass_, "nEvtsPass/i");
 		eventCountTree_->Branch("nEvtsRunOver", &totNumEvtsAnalyzed_, "nEvtsRunOver/i");
 	}
 	TreeHandlerBase::~TreeHandlerBase()
 	{
-		delete mainAnaTree_;
-		delete eventCountTree_;
+		delete outputFile_; // TTrees themselves should not be deleted since they reside in the file (??)
 	}
 
-	void TreeHandlerBase::saveToFile(const std::string& fileName)
+	void TreeHandlerBase::saveToFile()
 	{
 		// Firstly fill eventCountTree_
 		eventCountTree_->Fill();
 
-		// Then, save TTrees to file ...
-		TFile theFile(fileName.c_str(),"RECREATE");
+		// Then, write TTrees to file ...
+		outputFile_->cd();
 		mainAnaTree_->Write();
 		eventCountTree_->Write();
-		theFile.Close();
+		outputFile_->Close();
 	}
 
 
@@ -186,8 +176,8 @@ namespace tsw{
 		Bool_t treeVar_eleB_passHEEPNoIso_;
 
 	public:
-		ABCDMethodTree() :
-			TreeHandlerBase("abcdTree","ABCD method di-ele data")
+		ABCDMethodTree(const std::string& fileName) :
+			TreeHandlerBase("abcdTree","ABCD method di-ele data", fileName)
 		{
 			// Setting up the event / di-ele branches ...
 			mainAnaTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
@@ -280,8 +270,8 @@ namespace tsw{
 		Int_t treeVar_eleB_modHeepCutCode_;
 
 	public:
-		DiEleTree(std::string treeName="zBosonTree") :
-			TreeHandlerBase(treeName, "Tree of Z candidates ("+treeName+")" )
+		DiEleTree(const std::string& treeName, const std::string& fileName) :
+			TreeHandlerBase(treeName, "Tree of Z candidates ("+treeName+")", fileName)
 		{
 			// Setting up the event / di-ele branches ...
 			mainAnaTree_->Branch("weight",     &treeVar_weight_,     "weight/D");
@@ -457,8 +447,8 @@ namespace tsw{
 		Int_t treeVar_eleB_heepIdModIsoCutCode_;
 
 	public:
-		EffiCalcTree() :
-			TreeHandlerBase("zBosonEffiTree", "Tree of Z candidate information for signal MC effi calc'ns")
+		EffiCalcTree(const std::string& fileName) :
+			TreeHandlerBase("zBosonEffiTree", "Tree of Z candidate information for signal MC effi calc'ns", fileName)
 		{
 			// Setting up the event / di-ele branches ...
 			mainAnaTree_->Branch("weight",      &treeVar_weight_, "weight/D");
@@ -1264,8 +1254,9 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	normMuons_tight_1stpT_Histos_(       "h_normMuons_tight_1stpT_", "normal", "tight cuts", 2, 1, 50, 1000.0, 50, 1000.0),
 	normMuons_barrel_tight_1stpT_Histos_("h_normMuons_barrel_tight_1stpT_", "normal", "barrel, tight cuts", 2, 1, 50, 1000.0, 50, 1000.0),
 	//
-	noIsoZCandDiEleTree_("noIsoZBosonTree"),
-	modIsoZCandDiEleTree_("modIsoZBosonTree"),
+	noIsoZCandDiEleTree_("noIsoZBosonTree", outputFileName_ + "_noIsoZCandTree.root"),
+	modIsoZCandDiEleTree_("modIsoZBosonTree", outputFileName_ + "_modIsoZCandTree.root"),
+	zCandEffiTree_(outputFileName_ + "_zEffiTree.root"),
 	//
 	normEles_reconValidationHistos_(    "h_normEles_",      "standard",  "",              1,  false),
 	normEles_simpleCuts_reconValHistos_("h_normEles_sCuts_", "standard", ", simple cuts", 1,  false), //was 2
@@ -1826,15 +1817,13 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 	// Save the ABCD QCD estimation tree ...
 //	frPreDiEleTree_.SaveToFile("/opt/ppd/newscratch/williams/Datafiles/abcdDiEleTrees/" + outputFile_name_ + "_abcdTree.root");
 
-	// Save the Z candidate di-ele tree ...
+	// Set the event counters for the tree handlers, and write trees to file ...
 	noIsoZCandDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
-	noIsoZCandDiEleTree_.saveToFile(outputFileName_ + "_noIsoZCandTree.root");
-
+	noIsoZCandDiEleTree_.saveToFile();
 	modIsoZCandDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
-	modIsoZCandDiEleTree_.saveToFile(outputFileName_ + "_modIsoZCandTree.root");
-
+	modIsoZCandDiEleTree_.saveToFile();
 	zCandEffiTree_.setEventCounter( this->GetNumEvtsRunOver() );
-	zCandEffiTree_.saveToFile(outputFileName_ + "_zEffiTree.root");
+	zCandEffiTree_.saveToFile();
 
 	// Output information to screen about diff ordering of cuts in QCD estimation
 	//numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_
