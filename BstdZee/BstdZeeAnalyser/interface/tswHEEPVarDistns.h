@@ -311,9 +311,9 @@ namespace tsw{
 		//hist_ele_e5x5_->Fill(ele_e5x5, evtWeight);
 	}
 
-	void HEEPVarDistns::WriteHistos(TFile* ptr_file){
-		TDirectory* tmpTDirPtr;
-		tmpTDirPtr = ptr_file->mkdir(hNamePrefix_);
+	void HEEPVarDistns::WriteHistos(TFile* ptr_file)
+	{
+		ptr_file->mkdir(hNamePrefix_);
 		ptr_file->cd(hNamePrefix_);
 
 		hist_ele_number_->Write();

@@ -2,8 +2,8 @@
 #define tswEventHelper_h
 
 // BstdZee includes
-#include "BstdZeeFirst/Analyser/interface/tswMuonCollection.h"
-#include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswMuonCollection.h"
+#include "TSWilliams/BstdZeeNTupler/interface/tswEvent.h"
 
 namespace tsw{
 	class EventHelper{

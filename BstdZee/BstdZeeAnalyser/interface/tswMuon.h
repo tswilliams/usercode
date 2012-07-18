@@ -1,8 +1,8 @@
 #ifndef tswMuon_h
 #define tswMuon_h
 
-#include "BstdZeeFirst/Analyser/interface/tswMuStruct.h"
-#include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
+#include "TSWilliams/BstdZeeNTupler/interface/tswMuStruct.h"
+#include "TSWilliams/BstdZeeNTupler/interface/tswUsefulFunctions.h"
 
 namespace tsw{
 	class Muon{

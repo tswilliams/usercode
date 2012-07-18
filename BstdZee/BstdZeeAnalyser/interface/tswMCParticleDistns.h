@@ -1,7 +1,7 @@
 #ifndef tswMCParticleDistns_h
 #define tswMCParticleDistns_h
 
-#include "BstdZeeFirst/Analyser/interface/tswMCParticle.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswMCParticle.h"
 
 namespace tsw{
 	class MCParticleDistns{
@@ -125,8 +125,7 @@ namespace tsw{
 	// Method to write out the histograms to file ...
 	void MCParticleDistns::WriteHistos(TFile* ptr_outFile){
 		//Create a directory within the output file to store these histos in ...
-		TDirectory* tmpTDirPtr;
-		tmpTDirPtr = ptr_outFile->mkdir(hNamePrefix_);
+		ptr_outFile->mkdir(hNamePrefix_);
 		ptr_outFile->cd(hNamePrefix_);
 
 		//Write out the di-ele histos ...

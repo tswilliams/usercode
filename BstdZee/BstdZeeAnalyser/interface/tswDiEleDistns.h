@@ -295,8 +295,7 @@ namespace tsw{
 	// Method to write out the histograms to file ...
 	void DiEleDistns::WriteHistos(TFile* ptr_outFile){
 		//Create a directory within the output file to store these histos in ...
-		TDirectory* tmpTDirPtr;
-		tmpTDirPtr = ptr_outFile->mkdir(hNamePrefix_);
+		ptr_outFile->mkdir(hNamePrefix_);
 		ptr_outFile->cd(hNamePrefix_);
 
 		//Write out the di-ele histos ...

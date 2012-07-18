@@ -4,7 +4,7 @@
 <use   name="boost_program_options"/>
 <use   name="root"/>
 <use   name="rootcore"/>
-<use   name="NTupler/BstdZeeNTupler"/>
+<use   name="TSWilliams/BstdZeeNTupler"/>
 
 <lib   name="GenVector"/>
 <bin   name="BstdZeeFirstAnalyser" file="*.cpp">

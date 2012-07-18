@@ -33,19 +33,19 @@
 
 
 // BstdZee includes
-#include "BstdZeeFirst/Analyser/interface/tswEventHelper.h"
-#include "BstdZeeFirst/Analyser/interface/tswHEEPEle.h"
-#include "BstdZeeFirst/Analyser/interface/tswReconValidationHistos.h"
-#include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
-#include "BstdZeeFirst/Analyser/interface/tswHEEPDiEle.h"
-#include "BstdZeeFirst/Analyser/interface/tswDiEleDistns.h"
-#include "BstdZeeFirst/Analyser/interface/tswDiEleDistnsByRgn.h"
-#include "BstdZeeFirst/Analyser/interface/tswMCParticle.h"
-#include "BstdZeeFirst/Analyser/interface/tswMCParticleDistns.h"
-#include "BstdZeeFirst/Analyser/interface/tswMuonDistns.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswEventHelper.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswHEEPEle.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswReconValidationHistos.h"
+#include "TSWilliams/BstdZeeNTupler/interface/tswUsefulFunctions.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswHEEPDiEle.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswDiEleDistns.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswDiEleDistnsByRgn.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswMCParticle.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswMCParticleDistns.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswMuonDistns.h"
 
-#include "BstdZeeFirst/Analyser/interface/tswEleMuObject.h"
-#include "BstdZeeFirst/Analyser/interface/tswEleMuDistns.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswEleMuObject.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswEleMuDistns.h"
 
 
 #ifdef __MAKECINT__
@@ -1530,7 +1530,7 @@ void BstdZeeFirstAnalyser::SetupEleClassVectors(){
 	for(unsigned int iEle = 0; iEle < normGsfEles_number_; iEle++){
 		if(vFlg_>0){std::cout << "   iEle=" << iEle << std::endl;}
 		SetDefaultValuesInEleStruct(ithEleStruct);
-		ithHEEPEle = tsw::HEEPEle::HEEPEle(ithEleStruct);
+		ithHEEPEle = tsw::HEEPEle(ithEleStruct);
 
 		//kinematic and geometric methods
 		ithEleStruct.et_         = normHEEPEles_et_->at(iEle);
@@ -1653,7 +1653,7 @@ void BstdZeeFirstAnalyser::SetupEleClassVectors(){
 
 		ithEleStruct.numMissInnerHits_ = normHEEPEles_numMissInnerHits_->at(iEle);
 
-		ithHEEPEle = tsw::HEEPEle::HEEPEle(ithEleStruct);
+		ithHEEPEle = tsw::HEEPEle(ithEleStruct);
 		normEles_.push_back(ithHEEPEle);
 	}
 
@@ -1901,8 +1901,6 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	normEles_EB_HEEPNoIso_1stpT_exists_ = false;
 
 	//Currently a placeholder ...
-	unsigned int idx_highestEtEle = 0;
-	float highestEleEt = -999.9;
 	std::vector<bool> normEles_sCutsFlags;           normEles_sCutsFlags.clear();
 	std::vector<bool> normEles_HEEPCutsFlags;        normEles_HEEPCutsFlags.clear();
 	std::vector<bool> normEles_HEEPCutsNoIsoFlags;   normEles_HEEPCutsNoIsoFlags.clear();
@@ -1957,9 +1955,6 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	}
 	normEles_HEEPCuts_reconValHistos_.FillHistos(normEles_, normEles_HEEPCutsFlags, evtWeight);
 
-	idx_highestEtEle = 0;
-	highestEleEt = -999.9;
-
 	//	if(readInBstdEles_){
 	//		bstdEles_reconValidationHistos_.FillNumberElesHist(bstdGsfEles_number_ , evtWeight);
 	//		for(unsigned int iEle=0; iEle<bstdGsfEles_number_; iEle++){
@@ -2003,7 +1998,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	// ------------------------------
 	// HEEP (ALL cuts) di-electrons ...
 	if(tsw::NumPassingCuts(normEles_HEEPCutsFlags)>1){
-		normDiEle_AllHEEP = tsw::HEEPDiEle::HEEPDiEle( normEles_, normEles_HEEPCutsFlags );
+		normDiEle_AllHEEP = tsw::HEEPDiEle( normEles_, normEles_HEEPCutsFlags );
 		normDiEle_AllHEEP_Histos_.FillHistos(normDiEle_AllHEEP, evtWeight);
 		if( normDiEle_AllHEEP.eleA().isEB() && normDiEle_AllHEEP.eleB().isEB() )
 			normDiEle_AllHEEP_EBEB_Histos_.FillHistos(normDiEle_AllHEEP, evtWeight);
@@ -2024,7 +2019,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	// HEEPNoIso di-electrons ...
 	if(tsw::NumPassingCuts(normEles_HEEPCutsNoIsoFlags)>1){
 		// Set some of the emu method diele tree branch variablles here ...
-		normDiEle_HEEPNoIso = tsw::HEEPDiEle::HEEPDiEle( normEles_, normEles_HEEPCutsNoIsoFlags );
+		normDiEle_HEEPNoIso = tsw::HEEPDiEle( normEles_, normEles_HEEPCutsNoIsoFlags );
 
 		normDiEle_HEEPNoIso_Histos_.FillHistos(normDiEle_HEEPNoIso, evtWeight);
 		if(trg_PathA_decision_)
@@ -2049,7 +2044,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	// ------------------------
 	// EB HEEPNoIso di-electrons...
 	if(tsw::NumPassingCuts(normEles_EB_HEEPCutsNoIsoFlags)>1){
-		normDiEle_EB_HEEPNoIso = tsw::HEEPDiEle::HEEPDiEle( normEles_, normEles_EB_HEEPCutsNoIsoFlags);
+		normDiEle_EB_HEEPNoIso = tsw::HEEPDiEle( normEles_, normEles_EB_HEEPCutsNoIsoFlags);
 		//		//-----------------------------------------------
 		//		// Code for testing ApplyDiEleTrkIsolCut method ...
 		//		std::cout << std::endl << "   ****------------------------------------------------------------------****" << std::endl;
@@ -2143,7 +2138,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	// EB fid, ECAL-driven, fake rate (FR) pre-selection di-electrons
 	if( tsw::NumPassingCuts(normEles_EB_isFidEcalDrAndFRPreFlags)>1 ){
 		// Form the di-electron
-		normDiEle_EB_fidECALDrFRPre = tsw::HEEPDiEle::HEEPDiEle( normEles_, normEles_EB_isFidEcalDrAndFRPreFlags);
+		normDiEle_EB_fidECALDrFRPre = tsw::HEEPDiEle( normEles_, normEles_EB_isFidEcalDrAndFRPreFlags);
 		// Require signal trigger to have fired
 		if(trg_PathA_decision_){
 			std::string trigPathA_name = *trg_PathA_name_ptr_;

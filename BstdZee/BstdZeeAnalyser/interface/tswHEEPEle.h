@@ -10,8 +10,8 @@
 #include "Math/Vector4Dfwd.h"
 
 // BstdZee includes
-#include "BstdZeeFirst/Analyser/interface/tswEleStruct.h"
-#include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswEleStruct.h"
+#include "TSWilliams/BstdZeeNTupler/interface/tswUsefulFunctions.h"
 
 
 namespace tsw{
