@@ -1,6 +1,6 @@
 #include <vector>
 #include "boost/cstdint.hpp"
-#include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
+#include "TSWilliams/BstdZeeNTupler/interface/tswEvent.h"
 
 #ifdef __CINT__
 

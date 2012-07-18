@@ -9,7 +9,7 @@
 #include "TObject.h"
 
 // BstdZee includes
-#include "BstdZeeFirst/Analyser/interface/tswMuStruct.h"
+#include "TSWilliams/BstdZeeNTupler/interface/tswMuStruct.h"
 
 namespace tsw{
 	class Event : public TObject {

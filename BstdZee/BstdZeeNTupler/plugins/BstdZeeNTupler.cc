@@ -3,7 +3,7 @@
 // Package:    BstdZeeNTupler
 // Class:      BstdZeeNTupler
 // 
-/**\class BstdZeeNTupler BstdZeeNTupler.cc NTupler/BstdZeeNTupler/src/BstdZeeNTupler.cc
+/**\class BstdZeeNTupler BstdZeeNTupler.cc TSWilliams/BstdZeeNTupler/src/BstdZeeNTupler.cc
 
  Description: [one line class summary]
 sjlkd
@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.13 2012/05/15 14:07:27 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.14 2012/05/16 10:47:55 tsw Exp $
 //
 //
 
@@ -93,8 +93,8 @@ sjlkd
 #include "TSystem.h"
 #include "TClassTable.h"
 
-#include "NTupler/BstdZeeNTupler/interface/tswEvent.h"
-#include "BstdZeeFirst/Analyser/interface/tswUsefulFunctions.h"
+#include "TSWilliams/BstdZeeNTupler/interface/tswEvent.h"
+#include "TSWilliams/BstdZeeNTupler/interface/tswUsefulFunctions.h"
 
 //Functions...
 Double_t CalcOpeningAngle(const ROOT::Math::XYZTVector& , const ROOT::Math::XYZTVector& );

@@ -4,5 +4,5 @@
 <export>
    <use name="root"/>
    <use name="boost"/>
-   <lib name="NTuplerBstdZeeNTupler"/>
+   <lib name="TSWilliamsBstdZeeNTupler"/>
 </export>
