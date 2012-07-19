@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 #####################################
 # Input flags
-input_isMC = True
+input_isMC = False
 input_is2010SignalMC = False
 input_dyJetsToLLFilter =0 #==0 =>Don't select events, ==11 =>ele, ==13 =>muon, ==15 =>tau
 
@@ -299,34 +299,23 @@ process.demo = cms.EDAnalyzer('BstdZeeNTupler',
                               dyJetsToLL_EventType = cms.untracked.int32(input_dyJetsToLLFilter), #==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
                               isMC = cms.untracked.bool(input_isMC),
                               printOutInfo = cms.untracked.bool(False), 
-                              readInNormReco = cms.untracked.bool(True), readInBstdReco = cms.untracked.bool(False), readInTrigInfo = cms.untracked.bool(False),
+                              readInNormReco = cms.untracked.bool(True), readInBstdReco = cms.untracked.bool(False), readInTrigInfo = cms.untracked.bool(True),
                               eleCollection = cms.untracked.InputTag("gsfElectrons"),
                               useReducedRecHitsCollns = cms.untracked.bool(True) ,
                               is2010SignalDataset = cms.untracked.bool(input_is2010SignalMC),
                               vertexSrc = cms.untracked.InputTag("offlinePrimaryVertices"),
-                              hltPathA_possNames = cms.untracked.vstring("HLT_DoubleEle33_CaloIdT_v2",
-                                                                         "HLT_DoubleEle33_CaloIdT_v3",
-                                                                         "HLT_DoubleEle33_CaloIdL_v1",
-                                                                         "HLT_DoubleEle33_CaloIdL_v2",
-                                                                         "HLT_DoubleEle33_CaloIdL_v3",
-                                                                         "HLT_DoubleEle33_CaloIdL_v4",
-                                                                         "HLT_DoubleEle33_CaloIdL_v5",# - run 177878 (3e33, v4.0) # (5e33, v1.4)
-                                                                         "HLT_DoublePhoton33_v1",
-                                                                         "HLT_DoublePhoton33_v2",
-                                                                         "HLT_DoublePhoton33_v3"),
-                              trg_emuPath_possNames = cms.untracked.vstring("HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_v4",
-                                                                            "HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_v7",
-                                                                            "HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_v8",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v1",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v2",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v3",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v4",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v5",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v6",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v7",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v8",
-                                                                            "HLT_Mu15_Photon20_CaloIdL_v9")
-      ) 
+                              hltPathA_possNames = cms.untracked.vstring("HLT_DoubleEle33_CaloIdL_GsfTrkIdVL_v\\\\d+",     # 2012 trigger
+                                                                         "HLT_DoubleEle33_CaloIdT_v[2-3]",
+                                                                         "HLT_DoubleEle33_CaloIdL_v[1-5]",
+                                                                         "HLT_DoublePhoton33_v[1-3]"),
+                              trg_emuPath_possNames = cms.untracked.vstring("HLT_Mu22_Photon22_CaloIdL_v\\\\d+",     # 2012 trigger
+                                                                            "HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_v[478]",
+                                                                            "HLT_Mu15_Photon20_CaloIdL_v[1-9]"),
+                              puDists_mcFile       = cms.untracked.string("Summer12PileUp_true_20120719.root"),
+                              puDists_dataFile     = cms.untracked.string("data12PileUp_true_20120719_r190456-197044.root"),
+                              puDists_mcHistName   = cms.untracked.string("Summer12PileUpHist_true"),
+                              puDists_dataHistName = cms.untracked.string("pileup")
+     ) 
 
 
 ##################################################################################

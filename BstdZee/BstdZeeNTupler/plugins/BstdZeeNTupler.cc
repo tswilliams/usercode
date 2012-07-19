@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.16 2012/07/19 10:25:10 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.17 2012/07/19 13:21:11 tsw Exp $
 //
 //
 
@@ -186,7 +186,8 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		double histoEtMax;
 		int    histoEtNBins;
 
-		edm::LumiReWeighting LumiWeights_;
+		edm::LumiReWeighting lumiWeights_;
+		const bool calcPileUpWeights_;
 		reco::Vertex recoVtx_highestSumPtVtx_;
 
 		//Variables whose values will be stored as branches...
@@ -507,8 +508,8 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 	histoEtMin(0.0),
 	histoEtMax(80.0),
 	histoEtNBins(40),
-	LumiWeights_("Fall2011_finebin.root", "Data_full2011_Pileup-finebin_2011-01-30.root",
-			"F2011exp", "pileup"),
+	calcPileUpWeights_(  (iConfig.exists("puDists_mcFile") && iConfig.exists("puDists_dataFile")) &&
+								(iConfig.exists("puDists_mcHistName") && iConfig.exists("puDists_dataHistName"))  ),
 	hltResultsTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltResultsTag",edm::InputTag("TriggerResults","","HLT"))),
 	hltEventTag_(iConfig.getUntrackedParameter<edm::InputTag>("hltEventTag",edm::InputTag("hltTriggerSummaryAOD","","HLT"))),
   	hltPathA_("*** DEFAULT TRIGGER NAME ***"),
@@ -522,6 +523,20 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 
 {
    //now do what ever initialization is needed
+	std::cout << " * PU re-weighting ... "  << std::endl;
+	if(calcPileUpWeights_){
+		std::cout << "         -> Instantiating edm::LumiReweigting with specified file/hist names ..." << std::endl
+					 << "            ( Seg fault will occur if file/hist names are incorrect! )" << std::endl;
+		lumiWeights_ = edm::LumiReWeighting( iConfig.getUntrackedParameter<std::string>("puDists_mcFile"),
+							iConfig.getUntrackedParameter<std::string>("puDists_dataFile"),
+							iConfig.getUntrackedParameter<std::string>("puDists_mcHistName"),
+							iConfig.getUntrackedParameter<std::string>("puDists_dataHistName") );
+		std::cout << "         -> DONE !" << std::endl;
+	}
+	else
+		std::cout << "   *** WARNING : PU weights will not be calculated (relevant PU dist'n file & hist names not specified in config) !" << std::endl;
+
+
 	double histoEtBinWidth = (histoEtMax-histoEtMin)/static_cast<double>(histoEtNBins);
 	
 	eleHighestEt_EtHist    = fHistos->make<TH1D>("eleHighestEt_EtHist",   "p_{T} distribution of highest p_{T} electron; Electron p_{T} /GeVc^{-1}; Number per 2GeVc^{-1}",    histoEtNBins, histoEtMin, histoEtMax);
@@ -932,38 +947,12 @@ BstdZeeNTupler::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
 		hltConfig_.init(run, iSetup, hltResultsTag_.process(), changed); //The value of changed now indicates whether the HLT configuration has changed with respect to the previous run or not.
 		//printDatasetsAndTriggerNames();
 
-		// Run through all of the possible trigger names for the signal trigger (i.e. hltPathA) ...
-		std::cout << " * Looking through the supplied trigger names:" << std::endl;
-		for(unsigned int nameVecIdx = 0; nameVecIdx<hltPathA_possNames_.size(); nameVecIdx++){
-			std::string ithName = hltPathA_possNames_.at(nameVecIdx);
-			std::cout << " *   " << nameVecIdx << ": " << ithName << std::endl;;
-			hltPathIndex_ = hltConfig_.triggerIndex(ithName);
-			if(hltPathIndex_ < hltConfig_.size()){
-				hltPathA_ = ithName;
-				std::cout << " *     ->Have found this name in menu! Exiting for loop now ..." << std::endl;
-				break;
-			}
-			else
-				std::cout << " *     ->This name isn't in menu! Trying next one now ..." << std::endl;
-		}
-		std::cout << "******-----------**********" << std::endl;
-		std::cout << "The trigger " << hltPathA_ << " corresponds to index " << hltPathIndex_ << std::endl;
-		std::cout << "( There are " << hltConfig_.size() << " triggers in the menu. )" << std::endl;
-		if(hltPathIndex_>=hltConfig_.size()){
-			std::cout << std::endl << "  *** ERROR: Signal trigger (i.e. hltPathA) index >= Number of triggers in menu" << std::endl;
-			// Throw an exception ...
-			cms::Exception ex("readingTrigerInfo");
-			ex << " [In BstdZeeNTupler::beginRun ...]" << std::endl;
-			ex << "      None of the supplied possible names for hltPathA were found in the trigger menu "<< std::endl;
-			ex << "      (See FILE: '" << __FILE__ << "'; LINE NO. " << __LINE__ << ")" << std::endl;
-			throw ex;
-			// Just in case exception throw doesn't work. ... Force runtime error ...
-			std::vector<int> tmpVector; tmpVector.clear();
-			int tmpInt = tmpVector.at(1);
-		}
-		std::cout << "******-----------**********" << std::endl;
+		// Retrieve the di-ele signal trigger name and index ...
+		std::pair<std::string, unsigned int> diEleSigTrig_nameIdxPair = beginRun_getTriggerNameAndIdx(hltPathA_possNames_, "di-ele trigger");
+		hltPathA_     = diEleSigTrig_nameIdxPair.first;
+		hltPathIndex_ = diEleSigTrig_nameIdxPair.second;
 
-		// Now, retrieve the e-mu trigger name and index ...
+		// Retrieve the e-mu trigger name and index ...
 		std::pair<std::string, unsigned int> eMuTrigger_nameIdxPair = beginRun_getTriggerNameAndIdx(trg_emuPath_possNames_, "e-mu trigger");
 		trg_emuPath_name_ = eMuTrigger_nameIdxPair.first;
 		trg_emuPath_idx_ = eMuTrigger_nameIdxPair.second;
@@ -972,50 +961,37 @@ BstdZeeNTupler::beginRun(const edm::Run& run, const edm::EventSetup& iSetup){
 }
 
 
-std::pair<std::string, unsigned int> BstdZeeNTupler::beginRun_getTriggerNameAndIdx(const std::vector<std::string>& vecOfPossNames, std::string triggerId_debug)
+std::pair<std::string, unsigned int> BstdZeeNTupler::beginRun_getTriggerNameAndIdx(const std::vector<std::string>& vecOfRegexs, std::string triggerId_debug)
 { // N.B: Must be called AFTER hltConfig_.init() ....
 	unsigned int pathIdx = 999999;
 	std::string pathName = " *** DEFAULT TRIGGER NAME *** ";
-	// TODO ---- Adapt this so that it return index for arg vecOfPossNames, rather than for trigger from hltPathA_possNames_
 
 	// Run through all of the possible trigger names for this trigger ...
 	std::cout << std::endl << " *****************************************************" << std::endl;
-	std::cout << " * Looking through the supplied trigger names:" << std::endl;
-	for(unsigned int nameVecIdx = 0; nameVecIdx<vecOfPossNames.size(); nameVecIdx++){
-		std::string ithName = vecOfPossNames.at(nameVecIdx);
-		std::cout << " *   " << nameVecIdx << ": " << ithName << std::endl;;
-		pathIdx = hltConfig_.triggerIndex(ithName);
-		if(pathIdx < hltConfig_.size()){
-			pathName = ithName;
-			std::cout << " *     ->Have found this name in menu! Exiting for loop now ..." << std::endl;
-			break;
-		}
-		else
-			std::cout << " *     ->This name isn't in menu! Trying next one now ..." << std::endl;
+	std::cout << " * Looking through the supplied trigger regexs ...   [Trig table name: '" << hltConfig_.tableName() << "' ]" << std::endl;
+	for(std::vector<std::string>::const_iterator regexStringIt = vecOfRegexs.begin(); regexStringIt != vecOfRegexs.end(); regexStringIt++){
+		std::cout << "     * " << *regexStringIt << std::endl;;
+		std::vector<std::string> matchingTriggerNames = HLTConfigProvider::matched( hltConfig_.triggerNames() , *regexStringIt);
+
+		if(matchingTriggerNames.size()>0){
+			pathName = matchingTriggerNames.at(0);
+			pathIdx = hltConfig_.triggerIndex( pathName );
+			if(pathIdx < hltConfig_.size()){
+				std::cout << "       ->Have found matching trigger name (\"" << pathName << "\", idx=" << pathIdx << ") in menu! Exiting for loop now ..." << std::endl;
+				std::cout << "         ( There are " << hltConfig_.size() << " triggers in the menu. )" << std::endl << std::endl;
+				return std::pair<std::string, unsigned int>(pathName,pathIdx);
+			}
+			else
+				std::cout << "       ->This name isn't in menu! Trying next one now ..." << std::endl;
+		} // End-if : match found in menu
 	}
 
-	// Output to screen the results of this operation
-	std::cout << "******-----------**********" << std::endl;
-	std::cout << "The trigger " << pathName << " corresponds to index " << pathIdx << std::endl;
-	std::cout << "( There are " << hltConfig_.size() << " triggers in the menu. )" << std::endl;
-
-	// If none fo the trigger names provided could be found in the menu ...
-	if(pathIdx>=hltConfig_.size()){
-		std::cout << std::endl << "  *** ERROR: Trigger index >= Number of triggers in menu" << std::endl;
-		//Throw an exception ...
-		cms::Exception ex("readingTrigerInfo");
-		ex << " [In BstdZeeNTupler::beginRun_getTriggerNameAndIdx ...]" << std::endl;
-		ex << "      None of the supplied possible names for trigger '" << triggerId_debug << "' were found in the trigger menu "<< std::endl;
-		ex << "      (See FILE: '" << __FILE__ << "'; LINE NO. " << __LINE__ << ")" << std::endl;
-		throw ex;
-		// Just in case exception throw doesn't work. ... Force runtime error ...
-		std::vector<int> tmpVector; tmpVector.clear();
-		int tmpInt = tmpVector.at(1);
-	}
-	std::cout << "******-----------**********" << std::endl;
-
-	return std::pair<std::string, unsigned int>(pathName,pathIdx);
-
+	// If get here then none trigger names provided could be found in the menu then throw an exception ...
+	cms::Exception ex("readingTrigerInfo");
+	ex << " [In BstdZeeNTupler::beginRun_getTriggerNameAndIdx ...]" << std::endl;
+	ex << "      None of the supplied possible names for trigger '" << triggerId_debug << "' were found in the trigger menu "<< std::endl;
+	ex << "      (See FILE: '" << __FILE__ << "'; LINE NO. " << __LINE__ << ")" << std::endl;
+	throw ex;
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -1077,6 +1053,9 @@ void BstdZeeNTupler::endJob()
 
 	fHistos->cd();
 	EventDataTree->Write();
+
+	if(!calcPileUpWeights_)
+		std::cout << std::endl << "   *** WARNING : PU weights have *NOT* been calculated (relevant PU dist'n file & hist names not specified in config) !" << std::endl;
 
 	std::cout << std::endl;
 	std::cout << " ***************************************" << std::endl;
@@ -1795,9 +1774,11 @@ void BstdZeeNTupler::ReadInVtxAndPUInfo(bool beVerbose, const edm::Event& edmEve
 				float trueNumPUVertices = PVI->getTrueNumInteractions();
 				unsigned int numPUVertices = PVI->getPU_NumInteractions();
 				std::vector<float> puVertices_zPosns = PVI->getPU_zpositions();
-				double MyWeight = LumiWeights_.weight( trueNumPUVertices );
+				double myWeight = 1.0;
+				if(calcPileUpWeights_)
+					lumiWeights_.weight( trueNumPUVertices );
 
-				event_->SetMCPUInfo(trueNumPUVertices, numPUVertices, puVertices_zPosns, MyWeight);
+				event_->SetMCPUInfo(trueNumPUVertices, numPUVertices, puVertices_zPosns, myWeight);
 			}
 		}
 	}
