@@ -13,7 +13,7 @@
 //
 // Original Author:  Thomas Williams
 //         Created:  Mon Mar  5 18:12:27 GMT 2012
-// $Id$
+// $Id: BstdZeeModIsolProducer.cc,v 1.2 2012/05/04 09:51:54 tsw Exp $
 //
 //
 
@@ -29,6 +29,8 @@
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+
+#include "CommonTools/Utils/interface/StringToEnumValue.h"
 
 #include "DataFormats/Common/interface/ValueMap.h"
 
@@ -79,12 +81,14 @@ BstdZeeModIsolProducer::BstdZeeModIsolProducer(const edm::ParameterSet& iConfig)
 	ecal_vetoClustered_(iConfig.getParameter<bool>("vetoClustered")),
 	ecal_useNumCrystals_(iConfig.getParameter<bool>("useNumCrystals")),
 	ecal_severityLevelCut_(iConfig.getParameter<int>("severityLevelCut")),
-   recHitFlagsToBeExcluded_(iConfig.getParameter< std::vector<int> >("recHitFlagsToBeExcluded")),
+//   recHitFlagsToBeExcluded_(iConfig.getParameter< std::vector<int> >("recHitFlagsToBeExcluded")),
 	// HCAL depth 1 isolation
 	hcalTowersTag_(iConfig.getParameter<edm::InputTag>("hcalTowers")),
 	hcal_intRadius_(iConfig.getParameter<double>("intRadiusHcal")),
 	hcal_etMin_(iConfig.getParameter<double>("etMinHcal"))
 {
+   const std::vector<std::string> recHitFlagNames = iConfig.getParameter< std::vector<std::string> >("recHitFlagsToBeExcluded");
+   recHitFlagsToBeExcluded_ = StringToEnumValue<EcalRecHit::Flags>(recHitFlagNames);
    std::sort( recHitFlagsToBeExcluded_.begin(), recHitFlagsToBeExcluded_.end() );
    // Now, register the products
 	produces< std::vector<reco::Track> >("tracksInIsolSum");
