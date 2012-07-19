@@ -14,5 +14,5 @@
 
 <flags EDM_PLUGIN="1"/>
 
-<library name="TSWilliamsBstdZeeTools_plugins" file="BstdZeeModIsolProducer.cc">
+<library name="TSWilliamsBstdZeeTools_plugins" file="*.cc">
 </library>
