@@ -288,6 +288,10 @@ process.load("RecoJets.JetProducers.kt4PFJets_cfi")
 process.kt6PFJets = process.kt4PFJets.clone( rParam = 0.6, doRhoFastjet = True )
 process.kt6PFJets.Rho_EtaMax = cms.double(2.5) 
 
+####################################################################################################
+## For creating adapted GSF electron collection - just using SC energies - due to bad extrapolation of SC energy corrections to high energy in 5XY releases 
+# Load the HEEP energy corrector that creates new collection
+process.load("SHarper.HEEPAnalyzer.gsfElectronsHEEPCorr_cfi")
 
 ####################################################################################################
 ## Calling the NTupler , and defining sequence for running modules ...
@@ -296,6 +300,7 @@ process.demo = cms.EDAnalyzer('BstdZeeNTupler',
                               isMC = cms.untracked.bool(input_isMC),
                               printOutInfo = cms.untracked.bool(False), 
                               readInNormReco = cms.untracked.bool(True), readInBstdReco = cms.untracked.bool(False), readInTrigInfo = cms.untracked.bool(False),
+                              eleCollection = cms.untracked.InputTag("gsfElectrons"),
                               useReducedRecHitsCollns = cms.untracked.bool(True) ,
                               is2010SignalDataset = cms.untracked.bool(input_is2010SignalMC),
                               vertexSrc = cms.untracked.InputTag("offlinePrimaryVertices"),
@@ -345,7 +350,11 @@ process.demo = cms.EDAnalyzer('BstdZeeNTupler',
 
 ##################################################################################
 # Construct the whole path ...
-process.p = cms.Path( process.heepIdNoIso * process.heepIdNoIsoEles * process.innerVetoModEleIsos * process.recalcIsoVarsWithIsoDeps * process.kt6PFJets * process.demo )
+process.p = cms.Path( process.gsfElectronsHEEPCorr * process.heepIdNoIso * process.heepIdNoIsoEles * process.innerVetoModEleIsos * process.recalcIsoVarsWithIsoDeps * process.kt6PFJets * process.demo )
+
+# Swap over all producers etc to using the new gsfElectron collection
+from SHarper.HEEPAnalyzer.heepTools import *
+swapCollection(process, "gsfElectrons", "gsfElectronsHEEPCorr")
 
 ## For checking transient event content ....
 #process.Out = cms.OutputModule("PoolOutputModule", fileName = cms.untracked.string (options.outputFile+"_AODPlus.root") )

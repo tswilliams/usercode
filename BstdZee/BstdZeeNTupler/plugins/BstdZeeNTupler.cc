@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.15 2012/07/18 15:54:04 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.16 2012/07/19 10:25:10 tsw Exp $
 //
 //
 
@@ -179,7 +179,8 @@ class BstdZeeNTupler : public edm::EDAnalyzer {
 		const bool readInTrigInfo_;
 		const bool is2010SignalDataset_;
 		const bool useReducedRecHitsCollns_;
-		edm::InputTag vertexSrc_;
+		const edm::InputTag normEleInputTag_;
+		const edm::InputTag vertexSrc_;
 
 		double histoEtMin;
 		double histoEtMax;
@@ -501,6 +502,7 @@ BstdZeeNTupler::BstdZeeNTupler(const edm::ParameterSet& iConfig):
 	readInTrigInfo_(iConfig.getUntrackedParameter<bool>("readInTrigInfo",0)),
 	is2010SignalDataset_(iConfig.getUntrackedParameter<bool>("is2010SignalDataset",0)),
 	useReducedRecHitsCollns_(iConfig.getUntrackedParameter<bool>("useReducedRecHitsCollns",0)),
+	normEleInputTag_(iConfig.getUntrackedParameter<edm::InputTag>("eleCollection") ),
 	vertexSrc_(iConfig.getUntrackedParameter<edm::InputTag>("vertexSrc")),
 	histoEtMin(0.0),
 	histoEtMax(80.0),
@@ -600,7 +602,7 @@ BstdZeeNTupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	
 	//Getting the handle for the standard and special reco'n GSF electron data...
 	if(readInNormReco_)
-		iEvent.getByLabel(edm::InputTag("gsfElectrons::RECO"),        normGsfElesH);
+		iEvent.getByLabel(normEleInputTag_, normGsfElesH);
 	//iEvent.getByLabel(edm::InputTag("gsfElectrons::BOOSTEDRECO"), bstdGsfElesH);
 	if(readInBstdReco_)
 		iEvent.getByLabel(edm::InputTag("ecalDrivenGsfElectrons"), bstdGsfElesH);
