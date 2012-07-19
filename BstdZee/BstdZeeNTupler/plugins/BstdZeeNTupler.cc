@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.14 2012/05/16 10:47:55 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.15 2012/07/18 15:54:04 tsw Exp $
 //
 //
 
@@ -1925,8 +1925,6 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	iEvent.getByLabel("innerLVetoModEleIso","hcalDepth1",  h_inrLVetoEleIso_HcalD1);
 	iEvent.getByLabel("innerXLVetoModEleIso","hcalDepth1", h_inrXLVetoEleIso_HcalD1);
 
-	reco::GsfElectron ithGsfEle;
-	heep::Ele ithHEEPEle(ithGsfEle);
 
 	//Setting the values of the standard reconstruction GSF electron variables...
 	normGsfEles_number_ = handle_normGsfEles.product()->size();
@@ -1934,8 +1932,8 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	
 	for(unsigned int eleIdx = 0; eleIdx < normGsfEles_number_; eleIdx++){
 		
-		ithGsfEle = handle_normGsfEles.product()->at(eleIdx);
-		ithHEEPEle = heep::Ele(ithGsfEle);
+		reco::GsfElectron ithGsfEle = handle_normGsfEles.product()->at(eleIdx);
+		heep::Ele ithHEEPEle(ithGsfEle);
 
 		normGsfEles_p4ptr_->push_back(            ithGsfEle.p4()     );
 		normGsfEles_charge_.push_back(            ithGsfEle.charge() );
