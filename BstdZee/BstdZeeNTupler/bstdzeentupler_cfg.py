@@ -46,7 +46,9 @@ if os.path.isdir(options.inputFiles[0]) or os.path.isdir('/pnfs/pp.rl.ac.uk/data
    # Pre-pend the directory to the file names 
    for i in range(len(options.inputFiles)):
       options.inputFiles[i] = dirLocation+options.inputFiles[i]      
-
+else:
+   for i in range(len(options.inputFiles)):
+      options.inputFiles[i] = DataFileLocationAdaptor(options.inputFiles[i])
 
 #####################################################
 ## General setup/load lines, defining nevts, input & output etc.
@@ -56,7 +58,8 @@ process = cms.Process("NTupler")
 ## Loading Geometry modules for creation of transient geometry information used in determining eta and phi values of recHits ...
 process.load("Configuration.StandardSequences.GeometryDB_cff")
 process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
-process.GlobalTag.globaltag = 'START42_V13::All'
+#process.GlobalTag.globaltag = 'START42_V13::All'
+process.GlobalTag.globaltag = 'START52_V9::All'
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 ## Lines from P. Lenzi related to reading LHE info
@@ -94,7 +97,11 @@ from SHarper.HEEPAnalyzer.HEEPSelectionCuts_cfi import *
 process.heepIdNoIso = cms.EDProducer("HEEPIdValueMapProducer",
                                 eleLabel = cms.InputTag("gsfElectrons"),
                                 barrelCuts = cms.PSet(heepBarrelCuts),
-                                endcapCuts = cms.PSet(heepEndcapCuts)
+                                endcapCuts = cms.PSet(heepEndcapCuts),
+                                eleIsolEffectiveAreas = cms.PSet(heepEffectiveAreas),
+                                eleRhoCorrLabel = cms.InputTag("kt6PFJets", "rho"),
+                                applyRhoCorrToEleIsol = cms.bool(True),
+                                writeIdAsInt = cms.bool(True)
                                 )
 process.heepIdNoIso.barrelCuts.cuts=cms.string("et:detEta:ecalDriven:dEtaIn:dPhiIn:hadem:e2x5Over5x5:nrMissHits")
 process.heepIdNoIso.endcapCuts.cuts=cms.string("et:detEta:ecalDriven:dEtaIn:dPhiIn:hadem:sigmaIEtaIEta:nrMissHits")
@@ -288,7 +295,7 @@ process.demo = cms.EDAnalyzer('BstdZeeNTupler',
                               dyJetsToLL_EventType = cms.untracked.int32(input_dyJetsToLLFilter), #==0=>Don't select events, ==11=>ele, ==13=>muon, ==15=>tau
                               isMC = cms.untracked.bool(input_isMC),
                               printOutInfo = cms.untracked.bool(False), 
-                              readInNormReco = cms.untracked.bool(True), readInBstdReco = cms.untracked.bool(False), readInTrigInfo = cms.untracked.bool(True),
+                              readInNormReco = cms.untracked.bool(True), readInBstdReco = cms.untracked.bool(False), readInTrigInfo = cms.untracked.bool(False),
                               useReducedRecHitsCollns = cms.untracked.bool(True) ,
                               is2010SignalDataset = cms.untracked.bool(input_is2010SignalMC),
                               vertexSrc = cms.untracked.InputTag("offlinePrimaryVertices"),
