@@ -80,7 +80,12 @@ def WriteCrabOutputFileList(crabTaskDir):
    # Get list of file in output directory
    outputFileNames = runProcess("ls "+outputDir)
    outputFileNames = [eachLine.rstrip("\n") for eachLine in outputFileNames] # Strip newline character from end of each line using a list comprehension
-   
+
+   # Detect if output dir doesn't exist
+   if len(outputFileNames)==1 and outputFileNames[0].endswith('No such file or directory'):
+      print "   * No output files for this task yet; file-list will not be written!" 
+      return
+
    # Setup corresponding list of job no, 'job resubmit no' tuples 
    thePattern = re.compile('\S+_(\d+)_(\d+)_\w\w\w.root')
    outputFilesInfo = [ [int(thePattern.match(eachLine).group(1)), int(thePattern.match(eachLine).group(2))] for eachLine in outputFileNames]
