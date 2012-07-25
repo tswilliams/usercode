@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.17 2012/07/19 13:21:11 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.18 2012/07/19 19:23:48 tsw Exp $
 //
 //
 
@@ -1776,7 +1776,7 @@ void BstdZeeNTupler::ReadInVtxAndPUInfo(bool beVerbose, const edm::Event& edmEve
 				std::vector<float> puVertices_zPosns = PVI->getPU_zpositions();
 				double myWeight = 1.0;
 				if(calcPileUpWeights_)
-					lumiWeights_.weight( trueNumPUVertices );
+					myWeight = lumiWeights_.weight( trueNumPUVertices );
 
 				event_->SetMCPUInfo(trueNumPUVertices, numPUVertices, puVertices_zPosns, myWeight);
 			}
