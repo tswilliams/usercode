@@ -256,6 +256,7 @@ namespace tsw{
 		UInt_t treeVar_evtNum_;
 
 		Bool_t treeVar_trgDecision_;
+		UInt_t treeVar_nVtx_;
 
 		TLorentzVector* treeVar_Zp4Ptr_; TLorentzVector treeVar_Zp4_;
 		Double_t treeVar_ZpT_;
@@ -284,6 +285,7 @@ namespace tsw{
 			mainAnaTree_->Branch("evtNum", &treeVar_evtNum_,   "evtNum/i");
 
 			mainAnaTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
+			mainAnaTree_->Branch("nVtx", &treeVar_nVtx_, "nVtx/i");
 
 			treeVar_Zp4Ptr_ = &treeVar_Zp4_; mainAnaTree_->Branch("Zp4",   &treeVar_Zp4Ptr_);
 			mainAnaTree_->Branch("ZpT",   &treeVar_ZpT_,     "ZpT/D");
@@ -312,6 +314,7 @@ namespace tsw{
 			treeVar_evtNum_ = evtHelper.eventNum();
 
 			treeVar_trgDecision_ = trigDecision;
+			treeVar_nVtx_  = evtHelper.GetRecoVtx_nGoodVtxs();
 
 			treeVar_Zp4_   = diEle.p4();
 			treeVar_ZpT_   = diEle.pT();
