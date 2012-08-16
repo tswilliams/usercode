@@ -226,13 +226,13 @@ namespace tsw{
 			treeVar_eleA_p4_ = diEle_eleA.p4();
 			treeVar_eleA_charge_ = diEle_eleA.charge();
 			treeVar_eleA_EOverP_ = diEle_eleA.epIn();
-			treeVar_eleA_passHEEPNoIso_ = diEle_eleA.ApplyHEEPCutsNoIso();
+			treeVar_eleA_passHEEPNoIso_ = diEle_eleA.heepIdNoIsoCut();
 
 			tsw::HEEPEle diEle_eleB = diEle->eleB();
 			treeVar_eleB_p4_ = diEle_eleB.p4();
 			treeVar_eleB_charge_ = diEle_eleB.charge();
 			treeVar_eleB_EOverP_ = diEle_eleB.epIn();
-			treeVar_eleB_passHEEPNoIso_ = diEle_eleB.ApplyHEEPCutsNoIso();
+			treeVar_eleB_passHEEPNoIso_ = diEle_eleB.heepIdNoIsoCut();
 
 			// Setting values of variables for event & di-ele branches ...
 			treeVar_trgDecision_ = trgDecision;
@@ -633,10 +633,10 @@ namespace tsw{
 			treeVar_cut_both_hOverE_      = ( recoEleA.hOverE()<0.05 && recoEleB.hOverE()<0.05 );
 			treeVar_cut_both_showerShape_ = ( (recoEleA.e2x5MaxOver5x5()>0.94) || (recoEleA.e1x5Over5x5()>0.83) )
 															&& ( (recoEleB.e2x5MaxOver5x5()>0.94) || (recoEleB.e1x5Over5x5()>0.83) );
-			treeVar_cut_both_heepId_ = diEle->eleA().ApplyHEEPCutsNoIso() && diEle->eleB().ApplyHEEPCutsNoIso();
+			treeVar_cut_both_heepId_ = diEle->eleA().heepIdNoIsoCut() && diEle->eleB().heepIdNoIsoCut();
 
-			treeVar_cut_eleA_stdTrkIso_ = diEle->eleA().ApplyHEEPIsoCut_Trk();
-			treeVar_cut_eleB_stdTrkIso_ = diEle->eleB().ApplyHEEPIsoCut_Trk();
+			treeVar_cut_eleA_stdTrkIso_ = !(diEle->eleA().heepIdStdIsoCutCode(eventHelper) & tsw::HEEPEle::cutCode_isoTrk_);
+			treeVar_cut_eleB_stdTrkIso_ = !(diEle->eleB().heepIdStdIsoCutCode(eventHelper) & tsw::HEEPEle::cutCode_isoTrk_);
 			treeVar_eleA_stdTrkIso_     = diEle->eleA().isolPtTrks();
 			treeVar_eleB_stdTrkIso_     = diEle->eleB().isolPtTrks();
 
@@ -645,8 +645,8 @@ namespace tsw{
 			treeVar_eleA_modTrkIso_     = diEle->eleA_modTrkIso();
 			treeVar_eleB_modTrkIso_     = diEle->eleB_modTrkIso();
 
-			treeVar_cut_eleA_stdEmH1Iso_ = diEle->eleA().ApplyHEEPIsoCut_EmHad1();
-			treeVar_cut_eleB_stdEmH1Iso_ = diEle->eleB().ApplyHEEPIsoCut_EmHad1();
+			treeVar_cut_eleA_stdEmH1Iso_ = !(diEle->eleA().heepIdStdIsoCutCode(eventHelper) & tsw::HEEPEle::cutCode_isoEmH1_);
+			treeVar_cut_eleB_stdEmH1Iso_ = !(diEle->eleB().heepIdStdIsoCutCode(eventHelper) & tsw::HEEPEle::cutCode_isoEmH1_);
 			treeVar_eleA_stdEmH1Iso_     = diEle->eleA().isolEmHadDepth1();
 			treeVar_eleB_stdEmH1Iso_     = diEle->eleB().isolEmHadDepth1();
 
@@ -2053,7 +2053,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	normEles_EB_HEEPNoIso_1stpT_exists_ = false;
 
 	//Currently a placeholder ...
-	std::vector<bool> normEles_sCutsFlags;           normEles_sCutsFlags.clear();
+//	std::vector<bool> normEles_sCutsFlags;           normEles_sCutsFlags.clear();
 	std::vector<bool> normEles_HEEPCutsFlags;        normEles_HEEPCutsFlags.clear();
 	std::vector<bool> normEles_HEEPCutsNoIsoFlags;   normEles_HEEPCutsNoIsoFlags.clear();
 	std::vector<bool> normEles_EB_HEEPCutsNoIsoFlags;normEles_EB_HEEPCutsNoIsoFlags.clear();
@@ -2083,22 +2083,16 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	}
 
 	normEles_reconValidationHistos_.FillNumberElesHist(normGsfEles_number_ , evtWeight);
-	for(unsigned int iEle=0; iEle<normGsfEles_number_; iEle++){
-		normEles_reconValidationHistos_.FillHistos( normEles_.at(iEle), evtWeight);
-		if ( normEles_.at(iEle).ApplySimpleCuts() ){
-			normEles_simpleCuts_reconValHistos_.FillHistos( normEles_.at(iEle), evtWeight);}
-		//if ( normEles_.at(iEle).ApplyAllHEEPCuts() ){
-		//	normEles_HEEPCuts_reconValHistos_.FillHistos( normEles_.at(iEle) );}
+	for(std::vector<tsw::HEEPEle>::const_iterator eleIt = normEles_.begin(); eleIt != normEles_.end(); eleIt++){
+		normEles_reconValidationHistos_.FillHistos( *eleIt, evtWeight);
 
-		normEles_sCutsFlags.push_back(   normEles_.at(iEle).ApplySimpleCuts());
-		normEles_HEEPCutsFlags.push_back(normEles_.at(iEle).ApplyAllHEEPCuts()  );
-		normEles_HEEPCutsNoIsoFlags.push_back(normEles_.at(iEle).ApplyHEEPCutsNoIso()  );
-		normEles_EB_HEEPCutsNoIsoFlags.push_back( normEles_.at(iEle).ApplyHEEPCutsNoIso() && normEles_.at(iEle).isEB() );
+		normEles_HEEPCutsFlags.push_back( eleIt->heepIdStdIsoCut(eventHelper_) );
+		normEles_HEEPCutsNoIsoFlags.push_back( eleIt->heepIdNoIsoCut()  );
+		normEles_EB_HEEPCutsNoIsoFlags.push_back( eleIt->heepIdNoIsoCut() && eleIt->isEB() );
 
-		normEles_EB_heepIdModIsoFlags.push_back( normEles_.at(iEle).heepIdModIsoCut(eventHelper_) && normEles_.at(iEle).isEB() );
+		normEles_EB_heepIdModIsoFlags.push_back( eleIt->heepIdModIsoCut(eventHelper_) && eleIt->isEB() );
 
-//		normEles_EB_isFidAndEcalDrivenFlags.push_back( normEles_.at(iEle).isFiducialAndEcalDriven() && normEles_.at(iEle).isHEEPEB() );
-		normEles_EB_isFidEcalDrAndFRPreFlags.push_back( normEles_.at(iEle).isFidEcalDrAndPassesFRPre() && normEles_.at(iEle).isHEEPEB() );
+		normEles_EB_isFidEcalDrAndFRPreFlags.push_back( eleIt->isEcalDriven() && eleIt->fakeRatePreSelnCut() && eleIt->isHEEPEB() );
 
 		//if(normEles_.at(iEle).et()>highestEleEt){
 		//	highestEleEt = normEles_.at(iEle).et();
@@ -2241,7 +2235,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 			else
 				normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 
-			if(normDiEle_EB_HEEPNoIso.eleA().ApplyIsoVarHEEPCuts() && normDiEle_EB_HEEPNoIso.eleB().ApplyIsoVarHEEPCuts())
+			if(normDiEle_EB_HEEPNoIso.eleA().heepIdStdIsoCut(eventHelper_) && normDiEle_EB_HEEPNoIso.eleB().heepIdStdIsoCut(eventHelper_))
 				normDiEle_EB_HEEPNoIso_MZ_stdHEEPIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 
 			if(trg_PathA_decision_){
@@ -2298,7 +2292,6 @@ void BstdZeeFirstAnalyser::FillHistograms()
 			// GSF-GSF pair selection
 			if( tagEleIt->isHEEPEB() && tagEleIt->isEcalDriven() && probeEleIt->isEcalDriven() )
 				heepTagProbeTree_.fillQcdTree(*tagEleIt, *probeEleIt, eventHelper_, trg_PathA_decision_);
-
 		}
 	}
 
@@ -2318,8 +2311,8 @@ void BstdZeeFirstAnalyser::FillHistograms()
 				normDiEle_EB_fidECALDrFRPre_trgA_MZ_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
 
 				// Setup bools for whether eleA and eleB pass HEEPNoIso ...
-				bool eleA_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleA().ApplyHEEPCutsNoIso();
-				bool eleB_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleB().ApplyHEEPCutsNoIso();
+				bool eleA_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleA().heepIdNoIsoCut();
+				bool eleB_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleB().heepIdNoIsoCut();
 				// Setup bools for whether eleA and eleB pass HEEPNoIso+modIso ...
 				bool eleA_modAllHEEP = ( eleA_HEEPNoIso && ( normDiEle_EB_fidECALDrFRPre.eleA_modTrkIsolCut() && normDiEle_EB_fidECALDrFRPre.eleA_modEmHad1IsoCut() ) );
 				bool eleB_modAllHEEP = ( eleB_HEEPNoIso && ( normDiEle_EB_fidECALDrFRPre.eleB_modTrkIsolCut() && normDiEle_EB_fidECALDrFRPre.eleB_modEmHad1IsoCut() ) );
@@ -2360,8 +2353,8 @@ void BstdZeeFirstAnalyser::FillHistograms()
 				normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
 
 				// Setup bools for whether eleA and eleB pass HEEPNoIso ...
-				bool eleA_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleA().ApplyHEEPCutsNoIso();
-				bool eleB_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleB().ApplyHEEPCutsNoIso();
+				bool eleA_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleA().heepIdNoIsoCut();
+				bool eleB_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleB().heepIdNoIsoCut();
 				// Setup bools for whether eleA and eleB pass HEEPNoIso+modIso ...
 				bool eleA_modAllHEEP = ( eleA_HEEPNoIso && ( normDiEle_EB_fidECALDrFRPre.eleA_modTrkIsolCut() && normDiEle_EB_fidECALDrFRPre.eleA_modEmHad1IsoCut() ) );
 				bool eleB_modAllHEEP = ( eleB_HEEPNoIso && ( normDiEle_EB_fidECALDrFRPre.eleB_modTrkIsolCut() && normDiEle_EB_fidECALDrFRPre.eleB_modEmHad1IsoCut() ) );
@@ -2496,7 +2489,7 @@ void BstdZeeFirstAnalyser::DoEMuAnalysis()
 				eleMuTreeVar_weight_ = evtWeight;
 				eleMuTree_->Fill();
 				// Apply HEEP isol. cuts to electron
-				if(eleMu_EB_HEEPNoIso_muB_tight_.GetElectron()->ApplyIsoVarHEEPCuts())
+				if(eleMu_EB_HEEPNoIso_muB_tight_.GetElectron()->heepIdStdIsoCut(eventHelper_))
 					h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_HEEPIso_.FillHistos(eleMu_EB_HEEPNoIso_muB_tight_, evtWeight);
 			}
 		}
