@@ -16,6 +16,7 @@
 
 namespace tsw{
 	class HEEPEle{
+		friend class HEEPDiEle;
 		private:
 			EleStruct eleStr_;
 		public:
@@ -27,22 +28,17 @@ namespace tsw{
 
 			bool ApplySimpleCuts();
 			bool isFiducialAndEcalDriven();
-			bool isFidEcalDrAndPassesFRPre();
 			const bool isHEEPEB() const;
 			const bool isHEEPEE() const;
-			bool ApplyHEEPCutsNoIso();
-			bool ApplyHEEPIsoCut_Trk();
+		private:
 			const bool ApplyHEEPIsoCut_Trk(const double trkIsoValue) const {
 				bool tmpCutsFlag = false;
 				if( isHEEPEB() || isHEEPEE() )
 					tmpCutsFlag = (trkIsoValue<5.0);
 				return tmpCutsFlag;
 			}
-			bool ApplyHEEPIsoCut_EmHad1();
 			const bool ApplyHEEPIsoCut_EmHad1(float ) const;
-			bool ApplyHEEPIsoCut_Had2();
-			bool ApplyIsoVarHEEPCuts();
-			bool ApplyAllHEEPCuts();
+		public:
 
 			/////////////////////////////////////////////////
 			// Methods for reading out all of the HEEP variables ...
@@ -149,22 +145,6 @@ namespace tsw{
 			unsigned int isol_nGenHadronsDr04() const { return eleStr_.isol_nGenHadronsDr04_; }
 			double isol_ptSumGenHadronsDr04()   const { return eleStr_.isol_ptSumGenHadronsDr04_; }
 
-//			double isol_rhoCorrnEcal(const tsw::EventHelper& eventHelper) const {
-//				double effArea = 0.0;
-//				if( isHEEPEB() )
-//					effArea = 0.101;
-//				else if( isHEEPEE() )
-//					effArea = 0.046;
-//				return effArea*eventHelper.GetPURho();
-//			}
-//			double isol_rhoCorrnHcalD1(const tsw::EventHelper& eventHelper) const {
-//				double effArea = 0.0;
-//				if( isHEEPEB() )
-//					effArea = 0.021;
-//				else if( isHEEPEE() )
-//					effArea = 0.040;
-//				return effArea*eventHelper.GetPURho();
-//			}
 			double isol_rhoCorrnEmH1(const tsw::EventHelper& evtHelper) const {
 				return 0.28*(evtHelper.GetPURho()); }
 			unsigned int numMissInnerHits()  const  { return eleStr_.numMissInnerHits_; }
@@ -259,8 +239,8 @@ namespace tsw{
 			float modEmHad1Iso_v1(tsw::HEEPEle* theOtherEle);
 
 
-		private:
-			// Static private members storing the index for each cut in HEEP cut codes
+		public:
+			// Static public members storing the index for each cut in HEEP cut codes
 			static const int cutCode_Et_       = 0x0001;
 			static const int cutCode_eta_      = 0x0002;
 			static const int cutCode_ecalDrvn_ = 0x0004;
@@ -274,7 +254,7 @@ namespace tsw{
 			static const int cutCode_isoTrk_   = 0x0400;
 			static const int cutCode_missHits_ = 0x0800;
 
-			// Static private members storing the index for each cut in fake rate pre-selection cut codes
+			// Static public members storing the index for each cut in fake rate pre-selection cut codes
 			static const int cutCode_frPre_Et_       = 0x0001;
 			static const int cutCode_frPre_eta_      = 0x0002;
 			static const int cutCode_frPre_ecalDrvn_ = 0x0004;
@@ -415,25 +395,6 @@ namespace tsw{
 		return tmpCutsFlag;
 	}
 
-	bool HEEPEle::isFidEcalDrAndPassesFRPre()
-	{
-		// First apply the fiducial and ECAL-driven requirements ...
-		bool tmpCutsFlag = isFiducialAndEcalDriven();
-		// Then apply fake rate pre-selection from v6 of AN2011/159 (mentioned in trigger selection section, and detailed in table 10) ...
-		if( isHEEPEB() ){
-			tmpCutsFlag = tmpCutsFlag && ( sigmaIEtaIEta()<0.013 );
-			tmpCutsFlag = tmpCutsFlag && ( hOverE()<0.15 );
-		}
-		else if ( isHEEPEE() ){
-			tmpCutsFlag = tmpCutsFlag && ( sigmaIEtaIEta()<0.034 );
-			tmpCutsFlag = tmpCutsFlag && ( hOverE()<0.10 );
-		}
-		else
-			tmpCutsFlag = false;
-
-		return tmpCutsFlag;
-	}
-
 	const bool HEEPEle::isHEEPEB() const {
 		return ( fabs(scEta()) < 1.442 );
 	}
@@ -441,75 +402,7 @@ namespace tsw{
 		return ( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) );
 	}
 
-	bool HEEPEle::ApplyHEEPCutsNoIso(){
-		bool tmpCutsFlag = false;
 
-		if( fabs(scEta()) < 1.442 ){
-			// E_T cut ...
-			tmpCutsFlag = ( et()>35.0 );
-			// isEcalDriven cut ...
-			tmpCutsFlag = tmpCutsFlag && isEcalDriven();
-			// dEtaIn cut ...
-			tmpCutsFlag = tmpCutsFlag && ( fabs(dEtaIn())<0.005 );
-			// dPhiIn cut ...
-			tmpCutsFlag = tmpCutsFlag && ( fabs(dPhiIn())<0.06 );
-			// H/E cut ...
-			tmpCutsFlag = tmpCutsFlag && ( hOverE()<0.05 );
-			// sigmaIEtaIEta cut ...
-			//tmpCutsFlag = tmpCutsFlag && ( sigmaIEtaIEta()< 0.01);
-			// E2x5/E5x5 cut ...
-			tmpCutsFlag = tmpCutsFlag && ( (e2x5MaxOver5x5()>0.94) || (e1x5Over5x5()>0.83) );
-			// Inner layer lost hits cut ...
-			tmpCutsFlag = tmpCutsFlag && ( numMissInnerHits()==0 );
-		}
-		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) ){
-			// E_T cut ...
-			tmpCutsFlag = ( et()>40.0 );
-			// isEcalDriven cut ...
-			tmpCutsFlag = tmpCutsFlag && isEcalDriven();
-			// dEtaIn cut ...
-			tmpCutsFlag = tmpCutsFlag && ( fabs(dEtaIn())<0.007 );
-			// dPhiIn cut ...
-			tmpCutsFlag = tmpCutsFlag && ( fabs(dPhiIn())<0.06 );
-			// H/E cut ...
-			tmpCutsFlag = tmpCutsFlag && ( hOverE()<0.05 );
-			// sigmaIEtaIEta cut ...
-			tmpCutsFlag = tmpCutsFlag && ( sigmaIEtaIEta()< 0.03);
-			// E2x5/E5x5 cut ...
-			// ---> N/A
-			// Inner layer lost hits cut ...
-			tmpCutsFlag = tmpCutsFlag && ( numMissInnerHits()==0 );
-		}
-		else
-			tmpCutsFlag = false;
-
-		return tmpCutsFlag;
-	}
-
-	bool HEEPEle::ApplyHEEPIsoCut_Trk(){
-		bool tmpCutsFlag = false;
-		if( isHEEPEB() || isHEEPEE() ){
-			tmpCutsFlag = (isolPtTrks()<5.0);
-		}
-		return tmpCutsFlag;
-	}
-
-	bool HEEPEle::ApplyHEEPIsoCut_EmHad1(){
-		bool tmpCutsFlag = false;
-		if( fabs(scEta()) < 1.442 ){
-			tmpCutsFlag = ( isolEmHadDepth1()<(2.0+0.03*et()) );
-		}
-		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) ){
-			if( et()<50.0 ){
-				tmpCutsFlag = ( isolEmHadDepth1()<2.5 );}
-			else{
-				tmpCutsFlag = ( isolEmHadDepth1()<(2.5+0.03*(et()-50.0)) );}
-		}
-		else
-			tmpCutsFlag = false;
-
-		return tmpCutsFlag;
-	}
 	const bool HEEPEle::ApplyHEEPIsoCut_EmHad1(float emHad1IsolValue) const {
 		bool tmpCutsFlag = false;
 		if( isHEEPEB() ){
@@ -527,57 +420,8 @@ namespace tsw{
 		return tmpCutsFlag;
 	}
 
-	bool HEEPEle::ApplyHEEPIsoCut_Had2(){
-		bool tmpCutsFlag = false;
 
-		if( fabs(scEta()) < 1.442 ){
-			tmpCutsFlag = true; // (No had depth 2 isol cut)
-		}
-		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) )
-			tmpCutsFlag = ( isolHadDepth2()<0.5 );
-		else
-			tmpCutsFlag = false;
-
-		return tmpCutsFlag;
-	}
-
-	bool HEEPEle::ApplyIsoVarHEEPCuts(){
-		bool tmpCutsFlag = ( ApplyHEEPIsoCut_Trk() && ApplyHEEPIsoCut_EmHad1() );
-		tmpCutsFlag = tmpCutsFlag && ApplyHEEPIsoCut_Had2();
-
-		return tmpCutsFlag;
-	}
-	/*bool HEEPEle::ApplyIsoVarHEEPCuts(){
-		bool tmpCutsFlag = false;
-
-		if( fabs(scEta()) < 1.442 ){
-			// EM + Had depth 1 isol cut ...
-			tmpCutsFlag = ( isolEmHadDepth1()<(2.0+0.03*et()) );
-			// (No had depth 2 isol cut)
-			// Track isol cut ...
-			tmpCutsFlag = tmpCutsFlag && ( isolPtTrks()<7.5 );
-		}
-		else if( (fabs(scEta())>1.56) && (fabs(scEta())<2.5) ){
-			// EM + Had depth 1 isol cut ...
-			if( et()<50.0 ){
-				tmpCutsFlag = ( isolEmHadDepth1()<2.5 );}
-			else{
-				tmpCutsFlag = ( isolEmHadDepth1()<(2.5+0.03*(et()-50.0)) );}
-			// Had depth 2 isol cut ...
-			tmpCutsFlag = tmpCutsFlag && ( isolHadDepth2()<0.5 );
-			// Track isol cut ...
-			tmpCutsFlag = tmpCutsFlag && ( isolPtTrks()<15.0 );
-		}
-		else
-			tmpCutsFlag = false;
-
-		return tmpCutsFlag;
-	}*/
-	bool HEEPEle::ApplyAllHEEPCuts(){
-		return ( ApplyHEEPCutsNoIso() && ApplyIsoVarHEEPCuts() );
-	}
-
-}
+}// End: tsw namespace
 
 ///////////////////////////////////////////
 // Modified isol value accessor methods ...
@@ -701,7 +545,6 @@ int tsw::HEEPEle::heepIdNoIsoCutCode_v40() const
 int tsw::HEEPEle::heepIdModIsoCutCode_v40_v00(const tsw::EventHelper& evtHelper) const
 {
 	const bool isInEB = (fabs(scEta()) < 1.442);
-	const bool isInEE = ( fabs(scEta())>1.56 && fabs(scEta())<2.5 );
 
 	// Grab 'heepNoIso' cut code
 	int cutCode = heepIdNoIsoCutCode_v40();
