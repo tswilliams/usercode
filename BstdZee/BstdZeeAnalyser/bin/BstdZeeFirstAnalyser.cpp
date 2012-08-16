@@ -104,6 +104,9 @@ namespace tsw{
 			totNumEvtsAnalyzed_ = nEvtsTotal;  numEvtsPass_ = mainAnaTree_->GetEntries(); }
 		void saveToFile();
 
+	protected:
+		TTree* addTree(const std::string& treeName, const std::string& treeDescription ); ///< Returns TTree with specified name/description on heap and registers it for saving to file
+
 	private:
 		// PRIVATE MEMBERS
 		TFile* outputFile_;
@@ -115,6 +118,7 @@ namespace tsw{
 	protected:
 		// PROTECTED MEMBERS
 		TTree* mainAnaTree_;
+		std::vector<TTree*> otherTrees_;
 	};
 
 	TreeHandlerBase::TreeHandlerBase(const std::string& mainTreeName, const std::string& mainTreeDescription, const std::string& fileName) :
@@ -143,7 +147,17 @@ namespace tsw{
 		outputFile_->cd();
 		mainAnaTree_->Write();
 		eventCountTree_->Write();
+		for(size_t idx=0; idx<otherTrees_.size(); idx++)
+			otherTrees_.at(idx)->Write();
 		outputFile_->Close();
+	}
+
+	TTree* TreeHandlerBase::addTree(const std::string& treeName, const std::string& treeDescription )
+	{
+		TTree* treePtr = new TTree( treeName.c_str(), treeDescription.c_str() );
+		treePtr->SetDirectory( outputFile_ );
+		otherTrees_.push_back(treePtr);
+		return treePtr;
 	}
 
 
@@ -835,6 +849,136 @@ namespace tsw{
 		}
 	};
 
+
+	///////////////////////////////////////////////////////////////////////////////
+	// TagProbeTree: Used to generate the trees required for tag & probe studies
+	//               (1 tag-probe pair tree & 1 gsf-gsf pair tree (same seln) for QCD background estimations)
+
+	class TagProbeTree : public TreeHandlerBase {
+
+	public:
+		TagProbeTree(const std::string& tpTreeName, const std::string& gsfGsfTreeName, const std::string& fileName) :
+			TreeHandlerBase(tpTreeName, "Tree of tag-probe pairs ("+tpTreeName+")", fileName),
+			tpTreeBranchVars_(),
+			gsfGsfTree_( addTree(gsfGsfTreeName, "Tree of GSF-GSF pairs for QCD estimate ("+gsfGsfTreeName+")") ),
+			gsfGsfTreeBranchVars_()
+		{
+			setupBranchLinks(mainAnaTree_, tpTreeBranchVars_);
+			setupBranchLinks(gsfGsfTree_, gsfGsfTreeBranchVars_);
+		}
+		~TagProbeTree(){}
+
+		void fillTagProbeTree(const tsw::HEEPEle& tagEle, const tsw::HEEPEle& probeEle, const tsw::EventHelper& evtHelper, bool trigDecision)
+		{
+			fillTree(mainAnaTree_, tpTreeBranchVars_, tagEle, probeEle, evtHelper, trigDecision);
+		}
+
+		void fillQcdTree(const tsw::HEEPEle& tagCandidate, const tsw::HEEPEle& probeCandidate, const tsw::EventHelper& evtHelper, bool trigDecision)
+		{
+			fillTree(gsfGsfTree_, gsfGsfTreeBranchVars_, tagCandidate, probeCandidate, evtHelper, trigDecision);
+		}
+
+	private:
+		// PRIVATE STRUCTS
+		struct TreeBranchVars{
+			// CTOR
+			TreeBranchVars() :
+				pair_p4Ptr_(&pair_p4_),  tag_p4Ptr_(&tag_p4_),  prb_p4Ptr_(&prb_p4_)
+			{}
+			// PUBLIC MEMBERS
+			Double_t genWeight_;  Double_t puWeight_;
+
+			UInt_t runNum_;  UInt_t lumiSec_;  UInt_t evtNum_;
+
+			Bool_t trgDecision_;
+			UInt_t nVtx_;
+
+			TLorentzVector* pair_p4Ptr_; TLorentzVector pair_p4_;
+
+			TLorentzVector* tag_p4Ptr_; TLorentzVector tag_p4_;
+			Int_t tag_stdHeepCutCode_;
+			Int_t tag_modHeepCutCode_;
+			Int_t tag_fakePreCutCode_;
+			Int_t tag_charge_;
+
+			TLorentzVector* prb_p4Ptr_; TLorentzVector prb_p4_;
+			Int_t prb_stdHeepCutCode_;
+			Int_t prb_modHeepCutCode_;
+			Int_t prb_fakePreCutCode_;
+			Int_t prb_charge_;
+		};
+
+		// PRIVATE METHODS
+		static void setupBranchLinks(TTree* treePtr, TreeBranchVars& treeBranchVars);
+		static void fillTree(TTree* treePtr, TreeBranchVars& treeVars, const tsw::HEEPEle& tagEle, const tsw::HEEPEle& probeEle, const tsw::EventHelper& evtHelper, bool trigDecision);
+
+		// PRIVATE MEMBERS
+		TreeBranchVars tpTreeBranchVars_;
+
+		TTree* gsfGsfTree_;
+		TreeBranchVars gsfGsfTreeBranchVars_;
+
+	};
+
+	void TagProbeTree::setupBranchLinks(TTree* treePtr, TreeBranchVars& branchVars)
+	{
+		treePtr->Branch("genWeight",  &(branchVars.genWeight_),  "genWeight/D");
+		treePtr->Branch("puWeight",   &(branchVars.puWeight_),   "puWeight/D");
+
+		treePtr->Branch("runNum",  &branchVars.runNum_,   "runNum/i");
+		treePtr->Branch("lumiSec", &branchVars.lumiSec_,  "lumiSec/i");
+		treePtr->Branch("evtNum",  &branchVars.evtNum_,   "evtNum/i");
+
+		treePtr->Branch("trgDecision", &(branchVars.trgDecision_), "trgDecision/O");
+		treePtr->Branch("nVtx", &(branchVars.nVtx_), "nVtx/i");
+
+		treePtr->Branch("pair_p4",   &(branchVars.pair_p4Ptr_) );
+
+		treePtr->Branch("tag_p4",   &(branchVars.tag_p4Ptr_) );
+		treePtr->Branch("tag_stdHeepCutCode", &(branchVars.tag_stdHeepCutCode_), "tag_stdHeepCutCode/I");
+		treePtr->Branch("tag_modHeepCutCode", &(branchVars.tag_modHeepCutCode_), "tag_modHeepCutCode/I");
+		treePtr->Branch("tag_fakePreCutCode", &(branchVars.tag_fakePreCutCode_), "tag_fakePreCutCode/I");
+		treePtr->Branch("tag_charge", &(branchVars.tag_charge_), "tag_charge/I");
+
+		treePtr->Branch("probe_p4", &(branchVars.prb_p4Ptr_) );
+		treePtr->Branch("probe_stdHeepCutCode", &(branchVars.prb_stdHeepCutCode_), "probe_stdHeepCutCode/I");
+		treePtr->Branch("probe_modHeepCutCode", &(branchVars.prb_modHeepCutCode_), "probe_modHeepCutCode/I");
+		treePtr->Branch("probe_fakePreCutCode", &(branchVars.prb_fakePreCutCode_), "probe_fakePreCutCode/I");
+		treePtr->Branch("probe_charge", &(branchVars.prb_charge_), "probe_charge/I");
+	}
+
+	void TagProbeTree::fillTree(TTree* treePtr, TreeBranchVars& treeVars, const tsw::HEEPEle& tagEle, const tsw::HEEPEle& probeEle, const tsw::EventHelper& evtHelper, bool trigDecision)
+	{
+		// Set branch variables ...
+		treeVars.genWeight_ = evtHelper.genWeight();
+		treeVars.puWeight_  = evtHelper.puWeight();
+
+		treeVars.runNum_ = evtHelper.runNum();
+		treeVars.lumiSec_ = evtHelper.lumiSec();
+		treeVars.evtNum_ = evtHelper.eventNum();
+
+		treeVars.trgDecision_ = trigDecision;
+		treeVars.nVtx_  = evtHelper.GetRecoVtx_nGoodVtxs();
+
+		treeVars.pair_p4_ = ( tagEle.p4() + probeEle.p4() );
+
+		treeVars.tag_p4_ = tagEle.p4();
+		treeVars.tag_modHeepCutCode_ = tagEle.heepIdModIsoCutCode(evtHelper);
+		treeVars.tag_modHeepCutCode_ = tagEle.heepIdStdIsoCutCode(evtHelper);
+		treeVars.tag_modHeepCutCode_ = tagEle.fakeRatePreSelnCutCode();
+		treeVars.tag_charge_ = tagEle.charge();
+
+		treeVars.prb_p4_ = probeEle.p4();
+		treeVars.prb_modHeepCutCode_ = probeEle.heepIdModIsoCutCode(evtHelper);
+		treeVars.prb_modHeepCutCode_ = probeEle.heepIdStdIsoCutCode(evtHelper);
+		treeVars.prb_modHeepCutCode_ = probeEle.fakeRatePreSelnCutCode();
+		treeVars.prb_charge_ = probeEle.charge();
+
+		// And finally fill the tree ...
+		treePtr->Fill();
+	}
+
+
 }
 
 //-----------------------------------------------------------------------------------------------------
@@ -1123,6 +1267,8 @@ class BstdZeeFirstAnalyser{
 		tsw::DiEleTree modIsoZCandDiEleTree_;
 		tsw::EffiCalcTree zCandEffiTree_;
 
+		tsw::TagProbeTree heepTagProbeTree_;
+
 		TTree* eleMuTree_;
 		Double_t eleMuTreeVar_mass_;
 		Double_t eleMuTreeVar_pT_;
@@ -1260,6 +1406,7 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	noIsoZCandDiEleTree_("noIsoZBosonTree", outputFileName_ + "_noIsoZCandTree.root"),
 	modIsoZCandDiEleTree_("modIsoZBosonTree", outputFileName_ + "_modIsoZCandTree.root"),
 	zCandEffiTree_(outputFileName_ + "_zEffiTree.root"),
+	heepTagProbeTree_("tagProbeTree", "qcdGsfGsfTree", outputFileName_+"_heepTpTree.root"),
 	//
 	normEles_reconValidationHistos_(    "h_normEles_",      "standard",  "",              1,  false),
 	normEles_simpleCuts_reconValHistos_("h_normEles_sCuts_", "standard", ", simple cuts", 1,  false), //was 2
@@ -1827,6 +1974,8 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 	modIsoZCandDiEleTree_.saveToFile();
 	zCandEffiTree_.setEventCounter( this->GetNumEvtsRunOver() );
 	zCandEffiTree_.saveToFile();
+	heepTagProbeTree_.setEventCounter( this->GetNumEvtsRunOver() );
+	heepTagProbeTree_.saveToFile();
 
 	// Output information to screen about diff ordering of cuts in QCD estimation
 	//numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_
@@ -2133,6 +2282,24 @@ void BstdZeeFirstAnalyser::FillHistograms()
 		if( heepIdModIsoEbDiEle.isInZMassRange() )
 			modIsoZCandDiEleTree_.fillTree(heepIdModIsoEbDiEle, eventHelper_, trg_PathA_decision_);
 
+	}
+
+	//-----------------------------------
+	// Selection for HEEP (std/mod iso) tag-probe studies:
+	//     * Tag-Probe pairs ... TAG: barrel & pass HEEP ID  ;  PROBE: ECAL-driven
+	//     * GSF-GSF pairs for QCD estimation ... TAG CANDIDATE: barrel & ECAL-driven  ;  PROBE:
+	// [Since take all T-P/GSF-GSF pairs in each event satisfying these criteria, stricter requirements can be imposed later in T-P effi value calc'ing code.]
+	for(std::vector<tsw::HEEPEle>::const_iterator tagEleIt = normEles_.begin(); tagEleIt != normEles_.end(); tagEleIt++){
+		for(std::vector<tsw::HEEPEle>::const_iterator probeEleIt = normEles_.begin(); probeEleIt != normEles_.end(); probeEleIt++){
+			// Tag-probe pair selection
+			if( tagEleIt->isHEEPEB() && tagEleIt->heepIdNoIsoCut() && probeEleIt->isEcalDriven() )
+				heepTagProbeTree_.fillTagProbeTree(*tagEleIt, *probeEleIt, eventHelper_, trg_PathA_decision_);
+
+			// GSF-GSF pair selection
+			if( tagEleIt->isHEEPEB() && tagEleIt->isEcalDriven() && probeEleIt->isEcalDriven() )
+				heepTagProbeTree_.fillQcdTree(*tagEleIt, *probeEleIt, eventHelper_, trg_PathA_decision_);
+
+		}
 	}
 
 
