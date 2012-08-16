@@ -149,7 +149,10 @@ namespace tsw{
 				return 0.28*(evtHelper.GetPURho()); }
 			unsigned int numMissInnerHits()  const  { return eleStr_.numMissInnerHits_; }
 
-			/// Method for applying HEEP cuts with modified isolation (HEEP v4.0, modHeepIso v0.0)
+			// Methods for applying HEEP cuts
+			bool heepFidCut_v40() const;
+			bool heepFidCut() const { return heepFidCut_v40();  }
+
 			int heepIdNoIsoCutCode_v40() const;
 			int heepIdNoIsoCutCode() const { return heepIdNoIsoCutCode_v40(); }
 			bool heepIdNoIsoCut() const { return (heepIdNoIsoCutCode()==0); }
@@ -502,17 +505,25 @@ const bool tsw::HEEPEle::isolCut_inrVetoModEmHadD1(const tsw::Event::InnerVetoSi
 }
 
 
+bool tsw::HEEPEle::heepFidCut_v40() const
+{
+	bool isFid = (isHEEPEB() || isHEEPEE());
+	isFid = isFid && et()>35.0;
+	isFid = isFid && isEcalDriven();
+	return isFid;
+}
+
+
 int tsw::HEEPEle::heepIdNoIsoCutCode_v40() const
 {
 	const bool isInEB = (fabs(scEta()) < 1.442);
 	const bool isInEE = ( fabs(scEta())>1.56 && fabs(scEta())<2.5 );
-	const float thr_Et  = isInEB ? 35.0 : 40.0 ;
 	const float thr_dEtaIn = isInEB ? 0.005 : 0.007 ;
 
 	int cutCode = 0;
 
 	// Fiducial cuts
-	if( !(et()>thr_Et) )
+	if( !(et()>35.0) )
 		cutCode |= cutCode_Et_;
 	if( !(isInEB || isInEE) )
 		cutCode |= cutCode_eta_;
