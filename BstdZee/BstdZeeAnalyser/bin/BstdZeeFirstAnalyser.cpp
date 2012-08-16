@@ -963,15 +963,15 @@ namespace tsw{
 		treeVars.pair_p4_ = ( tagEle.p4() + probeEle.p4() );
 
 		treeVars.tag_p4_ = tagEle.p4();
+		treeVars.tag_stdHeepCutCode_ = tagEle.heepIdStdIsoCutCode(evtHelper);
 		treeVars.tag_modHeepCutCode_ = tagEle.heepIdModIsoCutCode(evtHelper);
-		treeVars.tag_modHeepCutCode_ = tagEle.heepIdStdIsoCutCode(evtHelper);
-		treeVars.tag_modHeepCutCode_ = tagEle.fakeRatePreSelnCutCode();
+		treeVars.tag_fakePreCutCode_ = tagEle.fakeRatePreSelnCutCode();
 		treeVars.tag_charge_ = tagEle.charge();
 
 		treeVars.prb_p4_ = probeEle.p4();
+		treeVars.prb_stdHeepCutCode_ = probeEle.heepIdStdIsoCutCode(evtHelper);
 		treeVars.prb_modHeepCutCode_ = probeEle.heepIdModIsoCutCode(evtHelper);
-		treeVars.prb_modHeepCutCode_ = probeEle.heepIdStdIsoCutCode(evtHelper);
-		treeVars.prb_modHeepCutCode_ = probeEle.fakeRatePreSelnCutCode();
+		treeVars.prb_fakePreCutCode_ = probeEle.fakeRatePreSelnCutCode();
 		treeVars.prb_charge_ = probeEle.charge();
 
 		// And finally fill the tree ...
@@ -2280,17 +2280,20 @@ void BstdZeeFirstAnalyser::FillHistograms()
 
 	//-----------------------------------
 	// Selection for HEEP (std/mod iso) tag-probe studies:
-	//     * Tag-Probe pairs ... TAG: barrel & pass HEEP ID  ;  PROBE: ECAL-driven
-	//     * GSF-GSF pairs for QCD estimation ... TAG CANDIDATE: barrel & ECAL-driven  ;  PROBE:
+	//     * Tag-Probe pairs ... TAG: barrel & pass HEEP ID  ;  PROBE: heepFid
+	//     * GSF-GSF pairs for QCD estimation ... TAG CANDIDATE: barrel & heepFid  ;  PROBE: heepFid
 	// [Since take all T-P/GSF-GSF pairs in each event satisfying these criteria, stricter requirements can be imposed later in T-P effi value calc'ing code.]
 	for(std::vector<tsw::HEEPEle>::const_iterator tagEleIt = normEles_.begin(); tagEleIt != normEles_.end(); tagEleIt++){
 		for(std::vector<tsw::HEEPEle>::const_iterator probeEleIt = normEles_.begin(); probeEleIt != normEles_.end(); probeEleIt++){
+			if(tagEleIt==probeEleIt)
+				continue;
+
 			// Tag-probe pair selection
-			if( tagEleIt->isHEEPEB() && tagEleIt->heepIdNoIsoCut() && probeEleIt->isEcalDriven() )
+			if( tagEleIt->isHEEPEB() && tagEleIt->heepIdNoIsoCut() && probeEleIt->heepFidCut() )
 				heepTagProbeTree_.fillTagProbeTree(*tagEleIt, *probeEleIt, eventHelper_, trg_PathA_decision_);
 
 			// GSF-GSF pair selection
-			if( tagEleIt->isHEEPEB() && tagEleIt->isEcalDriven() && probeEleIt->isEcalDriven() )
+			if( tagEleIt->isHEEPEB() && tagEleIt->heepFidCut() && probeEleIt->heepFidCut() )
 				heepTagProbeTree_.fillQcdTree(*tagEleIt, *probeEleIt, eventHelper_, trg_PathA_decision_);
 		}
 	}
