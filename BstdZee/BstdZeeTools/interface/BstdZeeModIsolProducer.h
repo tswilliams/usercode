@@ -9,9 +9,11 @@
 #include "FWCore/Framework/interface/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 
-#include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
+#include "CommonTools/Utils/interface/StringToEnumValue.h"
 
+#include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
 #include "DataFormats/TrackReco/interface/TrackBase.h"
+#include "DataFormats/EcalRecHit/interface/EcalSeverityLevel.h"
 
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "RecoCaloTools/MetaCollections/interface/CaloRecHitMetaCollections.h"
@@ -28,10 +30,14 @@ class BstdZeeModIsolProducer : public edm::EDProducer {
 			HcalDepth2=2
 		};
 		struct ECALParams{
-			ECALParams(const edm::InputTag& tag, double radius, double width, double otherElesRadius, double otherElesWidth, double minEt, double minE) :
+			ECALParams(const edm::InputTag& tag, double radius, double width, double otherElesRadius, double otherElesWidth, double minEt, double minE, const std::vector<std::string>& recHitFlagNames, const std::vector<std::string>& recHitSeverityNames) :
 				recHitsTag(tag), intRadius(radius), etaSlice(width),
 				otherElesIntRadius(otherElesRadius), otherElesEtaSlice(otherElesWidth),
-				etMin(minEt), eMin(minE) { }
+				etMin(minEt), eMin(minE)
+			{
+				recHitFlagsExcl_ = StringToEnumValue<EcalRecHit::Flags>(recHitFlagNames);
+				recHitSeveritiesExcl_ = StringToEnumValue<EcalSeverityLevel::SeverityLevel>( recHitSeverityNames ); 
+			}
 			edm::InputTag recHitsTag;
 			double intRadius;
 			double etaSlice;
@@ -39,6 +45,8 @@ class BstdZeeModIsolProducer : public edm::EDProducer {
 			double otherElesEtaSlice;
 			double etMin;
 			double eMin;
+			std::vector<int> recHitSeveritiesExcl_;
+			std::vector<int> recHitFlagsExcl_;
 		};
    public:
       explicit BstdZeeModIsolProducer(const edm::ParameterSet&);
@@ -58,7 +66,7 @@ class BstdZeeModIsolProducer : public edm::EDProducer {
       std::vector<double> getTrackIsol(const reco::GsfElectronCollection& inputEles, const reco::GsfElectronCollection& vetoEles, const edm::Event& iEvent);
       double getTrackIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const reco::TrackCollection* trackCollection, const reco::TrackBase::Point beamPoint);
       std::vector<double> getEcalIsol(const reco::GsfElectronCollection& inputEles, const reco::GsfElectronCollection& vetoEles, const edm::Event& iEvent, const edm::EventSetup& iSetup);
-      double getEcalIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const EcalRecHitMetaCollection* recHitsMeta, const edm::ESHandle<CaloGeometry>& theCaloGeom, const ECALParams& params, const EcalSeverityLevelAlgo* sevLevelAlgo=0);
+      double getEcalIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const EcalRecHitMetaCollection* recHitsMeta, const edm::ESHandle<CaloGeometry>& theCaloGeom, const ECALParams& params, const EcalSeverityLevelAlgo* sevLevelAlgo);
       std::vector<double> getHcalDepth1Isol(const reco::GsfElectronCollection& inputEles, const reco::GsfElectronCollection& vetoEles, const edm::Event& iEvent);
       double getHcalDepth1Isol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const CaloTowerCollection* towercollection);
 
@@ -89,8 +97,6 @@ class BstdZeeModIsolProducer : public edm::EDProducer {
       const EcalRecHitCollection* ecalBarHits_;
       const bool ecal_vetoClustered_;
       const bool ecal_useNumCrystals_;
-      const int ecal_severityLevelCut_;
-      std::vector<int> recHitFlagsToBeExcluded_;
 
       const edm::InputTag hcalTowersTag_;
       const double hcal_intRadius_;

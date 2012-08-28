@@ -35,8 +35,10 @@ bstdZeeModIsolParams = cms.PSet (
    eMinEndcaps          = stdGsfEles.eMinEndcaps,
    vetoClustered        = stdGsfEles.vetoClustered,
    useNumCrystals       = stdGsfEles.useNumCrystals,
-   severityLevelCut     = stdGsfEles.severityLevelCut,
-   recHitFlagsToBeExcluded = stdGsfEles.recHitFlagsToBeExcluded,
+   recHitFlagsToBeExcludedBarrel = stdGsfEles.recHitFlagsToBeExcludedBarrel,
+   recHitFlagsToBeExcludedEndcaps = stdGsfEles.recHitFlagsToBeExcludedEndcaps,
+   recHitSeverityToBeExcludedBarrel = stdGsfEles.recHitSeverityToBeExcludedBarrel,
+   recHitSeverityToBeExcludedEndcaps = stdGsfEles.recHitSeverityToBeExcludedEndcaps,
    
    hcalTowers    = cms.InputTag("towerMaker"),
    intRadiusHcal = stdGsfEles.intRadiusHcal,

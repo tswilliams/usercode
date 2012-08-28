@@ -13,7 +13,7 @@
 //
 // Original Author:  Thomas Williams
 //         Created:  Mon Mar  5 18:12:27 GMT 2012
-// $Id: BstdZeeModIsolProducer.cc,v 1.2 2012/05/04 09:51:54 tsw Exp $
+// $Id: BstdZeeModIsolProducer.cc,v 1.3 2012/07/19 12:03:46 tsw Exp $
 //
 //
 
@@ -29,8 +29,6 @@
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-
-#include "CommonTools/Utils/interface/StringToEnumValue.h"
 
 #include "DataFormats/Common/interface/ValueMap.h"
 
@@ -70,26 +68,27 @@ BstdZeeModIsolProducer::BstdZeeModIsolProducer(const edm::ParameterSet& iConfig)
 						iConfig.getParameter<double>("otherElesIntRadiusEcalBarrel"),
 						iConfig.getParameter<double>("otherElesJurassicWidth"),
 						iConfig.getParameter<double>("etMinBarrel"),
-						iConfig.getParameter<double>("eMinBarrel") ),
+						iConfig.getParameter<double>("eMinBarrel"),
+						iConfig.getParameter< std::vector<std::string> >("recHitFlagsToBeExcludedBarrel"),
+						iConfig.getParameter< std::vector<std::string> >("recHitSeverityToBeExcludedBarrel") ),
 	ecalParams_EE_(iConfig.getParameter<edm::InputTag>("endcapRecHitsTag"),
 						iConfig.getParameter<double>("intRadiusEcalEndcaps"),
 						iConfig.getParameter<double>("jurassicWidth"),
 						iConfig.getParameter<double>("otherElesIntRadiusEcalEndcaps"),
 						iConfig.getParameter<double>("otherElesJurassicWidth"),
 						iConfig.getParameter<double>("etMinEndcaps"),
-						iConfig.getParameter<double>("eMinEndcaps") ),
+						iConfig.getParameter<double>("eMinEndcaps"),
+						iConfig.getParameter< std::vector<std::string> >("recHitFlagsToBeExcludedEndcaps"),
+						iConfig.getParameter< std::vector<std::string> >("recHitSeverityToBeExcludedEndcaps") ),
 	ecal_vetoClustered_(iConfig.getParameter<bool>("vetoClustered")),
 	ecal_useNumCrystals_(iConfig.getParameter<bool>("useNumCrystals")),
-	ecal_severityLevelCut_(iConfig.getParameter<int>("severityLevelCut")),
+	//ecal_severityLevelCut_(iConfig.getParameter<int>("severityLevelCut")),
 //   recHitFlagsToBeExcluded_(iConfig.getParameter< std::vector<int> >("recHitFlagsToBeExcluded")),
 	// HCAL depth 1 isolation
 	hcalTowersTag_(iConfig.getParameter<edm::InputTag>("hcalTowers")),
 	hcal_intRadius_(iConfig.getParameter<double>("intRadiusHcal")),
 	hcal_etMin_(iConfig.getParameter<double>("etMinHcal"))
 {
-   const std::vector<std::string> recHitFlagNames = iConfig.getParameter< std::vector<std::string> >("recHitFlagsToBeExcluded");
-   recHitFlagsToBeExcluded_ = StringToEnumValue<EcalRecHit::Flags>(recHitFlagNames);
-   std::sort( recHitFlagsToBeExcluded_.begin(), recHitFlagsToBeExcluded_.end() );
    // Now, register the products
 	produces< std::vector<reco::Track> >("tracksInIsolSum");
 	produces< edm::ValueMap<double> >("track");
@@ -282,7 +281,7 @@ std::vector<double> BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectronC
 
 	std::vector<double> isolValues;
 	for( reco::GsfElectronCollection::const_iterator eleIt = inputEles.begin(); eleIt!=inputEles.end(); eleIt++)
-		isolValues.push_back( getEcalIsol(*eleIt, vetoEles, recHitsMetaEB, theCaloGeom, ecalParams_EB_, sevLevelAlgo.product()) + getEcalIsol(*eleIt, vetoEles, recHitsMetaEE, theCaloGeom, ecalParams_EE_) );
+		isolValues.push_back( getEcalIsol(*eleIt, vetoEles, recHitsMetaEB, theCaloGeom, ecalParams_EB_, sevLevelAlgo.product()) + getEcalIsol(*eleIt, vetoEles, recHitsMetaEE, theCaloGeom, ecalParams_EE_, sevLevelAlgo.product()) );
 
 	delete recHitsMetaEB;
 	delete recHitsMetaEE;
@@ -391,31 +390,17 @@ double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, cons
 					if(vetoedByVetoEles)
 						continue;
 
-					//Severity level check
-					//make sure we have a barrel rechit
-					//call the severity level method
-					//passing the EBDetId
-					//the rechit collection in order to calculate the swiss crss
-					//and the EcalChannelRecHitRcd
-					//only consider rechits with ET >
-					//the SpikeId method (currently kE1OverE9 or kSwissCross)
-					//cut value for above
-					//then if the severity level is too high, we continue to the next rechit
-					if(sevLevelAlgo!=0){
-						if( ecal_severityLevelCut_!=-1 && ecalBarHits_ &&
-								sevLevelAlgo->severityLevel(EBDetId(j->detid()), *ecalBarHits_) >= ecal_severityLevelCut_)
-							continue;
-					}
-					//                            *chStatus_,
-					//        severityRecHitThreshold_,
-					//        spId_,
-					//        spIdThreshold_
-					//    ) >= severityLevelCut_) continue;
+					// RecHit severity level / 'reco' flag checks
+					int severityFlag = ecalBarHits_ == 0 ? -1 : sevLevelAlgo->severityLevel(((EcalRecHit*)(&*j))->detid(), *ecalBarHits_);
+					std::vector<int>::const_iterator sit = std::find(params.recHitSeveritiesExcl_.begin(), 
+											 params.recHitSeveritiesExcl_.end(), severityFlag);
+					if( sit != params.recHitSeveritiesExcl_.end() )
+						continue;
 
-					//Check based on flags to protect from recovered channels from non-read towers
-					//Assumption is that v_chstatus_ is empty unless doFlagChecks() has been called
-					std::vector<int>::const_iterator vit = std::find( recHitFlagsToBeExcluded_.begin(), recHitFlagsToBeExcluded_.end(),  ((EcalRecHit*)(&*j))->recoFlag() );
-					if ( vit != recHitFlagsToBeExcluded_.end() ) continue; // the recHit has to be excluded from the iso sum
+					std::vector<int>::const_iterator vit = std::find( params.recHitFlagsExcl_.begin(), params.recHitFlagsExcl_.end(),  ((EcalRecHit*)(&*j))->recoFlag() );
+					if ( vit != params.recHitFlagsExcl_.end() )
+						continue; // the recHit has to be excluded from the iso sum
+
 
 					double et = energy*position.perp()/position.mag();
 					if ( fabs(et) > params.etMin && fabs(energy) > params.eMin ){ //Changed energy --> fabs(energy)
