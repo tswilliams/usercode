@@ -161,6 +161,10 @@ namespace tsw{
 			int heepIdModIsoCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoCutCode_v40_v00(evtHelper);}
 			bool heepIdModIsoCut(const tsw::EventHelper& evtHelper) const { return (heepIdModIsoCutCode(evtHelper)==0); }
 
+			int heepIdModIsoStdThrCutCode_v40(const tsw::EventHelper& evtHelper) const;
+			int heepIdModIsoStdThrCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoStdThrCutCode_v40(evtHelper); }
+			bool heepIdModIsoStdThrCut(const tsw::EventHelper& evtHelper) const { return (heepIdModIsoStdThrCutCode(evtHelper)==0); }
+
 			int heepIdStdIsoCutCode_v40(const tsw::EventHelper& evtHelper) const;
 			int heepIdStdIsoCutCode(const tsw::EventHelper& evtHelper) const { return heepIdStdIsoCutCode_v40(evtHelper); }
 			bool heepIdStdIsoCut(const tsw::EventHelper& evtHelper) const { return (heepIdStdIsoCutCode(evtHelper)==0); }
@@ -571,6 +575,25 @@ int tsw::HEEPEle::heepIdModIsoCutCode_v40_v00(const tsw::EventHelper& evtHelper)
 	return cutCode;
 }
 
+int tsw::HEEPEle::heepIdModIsoStdThrCutCode_v40(const tsw::EventHelper& evtHelper) const
+{
+	const bool isInEB = (fabs(scEta()) < 1.442);
+	const float thr_isoEmH1 = isInEB ? (2.0+0.03*et()) : ( et()<50.0 ? 2.5 : (2.5+0.03*(et()-50.0)) ) ;
+
+	// Grab 'heepNoIso' cut code
+	int cutCode = heepIdNoIsoCutCode_v40();
+
+	// ... add in iso bits with mod isolation cuts
+	const float modEmH1isol = isol_inrVetoModEmHadD1(tsw::Event::mediumVeto) - isol_rhoCorrnEmH1(evtHelper);
+	const float modTrkIsol  = isol_inrVetoModTrk(tsw::Event::xSmallVeto);
+	if(  !( modEmH1isol<thr_isoEmH1 )  )
+		cutCode |= cutCode_isoEmH1_;
+	if(  !( modTrkIsol<5.0 )  )
+		cutCode |= cutCode_isoTrk_;
+
+	return cutCode;
+
+}
 
 int tsw::HEEPEle::heepIdStdIsoCutCode_v40(const tsw::EventHelper& evtHelper) const
 {
