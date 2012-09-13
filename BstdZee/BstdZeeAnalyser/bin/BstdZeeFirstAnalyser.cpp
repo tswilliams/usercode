@@ -390,8 +390,10 @@ namespace tsw{
 		Double_t treeVar_ZdPhi_;
 		Double_t treeVar_ZdR_;
 		TLorentzVector* treeVar_eleA_p4Ptr_; TLorentzVector treeVar_eleA_p4_;
+		Double_t treeVar_eleA_scEta_;
 		Double_t treeVar_eleA_dRmc_;
 		TLorentzVector* treeVar_eleB_p4Ptr_;	TLorentzVector treeVar_eleB_p4_;
+		Double_t treeVar_eleB_scEta_;
 		Double_t treeVar_eleB_dRmc_;
 
 		Int_t treeVar_eleA_stdHeepCutCode_;
@@ -479,8 +481,10 @@ namespace tsw{
 			mainAnaTree_->Branch("ZdPhi", &treeVar_ZdPhi_,     "ZdPhi/D");
 			mainAnaTree_->Branch("ZdR", &treeVar_ZdR_, "ZdR/D");
 			mainAnaTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);	treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;
+			mainAnaTree_->Branch("eleA_scEta", &treeVar_eleA_scEta_, "eleA_scEta/D");
 			mainAnaTree_->Branch("eleA_dRmc", &treeVar_eleA_dRmc_, "eleA_dRmc/D");
 			mainAnaTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);	treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;
+			mainAnaTree_->Branch("eleB_scEta", &treeVar_eleB_scEta_, "eleB_scEta/D");
 			mainAnaTree_->Branch("eleB_dRmc", &treeVar_eleB_dRmc_, "eleB_dRmc/D");
 
 			mainAnaTree_->Branch("eleA_stdHeep", &treeVar_eleA_stdHeepCutCode_, "eleA_stdHeep/I");
@@ -578,6 +582,8 @@ namespace tsw{
 				treeVar_eleA_dRmc_ = dR_recoEleA_mcEle2;
 				treeVar_eleB_dRmc_ = dR_recoEleB_mcEle1;
 			}
+			treeVar_eleA_scEta_ = diEle->eleA().scEta();
+			treeVar_eleB_scEta_ = diEle->eleB().scEta();
 
 			treeVar_eleA_stdHeepCutCode_       = diEle->eleA().heepIdStdIsoCutCode(eventHelper);
 			treeVar_eleB_stdHeepCutCode_       = diEle->eleB().heepIdStdIsoCutCode(eventHelper);
@@ -669,6 +675,8 @@ namespace tsw{
 				treeVar_eleA_p4_ = mcZboson_ele2;
 				treeVar_eleB_p4_ = mcZboson_ele1;
 			}
+			treeVar_eleA_scEta_ = treeVar_eleA_p4_.Eta();
+			treeVar_eleB_scEta_ = treeVar_eleB_p4_.Eta();
 
 			// Default value setting from now on ...
 			treeVar_eleA_stdHeepCutCode_ = 0x01000-1;
@@ -2205,13 +2213,16 @@ void BstdZeeFirstAnalyser::FillHistograms()
 		}
 	}
 
-	if( tsw::HEEPDiEle* mcMatchedDiEle = getMcMatchedDiEle(mcZ_daughterA_p4_, mcZ_daughterB_p4_, normEles_) )
+	const TLorentzVector& mcZ_eleA_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterA_p4_ : mcEles_HighestEt_p4_);
+	const TLorentzVector& mcZ_eleB_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterB_p4_ : mcEles_2ndHighestEt_p4_);
+
+	if( tsw::HEEPDiEle* mcMatchedDiEle = getMcMatchedDiEle(mcZ_eleA_p4, mcZ_eleB_p4, normEles_) )
 	{
-		zCandEffiTree_.fillTree(mcMatchedDiEle, mcZ_daughterA_p4_, mcZ_daughterB_p4_, eventHelper_);
+		zCandEffiTree_.fillTree(mcMatchedDiEle, mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
 		delete mcMatchedDiEle;
 	}
 	else
-		zCandEffiTree_.fillTree_NotReconstructed(mcZ_daughterA_p4_, mcZ_daughterB_p4_, eventHelper_);
+		zCandEffiTree_.fillTree_NotReconstructed(mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
 
 	// ------------------------
 	// EB HEEPNoIso di-electrons...
