@@ -878,17 +878,17 @@ namespace tsw{
 
 		treePtr->Branch("tag_p4",   &(branchVars.tag_p4Ptr_) );
 		treePtr->Branch("tag_scEta",   &(branchVars.tag_scEta_), "tag_scEta/D" );
-		treePtr->Branch("tag_stdHeep", &(branchVars.tag_stdHeepCutCode_), "tag_stdHeepCutCode/I");
-		treePtr->Branch("tag_modHeepStdThr", &(branchVars.tag_modHeepStdThrCutCode_), "tag_modHeepStdThrCutCode/I");
-		treePtr->Branch("tag_modHeepColThr", &(branchVars.tag_modHeepColThrCutCode_), "tag_modHeepColThrCutCode/I");
+		treePtr->Branch("tag_stdHeep", &(branchVars.tag_stdHeepCutCode_), "tag_stdHeep/I");
+		treePtr->Branch("tag_modHeepStdThr", &(branchVars.tag_modHeepStdThrCutCode_), "tag_modHeepStdThr/I");
+		treePtr->Branch("tag_modHeepColThr", &(branchVars.tag_modHeepColThrCutCode_), "tag_modHeepColThr/I");
 		treePtr->Branch("tag_fakePreCutCode", &(branchVars.tag_fakePreCutCode_), "tag_fakePreCutCode/I");
 		treePtr->Branch("tag_charge", &(branchVars.tag_charge_), "tag_charge/I");
 
 		treePtr->Branch("probe_p4", &(branchVars.prb_p4Ptr_) );
 		treePtr->Branch("probe_scEta",   &(branchVars.prb_scEta_), "probe_scEta/D" );
-		treePtr->Branch("probe_stdHeep", &(branchVars.prb_stdHeepCutCode_), "probe_stdHeepCutCode/I");
-		treePtr->Branch("probe_modHeepStdThr", &(branchVars.prb_modHeepStdThrCutCode_), "probe_modHeepStdThrCutCode/I");
-		treePtr->Branch("probe_modHeepColThr", &(branchVars.prb_modHeepColThrCutCode_), "probe_modHeepColThrCode/I");
+		treePtr->Branch("probe_stdHeep", &(branchVars.prb_stdHeepCutCode_), "probe_stdHeep/I");
+		treePtr->Branch("probe_modHeepStdThr", &(branchVars.prb_modHeepStdThrCutCode_), "probe_modHeepStdThr/I");
+		treePtr->Branch("probe_modHeepColThr", &(branchVars.prb_modHeepColThrCutCode_), "probe_modHeepColThr/I");
 		treePtr->Branch("probe_fakePreCutCode", &(branchVars.prb_fakePreCutCode_), "probe_fakePreCutCode/I");
 		treePtr->Branch("probe_charge", &(branchVars.prb_charge_), "probe_charge/I");
 	}
