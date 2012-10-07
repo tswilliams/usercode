@@ -13,7 +13,7 @@
 //
 // Original Author:  Thomas Williams
 //         Created:  Mon Mar  5 18:12:27 GMT 2012
-// $Id: BstdZeeModIsolProducer.cc,v 1.3 2012/07/19 12:03:46 tsw Exp $
+// $Id: BstdZeeModIsolProducer.cc,v 1.4 2012/08/28 15:21:18 tsw Exp $
 //
 //
 
@@ -198,7 +198,7 @@ double BstdZeeModIsolProducer::getTrackIsol(const reco::GsfElectron& theEle, con
 
 	for ( reco::TrackCollection::const_iterator itrTr  = (*trackCollection).begin() ;
 			itrTr != (*trackCollection).end(); ++itrTr ) {
-		math::XYZVector tmpTrackMomentumAtVtx = (*itrTr).momentum () ;
+		//math::XYZVector tmpTrackMomentumAtVtx = (*itrTr).momentum () ;
 
 		double this_pt  = (*itrTr).pt();
 		if ( this_pt < tk_ptMin_ ) continue;
@@ -433,7 +433,7 @@ double BstdZeeModIsolProducer::getHcalDepth1Isol(const reco::GsfElectron& theEle
 	signed int depth = HcalDepth1;
 
 	const reco::SuperCluster* sc = theEle.get<reco::SuperClusterRef>().get();
-	math::XYZPoint theCaloPosition = sc->position();
+	//math::XYZPoint theCaloPosition = sc->position();
 	double candEta=sc->eta();
 	double candPhi=sc->phi();
 	double ptSum =0.;
@@ -471,7 +471,7 @@ double BstdZeeModIsolProducer::getHcalDepth1Isol(const reco::GsfElectron& theEle
 		// TODO -- Check if caloTower is within inner veto area of any of the other eles
 		for( reco::GsfElectronCollection::const_iterator otherEleIt = vetoEles.begin(); otherEleIt!=vetoEles.end(); otherEleIt++){
 			const reco::SuperCluster* otherEleSC = otherEleIt->get<reco::SuperClusterRef>().get();
-			math::XYZPoint otherEleCaloPosition = otherEleSC->position();
+			//math::XYZPoint otherEleCaloPosition = otherEleSC->position();
 			double otherEle_eta = otherEleSC->eta();
 			double otherEle_phi = otherEleSC->phi();
 
