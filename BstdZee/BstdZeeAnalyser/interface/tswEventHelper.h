@@ -173,6 +173,11 @@ namespace tsw{
 			ithMuStruct.outTrk_phi    = theEvent_->normMuons_outTrk_phi_.at(muIdx);
 			ithMuStruct.outTrk_charge = theEvent_->normMuons_outTrk_charge_.at(muIdx);
 
+			ithMuStruct.bestTrk_dxy_bspot = theEvent_->normMuons_bestTrk_dxy_bspot.at(muIdx);
+			ithMuStruct.bestTrk_dxy_vtx   = theEvent_->normMuons_bestTrk_dxy_vtx.at(muIdx);
+			ithMuStruct.bestTrk_dz_vtx    = theEvent_->normMuons_bestTrk_dz_vtx.at(muIdx);
+			ithMuStruct.trk_trkrLayersWHits = theEvent_->normMuons_trk_trkrLayersWHits.at(muIdx);
+
 			Muon ithMuon(ithMuStruct);
 			vecOfMuons.push_back(ithMuon);
 		}
