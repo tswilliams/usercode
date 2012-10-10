@@ -136,6 +136,11 @@ namespace tsw{
 			std::vector<Double_t> normMuons_outTrk_phi_;
 			std::vector<Int_t>    normMuons_outTrk_charge_;
 
+	   	std::vector<Double_t> normMuons_bestTrk_dxy_bspot;
+	   	std::vector<Double_t> normMuons_bestTrk_dxy_vtx;
+	   	std::vector<Double_t> normMuons_bestTrk_dz_vtx;
+	   	std::vector<Int_t>    normMuons_trk_trkrLayersWHits;
+
 			ClassDef(tsw::Event,12);
 	};
 }

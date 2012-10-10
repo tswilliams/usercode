@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.18 2012/07/19 19:23:48 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.19 2012/07/25 09:55:59 tsw Exp $
 //
 //
 
@@ -55,7 +55,12 @@ sjlkd
 //...in order to use the heep::Ele class ...
 #include "SHarper/HEEPAnalyzer/interface/HEEPEle.h"
 
-//...for accessing the tevMuons and their cocktail tracks ...
+// ... for accessing the vertices & beamspot ...
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
+
+//...for accessing the muons ...
 #include <DataFormats/MuonReco/interface/Muon.h>
 #include "DataFormats/MuonReco/interface/MuonCocktails.h"
 
@@ -68,7 +73,6 @@ sjlkd
 #include "DataFormats/HLTReco/interface/TriggerEvent.h"
 
 //...for PU re-weighting
-#include "DataFormats/VertexReco/interface/Vertex.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 
@@ -2552,6 +2556,7 @@ void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 	// Declarations ...
 	edm::Handle <reco::TrackToTrackMap> tevMapH1, tevMapH2, tevMapH3;
 	edm::Handle<reco::MuonCollection> MuCollection;
+
 	//edm::Handle<reco::MuonCollection> refitMuonCollnH;
 	std::string MuonTags_ = "muons"; // It is suggested at the start of the "Available information" section of the "WorkBookMuonAnalysis" TWiki page
 												// that the vector<reco::Muon> with label "muons" should be used for the high-pT muons (along with other global muons, as well as the stand-alone and tracker muons).
@@ -2568,16 +2573,38 @@ void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 	edmEvent.getByLabel(MuonTags_, MuCollection);
 	const reco::MuonCollection muonC = *(MuCollection.product());
 
-	//edmEvent.getByLabel("refitMuons", refitMuonCollnH);
-	//const reco::MuonCollection refitMuonColln = *(refitMuonCollnH.product());
+	// Grab beamspot and highest pt-sum vertex
+	edm::Handle<reco::BeamSpot> h_beamSpot;
+	edmEvent.getByLabel("offlineBeamSpot", h_beamSpot);
+	if( ! h_beamSpot.isValid() )
+		edm::LogWarning("BstdZeeNTupler") << "WARNING!! Error will occur soon since handle to beam spot is not valid!\n";
 
-	/*// Running over the cocktail muons from the refitMuon module ...
-	std::cout << " ->There are " << refitMuonColln.size() << " refit muons in this event." << std::endl;
-	for(imuon = refitMuonColln.begin(); imuon != refitMuonColln.end(); ++imuon){
-		std::cout << "     Ctail refit muon ...: charge=" << imuon->charge() << "; isGlobalMuon()=" << imuon->isGlobalMuon() << "; isTrackerMuon=" << imuon->isTrackerMuon() << "isStandAloneMuon=" << imuon->isStandAloneMuon() << std::endl;
-		std::cout << "            global/ctail trk (pT, eta, phi) = (" << imuon->globalTrack()->pt() << ", " << imuon->globalTrack()->eta() << ", " << imuon->globalTrack()->phi() << ")" << std::endl;
-		std::cout << "            global/ctail trk charge = " << imuon->globalTrack()->charge() << std::endl;
-	}*/
+	edm::Handle<reco::VertexCollection> h_vertices;
+	edmEvent.getByLabel("offlinePrimaryVertices", h_vertices);
+	if( ! h_vertices.isValid() )
+		edm::LogWarning("BstdZeeNTupler") << "WARNING!! Error will occur soon since hande to primary vertices is not valid!\n";
+//	const reco::Vertex& firstPrimaryVertex = ;//( *h_vertices->begin() );
+	std::vector<reco::Vertex>::const_iterator mainPrimaryVertexIt(h_vertices->begin());
+	double mainPrimaryVtx_sumTrackPts = 0.0;
+
+	for(std::vector<reco::Vertex>::const_iterator vertexIt = h_vertices->begin();
+						vertexIt != h_vertices->end(); vertexIt++ )
+	{
+		// Apply basic quality cuts to vertex ...
+		bool goodQualityVtx = (vertexIt->tracksSize()>=4) && ( vertexIt->z()<24. && sqrt( pow(vertexIt->x(),2.0)+pow(vertexIt->y(),2.0) )<2.0 );
+		if( goodQualityVtx )
+		{
+			double ithVtx_sumTrackPts = 0.0;
+			for(std::vector<reco::Track>::const_iterator trkIt=vertexIt->refittedTracks().begin(); trkIt!=vertexIt->refittedTracks().end(); trkIt++)
+				ithVtx_sumTrackPts += sqrt(trkIt->innerMomentum().perp2());
+
+			if(ithVtx_sumTrackPts > mainPrimaryVtx_sumTrackPts)
+				mainPrimaryVertexIt = vertexIt;
+		}
+	}
+
+	if( mainPrimaryVertexIt!=h_vertices->begin() )
+		edm::LogWarning("BstdZeeNTupler") << "WARNING!! The highest sum-pT primary vertex used in " << __func__ << "is not the first from the collection!\n  This is unexpected ... \n";
 
 	// Running over the muons in the collection ...
 	if(beVerbose){std::cout << " ->There are " << muonC.size() << " muons in this event." << std::endl;}
@@ -2631,6 +2658,11 @@ void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 		}
 		else
 			ithMuon.outTrk_exists = false;
+
+		ithMuon.bestTrk_dxy_bspot   = imuon->muonBestTrack()->dxy( h_beamSpot->position() );
+		ithMuon.bestTrk_dxy_vtx     = imuon->muonBestTrack()->dxy( mainPrimaryVertexIt->position() );
+		ithMuon.bestTrk_dz_vtx      = imuon->muonBestTrack()->dz( mainPrimaryVertexIt->position() );
+		ithMuon.trk_trkrLayersWHits = imuon->track()->hitPattern().trackerLayersWithMeasurement();
 
 		//Printing this information to screen (if desired) ...
 		if(beVerbose){

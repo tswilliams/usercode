@@ -172,6 +172,11 @@ namespace tsw{
 		normMuons_outTrk_eta_   .push_back(theMuon->outTrk_eta);
 		normMuons_outTrk_phi_   .push_back(theMuon->outTrk_phi);
 		normMuons_outTrk_charge_.push_back(theMuon->outTrk_charge);
+
+   	normMuons_bestTrk_dxy_bspot .push_back(theMuon->bestTrk_dxy_bspot);
+   	normMuons_bestTrk_dxy_vtx   .push_back(theMuon->bestTrk_dxy_vtx);
+   	normMuons_bestTrk_dz_vtx    .push_back(theMuon->bestTrk_dz_vtx);
+   	normMuons_trk_trkrLayersWHits.push_back(theMuon->trk_trkrLayersWHits);
 	}
 }
 
