@@ -129,6 +129,7 @@ namespace tsw{
 			std::vector<Int_t>    normMuons_inTrk_numValidPixHits_;
 			std::vector<Int_t>    normMuons_inTrk_numValidTrkrHits_;
 			std::vector<Double_t> normMuons_inTrk_dxyVsOrigin_;
+	   	std::vector<Int_t>    normMuons_trk_trkrLayersWHits;
 
 			std::vector<Bool_t>   normMuons_outTrk_exists_;
 			std::vector<Double_t> normMuons_outTrk_pT_;
@@ -136,12 +137,12 @@ namespace tsw{
 			std::vector<Double_t> normMuons_outTrk_phi_;
 			std::vector<Int_t>    normMuons_outTrk_charge_;
 
-	   	std::vector<Double_t> normMuons_bestTrk_dxy_bspot;
-	   	std::vector<Double_t> normMuons_bestTrk_dxy_vtx;
-	   	std::vector<Double_t> normMuons_bestTrk_dz_vtx;
-	   	std::vector<Int_t>    normMuons_trk_trkrLayersWHits;
+			std::vector<Bool_t>   normMuons_bestTrk_exists_;
+	   	std::vector<Double_t> normMuons_bestTrk_dxy_bspot_;
+	   	std::vector<Double_t> normMuons_bestTrk_dxy_vtx_;
+	   	std::vector<Double_t> normMuons_bestTrk_dz_vtx_;
 
-			ClassDef(tsw::Event,12);
+			ClassDef(tsw::Event,13);
 	};
 }
 

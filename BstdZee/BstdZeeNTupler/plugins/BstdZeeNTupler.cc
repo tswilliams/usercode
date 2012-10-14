@@ -2644,6 +2644,7 @@ void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 			ithMuon.inTrk_numValidPixHits  = imuon->innerTrack()->hitPattern().numberOfValidPixelHits();
 			ithMuon.inTrk_numValidTrkrHits = imuon->innerTrack()->hitPattern().numberOfValidTrackerHits();
 			ithMuon.inTrk_dxyVsOrigin      = imuon->innerTrack()->dxy(); // Really, this should be calculated as innerTrack()->dxy(vertex->position()), but no vertex information is read in at the moment, and MuonRecoPerformance2010 TWiki page => Can calculate this approximately just relative to (0,0,0)
+			ithMuon.trk_trkrLayersWHits    = imuon->track()->hitPattern().trackerLayersWithMeasurement();
 		}
 		else
 			ithMuon.inTrk_exists = false;
@@ -2659,10 +2660,14 @@ void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 		else
 			ithMuon.outTrk_exists = false;
 
-		ithMuon.bestTrk_dxy_bspot   = imuon->muonBestTrack()->dxy( h_beamSpot->position() );
-		ithMuon.bestTrk_dxy_vtx     = imuon->muonBestTrack()->dxy( mainPrimaryVertexIt->position() );
-		ithMuon.bestTrk_dz_vtx      = imuon->muonBestTrack()->dz( mainPrimaryVertexIt->position() );
-		ithMuon.trk_trkrLayersWHits = imuon->track()->hitPattern().trackerLayersWithMeasurement();
+		if( imuon->muonBestTrack().get()!=0 ){
+			ithMuon.bestTrk_exists = true;
+			ithMuon.bestTrk_dxy_bspot   = imuon->muonBestTrack()->dxy( h_beamSpot->position() );
+			ithMuon.bestTrk_dxy_vtx     = imuon->muonBestTrack()->dxy( mainPrimaryVertexIt->position() );
+			ithMuon.bestTrk_dz_vtx      = imuon->muonBestTrack()->dz( mainPrimaryVertexIt->position() );
+		}
+		else
+			ithMuon.bestTrk_exists = false;
 
 		//Printing this information to screen (if desired) ...
 		if(beVerbose){

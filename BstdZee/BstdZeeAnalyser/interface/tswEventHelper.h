@@ -166,6 +166,7 @@ namespace tsw{
 			ithMuStruct.inTrk_numValidPixHits  = theEvent_->normMuons_inTrk_numValidPixHits_.at(muIdx);
 			ithMuStruct.inTrk_numValidTrkrHits = theEvent_->normMuons_inTrk_numValidTrkrHits_.at(muIdx);
 			ithMuStruct.inTrk_dxyVsOrigin      = theEvent_->normMuons_inTrk_dxyVsOrigin_.at(muIdx);
+			ithMuStruct.trk_trkrLayersWHits = theEvent_->normMuons_trk_trkrLayersWHits.at(muIdx);
 	   	// ... and from the outer track ...
 			ithMuStruct.outTrk_exists = theEvent_->normMuons_outTrk_exists_.at(muIdx);
 			ithMuStruct.outTrk_pT     = theEvent_->normMuons_outTrk_pT_.at(muIdx);
@@ -173,10 +174,10 @@ namespace tsw{
 			ithMuStruct.outTrk_phi    = theEvent_->normMuons_outTrk_phi_.at(muIdx);
 			ithMuStruct.outTrk_charge = theEvent_->normMuons_outTrk_charge_.at(muIdx);
 
-			ithMuStruct.bestTrk_dxy_bspot = theEvent_->normMuons_bestTrk_dxy_bspot.at(muIdx);
-			ithMuStruct.bestTrk_dxy_vtx   = theEvent_->normMuons_bestTrk_dxy_vtx.at(muIdx);
-			ithMuStruct.bestTrk_dz_vtx    = theEvent_->normMuons_bestTrk_dz_vtx.at(muIdx);
-			ithMuStruct.trk_trkrLayersWHits = theEvent_->normMuons_trk_trkrLayersWHits.at(muIdx);
+			ithMuStruct.bestTrk_exists    = theEvent_->normMuons_bestTrk_exists_.at(muIdx);
+			ithMuStruct.bestTrk_dxy_bspot = theEvent_->normMuons_bestTrk_dxy_bspot_.at(muIdx);
+			ithMuStruct.bestTrk_dxy_vtx   = theEvent_->normMuons_bestTrk_dxy_vtx_.at(muIdx);
+			ithMuStruct.bestTrk_dz_vtx    = theEvent_->normMuons_bestTrk_dz_vtx_.at(muIdx);
 
 			Muon ithMuon(ithMuStruct);
 			vecOfMuons.push_back(ithMuon);

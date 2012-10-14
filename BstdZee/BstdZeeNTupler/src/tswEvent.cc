@@ -166,6 +166,7 @@ namespace tsw{
 		normMuons_inTrk_numValidPixHits_ .push_back(theMuon->inTrk_numValidPixHits);
 		normMuons_inTrk_numValidTrkrHits_.push_back(theMuon->inTrk_numValidTrkrHits);
 		normMuons_inTrk_dxyVsOrigin_     .push_back(theMuon->inTrk_dxyVsOrigin);
+   	normMuons_trk_trkrLayersWHits.push_back(theMuon->trk_trkrLayersWHits);
 
 		normMuons_outTrk_exists_.push_back(theMuon->outTrk_exists);
 		normMuons_outTrk_pT_    .push_back(theMuon->outTrk_pT);
@@ -173,10 +174,10 @@ namespace tsw{
 		normMuons_outTrk_phi_   .push_back(theMuon->outTrk_phi);
 		normMuons_outTrk_charge_.push_back(theMuon->outTrk_charge);
 
-   	normMuons_bestTrk_dxy_bspot .push_back(theMuon->bestTrk_dxy_bspot);
-   	normMuons_bestTrk_dxy_vtx   .push_back(theMuon->bestTrk_dxy_vtx);
-   	normMuons_bestTrk_dz_vtx    .push_back(theMuon->bestTrk_dz_vtx);
-   	normMuons_trk_trkrLayersWHits.push_back(theMuon->trk_trkrLayersWHits);
+		normMuons_bestTrk_exists_   .push_back(theMuon->bestTrk_exists);
+   	normMuons_bestTrk_dxy_bspot_.push_back(theMuon->bestTrk_dxy_bspot);
+   	normMuons_bestTrk_dxy_vtx_  .push_back(theMuon->bestTrk_dxy_vtx);
+   	normMuons_bestTrk_dz_vtx_   .push_back(theMuon->bestTrk_dz_vtx);
 	}
 }
 
