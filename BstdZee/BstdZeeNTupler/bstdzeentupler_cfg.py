@@ -98,8 +98,9 @@ process.heepIdNoIso = cms.EDProducer("HEEPIdValueMapProducer",
                                 eleLabel = cms.InputTag("gsfElectrons"),
                                 barrelCuts = cms.PSet(heepBarrelCuts),
                                 endcapCuts = cms.PSet(heepEndcapCuts),
-                                eleIsolEffectiveAreas = cms.PSet(heepEffectiveAreas),
+                                verticesLabel = cms.InputTag("offlinePrimaryVertices"),
                                 eleRhoCorrLabel = cms.InputTag("kt6PFJets", "rho"),
+                                eleIsolEffectiveAreas = cms.PSet(heepEffectiveAreas),
                                 applyRhoCorrToEleIsol = cms.bool(True),
                                 writeIdAsInt = cms.bool(True)
                                 )
