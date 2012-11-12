@@ -35,6 +35,7 @@ namespace tsw{
 			void SetRecoVtxInfo(unsigned int nRecoVtxs, unsigned int nGoodRecoVtxs);
 			void SetPURho(const double rhoValue);
 			void SetEMuTriggerInfo(const std::string eMuPathName, const bool eMuPathDecision);
+			void AddStdEleInfo_dxy(double );
 			void AddStdEleInfo_isoDep_std(double ,double ,double );
 			void AddStdEleInfo_isoDep_inrVeto(double, double, double );
 			void AddStdEleInfo_inrVetoModIso(tsw::Event::InnerVetoSize, double, double, double );
@@ -80,6 +81,8 @@ namespace tsw{
 			bool trg_emuPath_decision_;
 
 			// Information about the standard electrons ...
+			std::vector<Double_t> stdEles_dxy_;
+
 			std::vector<Double_t> stdEles_isoDeps_stdTrkIso_;
 			std::vector<Double_t> stdEles_isoDeps_stdEcalIso_;
 			std::vector<Double_t> stdEles_isoDeps_stdHcalD1Iso_;
@@ -150,7 +153,7 @@ namespace tsw{
 	   	std::vector<Double_t> normMuons_bestTrk_dxy_vtx_;
 	   	std::vector<Double_t> normMuons_bestTrk_dz_vtx_;
 
-			ClassDef(tsw::Event, 15);
+			ClassDef(tsw::Event, 16);
 	};
 }
 

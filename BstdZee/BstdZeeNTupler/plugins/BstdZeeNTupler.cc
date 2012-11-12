@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.21 2012/10/14 14:27:04 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.22 2012/11/12 11:11:13 tsw Exp $
 //
 //
 
@@ -1936,6 +1936,11 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		iEvent.getByLabel(phantomEleValMapLabel, "hcalDepth1",     hVec_inrVetoModH1IsosPhantomEle.at(i));
 	}
 
+	edm::Handle<reco::VertexCollection> h_vertices;
+	iEvent.getByLabel("offlinePrimaryVertices", h_vertices);
+	if( ! h_vertices.isValid() )
+		edm::LogWarning("BstdZeeNTupler") << "WARNING!! Error will occur soon since handle to primary vertices is not valid!\n";
+	const reco::Vertex& firstPrimaryVertex = h_vertices->front() ;
 
 	//Setting the values of the standard reconstruction GSF electron variables...
 	normGsfEles_number_ = handle_normGsfEles.product()->size();
@@ -2066,6 +2071,9 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 
 	   normHEEPEles_numMissInnerHits_.push_back( ithHEEPEle.nrMissHits() );
 
+
+	   ithHEEPEle.setEvtPrimVertexPos( firstPrimaryVertex.position() );
+	   event_->AddStdEleInfo_dxy( ithHEEPEle.dxy() );
 
 	   // For getting the caloGeometry information ... es.get<CaloGeometryRecord>().get(eventSetupData_->caloGeom);
 	   // Variables storing the recHits information ...

@@ -77,6 +77,11 @@ namespace tsw{
 		trg_emuPath_decision_ = eMuPathDecision;
 	}
 
+	void Event::AddStdEleInfo_dxy(const double dxy)
+	{
+		stdEles_dxy_.push_back( dxy );
+	}
+
 	void Event::AddStdEleInfo_isoDep_std(const double stdTrkIso, const double stdEcalIso, const double stdHcalD1Iso)
 	{
 		stdEles_isoDeps_stdTrkIso_.push_back( stdTrkIso );
