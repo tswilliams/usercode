@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.19 2012/07/25 09:55:59 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.21 2012/10/14 14:27:04 tsw Exp $
 //
 //
 
@@ -1913,6 +1913,30 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	iEvent.getByLabel("innerXLVetoModEleIso","hcalDepth1", h_inrXLVetoEleIso_HcalD1);
 
 
+	std::vector<std::string> phantomEleValMapLabels;
+	phantomEleValMapLabels.push_back("vetoAreaModEleIsoPhantomDr005To010");
+	phantomEleValMapLabels.push_back("vetoAreaModEleIsoPhantomDr010To015");
+	phantomEleValMapLabels.push_back("vetoAreaModEleIsoPhantomDr015To020");
+	phantomEleValMapLabels.push_back("vetoAreaModEleIsoPhantomDr020To025");
+	phantomEleValMapLabels.push_back("vetoAreaModEleIsoPhantomDr025To030");
+	phantomEleValMapLabels.push_back("vetoAreaModEleIsoPhantomDr030To035");
+	phantomEleValMapLabels.push_back("vetoAreaModEleIsoPhantomDr035To040");
+	size_t nrPhantomEleValMaps = phantomEleValMapLabels.size();
+	std::vector< edm::Handle< edm::ValueMap<double> > > hVec_inrVetoModIsosPhantomEle_dEta(nrPhantomEleValMaps),
+				hVec_inrVetoModIsosPhantomEle_dPhi(nrPhantomEleValMaps),
+				hVec_inrVetoModTkIsosPhantomEle(nrPhantomEleValMaps),
+				hVec_inrVetoModEmIsosPhantomEle(nrPhantomEleValMaps),
+				hVec_inrVetoModH1IsosPhantomEle(nrPhantomEleValMaps);
+	for(size_t i=0; i<nrPhantomEleValMaps; i++){
+		const std::string& phantomEleValMapLabel = phantomEleValMapLabels.at(i);
+		iEvent.getByLabel(phantomEleValMapLabel, "dEtaPhantomEle", hVec_inrVetoModIsosPhantomEle_dEta.at(i));
+		iEvent.getByLabel(phantomEleValMapLabel, "dPhiPhantomEle", hVec_inrVetoModIsosPhantomEle_dPhi.at(i));
+		iEvent.getByLabel(phantomEleValMapLabel, "track",          hVec_inrVetoModTkIsosPhantomEle.at(i));
+		iEvent.getByLabel(phantomEleValMapLabel, "ecal",           hVec_inrVetoModEmIsosPhantomEle.at(i));
+		iEvent.getByLabel(phantomEleValMapLabel, "hcalDepth1",     hVec_inrVetoModH1IsosPhantomEle.at(i));
+	}
+
+
 	//Setting the values of the standard reconstruction GSF electron variables...
 	normGsfEles_number_ = handle_normGsfEles.product()->size();
 	if(beVerbose){std::cout << " ->There are " << normGsfEles_number_ << " standard GSF electrons in this event."<< std::endl;}
@@ -2167,6 +2191,31 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		event_->AddStdEleInfo_inrVetoModIso(tsw::Event::largeVeto,  (*h_inrLVetoEleIso_Tk )[ithGsfEleRef], (*h_inrLVetoEleIso_Ecal )[ithGsfEleRef], (*h_inrLVetoEleIso_HcalD1 )[ithGsfEleRef] );
 		event_->AddStdEleInfo_inrVetoModIso(tsw::Event::xLargeVeto, (*h_inrXLVetoEleIso_Tk)[ithGsfEleRef], (*h_inrXLVetoEleIso_Ecal)[ithGsfEleRef], (*h_inrXLVetoEleIso_HcalD1)[ithGsfEleRef] );
 
+
+		typedef std::vector<edm::Handle< edm::ValueMap<double> > >::const_iterator  DblValMapHandleVecIt ;
+		DblValMapHandleVecIt hIt_inrVetoModIsosPhantomEle_dEta = hVec_inrVetoModIsosPhantomEle_dEta.begin();
+		DblValMapHandleVecIt hIt_inrVetoModIsosPhantomEle_dPhi = hVec_inrVetoModIsosPhantomEle_dPhi.begin();
+		DblValMapHandleVecIt hIt_inrVetoModTkIsosPhantomEle    = hVec_inrVetoModTkIsosPhantomEle.begin();
+		DblValMapHandleVecIt hIt_inrVetoModEmIsosPhantomEle    = hVec_inrVetoModEmIsosPhantomEle.begin();
+		DblValMapHandleVecIt hIt_inrVetoModH1IsosPhantomEle    = hVec_inrVetoModH1IsosPhantomEle.begin();
+		std::vector<double> vec_inrVetoModIsosPhantomEle_dEta, vec_inrVetoModIsosPhantomEle_dPhi,
+				vec_inrVetoModTkIsosPhantomEle, vec_inrVetoModEmIsosPhantomEle, vec_inrVetoModH1IsosPhantomEle;
+		for( ; hIt_inrVetoModIsosPhantomEle_dEta != hVec_inrVetoModIsosPhantomEle_dEta.end(); ){
+			vec_inrVetoModIsosPhantomEle_dEta.push_back( (**hIt_inrVetoModIsosPhantomEle_dEta)[ithGsfEleRef] );
+			hIt_inrVetoModIsosPhantomEle_dEta++;
+			vec_inrVetoModIsosPhantomEle_dPhi.push_back( (**hIt_inrVetoModIsosPhantomEle_dPhi)[ithGsfEleRef] );
+			hIt_inrVetoModIsosPhantomEle_dPhi++;
+
+			vec_inrVetoModTkIsosPhantomEle.push_back( (**hIt_inrVetoModTkIsosPhantomEle)[ithGsfEleRef] );
+			hIt_inrVetoModTkIsosPhantomEle++;
+			vec_inrVetoModEmIsosPhantomEle.push_back( (**hIt_inrVetoModEmIsosPhantomEle)[ithGsfEleRef] );
+			hIt_inrVetoModEmIsosPhantomEle++;
+			vec_inrVetoModH1IsosPhantomEle.push_back( (**hIt_inrVetoModH1IsosPhantomEle)[ithGsfEleRef] );
+			hIt_inrVetoModH1IsosPhantomEle++;
+		}
+		event_->AddStdEleInfo_inrVetoModIsoWithPhantomEle(vec_inrVetoModIsosPhantomEle_dEta, vec_inrVetoModIsosPhantomEle_dPhi,
+				vec_inrVetoModTkIsosPhantomEle, vec_inrVetoModEmIsosPhantomEle, vec_inrVetoModH1IsosPhantomEle );
+
 		// Calculating the number of hadrons within a dR=0.4 cone around each electron (for separation of underlying event & other-electron-footprint effects from isolation cut efficiency curves)
 		unsigned int nGenHadrons_dR04 = 0;
 		double   ptSumGenHadrons_dR04 = 0.0;
@@ -2207,7 +2256,15 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 
 	} //End: for loop over GSF eles
 	
-	//Printing these values to screen...
+//	//Printing these values to screen...
+//	for(unsigned int iEle = 0; iEle < normGsfEles_p4ptr_->size(); iEle++){
+//		std::cout << "  * GSF ele no. " << iEle << ":" << std::endl
+//				    << "       Et=" << normGsfEles_p4_.at(iEle).Pt() << " ; eta=" << normGsfEles_p4_.at(iEle).Eta() << " ; phi=" << normGsfEles_p4_.at(iEle).Phi() << std::endl;
+//		std::cout << "       Isos: track=" << normHEEPEles_isolPtTrks_.at(iEle) << " ; ecal=" << normHEEPEles_isolEm_.at(iEle) << " ; hcalD1=" << normHEEPEles_isolHadDepth1_.at(iEle) << std::endl;
+//		event_->PrintStdEleInfo_inrVetoModIsoWithPhantomEle(iEle);
+//		std::cout << std::endl;
+//	}
+
 	if(beVerbose){
 		for(unsigned int iEle = 0; iEle < normGsfEles_p4ptr_->size(); iEle++){
 			std::cout << "     norm GSF ele no. " << iEle << ":";

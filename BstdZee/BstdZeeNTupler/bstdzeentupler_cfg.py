@@ -2,9 +2,9 @@ import FWCore.ParameterSet.Config as cms
 
 #####################################
 # Input flags
-input_isMC = False
+input_isMC = True
 input_is2010SignalMC = False
-input_dyJetsToLLFilter =0 #==0 =>Don't select events, ==11 =>ele, ==13 =>muon, ==15 =>tau
+input_dyJetsToLLFilter =11 #==0 =>Don't select events, ==11 =>ele, ==13 =>muon, ==15 =>tau
 
 #####################################################
 ## Useful function for local running...
@@ -45,7 +45,7 @@ if os.path.isdir(options.inputFiles[0]) or os.path.isdir('/pnfs/pp.rl.ac.uk/data
 
    # Pre-pend the directory to the file names 
    for i in range(len(options.inputFiles)):
-      options.inputFiles[i] = dirLocation+options.inputFiles[i]      
+      options.inputFiles[i] = dirLocation+"/"+options.inputFiles[i]      
 else:
    for i in range(len(options.inputFiles)):
       options.inputFiles[i] = DataFileLocationAdaptor(options.inputFiles[i])
@@ -73,7 +73,7 @@ process.MessageLogger.categories=cms.untracked.vstring('FwkJob'
 process.MessageLogger.cerr.Generator = cms.untracked.PSet(limit = cms.untracked.int32(0))
 process.MessageLogger.cerr.LHEInterface = cms.untracked.PSet(limit = cms.untracked.int32(10000))
 
-process.MessageLogger.cerr.FwkReport.reportEvery = 50000
+process.MessageLogger.cerr.FwkReport.reportEvery = 5000
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(options.maxEvents) )
 
 #Reading in a list of datafile locations from a file...
@@ -86,7 +86,7 @@ datafileLocations = map(DataFileLocationAdaptor,datafilesList)
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(options.inputFiles) )
 
 #Defining the output file to store the histograms/NTuples in... 
-#process.TFileService = cms.Service("TFileService", fileName=cms.string("mcNTuple_42Xv1x_Fall11.root"))
+#process.TFileService = cms.Service("TFileService", fileName=cms.string("BstdZeeNTuple_53X-v2pre1b.root"))
 process.TFileService = cms.Service("TFileService", fileName=cms.string(options.outputFile))
 
 ###################################################################################################
@@ -167,6 +167,60 @@ process.innerXLVetoModEleIso.otherElesIntRadiusEcalBarrel  = cms.double(7.0)
 process.innerXLVetoModEleIso.otherElesIntRadiusEcalEndcaps = cms.double(7.0)
 process.innerXLVetoModEleIso.otherElesJurassicWidth        = cms.double(3.5)
 
+
+process.vetoAreaModEleIsoPhantomDr005To010 = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles"),
+      extraPhantomVetoEle = cms.bool(True),
+      phantomVetoEleDrMin = cms.double(0.05),
+      phantomVetoEleDrMax = cms.double(0.10) )
+
+process.vetoAreaModEleIsoPhantomDr010To015 = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles"), 
+      extraPhantomVetoEle = cms.bool(True),
+      phantomVetoEleDrMin = cms.double(0.10),
+      phantomVetoEleDrMax = cms.double(0.15) )
+
+process.vetoAreaModEleIsoPhantomDr015To020 = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles"), 
+      extraPhantomVetoEle = cms.bool(True),
+      phantomVetoEleDrMin = cms.double(0.15),
+      phantomVetoEleDrMax = cms.double(0.20) )
+
+process.vetoAreaModEleIsoPhantomDr020To025 = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles"), 
+      extraPhantomVetoEle = cms.bool(True),
+      phantomVetoEleDrMin = cms.double(0.20),
+      phantomVetoEleDrMax = cms.double(0.25) )
+
+process.vetoAreaModEleIsoPhantomDr025To030 = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles"), 
+      extraPhantomVetoEle = cms.bool(True),
+      phantomVetoEleDrMin = cms.double(0.25),
+      phantomVetoEleDrMax = cms.double(0.30) )
+
+process.vetoAreaModEleIsoPhantomDr030To035 = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles"), 
+      extraPhantomVetoEle = cms.bool(True),
+      phantomVetoEleDrMin = cms.double(0.30),
+      phantomVetoEleDrMax = cms.double(0.35) )
+
+process.vetoAreaModEleIsoPhantomDr035To040 = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles"), 
+      extraPhantomVetoEle = cms.bool(True),
+      phantomVetoEleDrMin = cms.double(0.35),
+      phantomVetoEleDrMax = cms.double(0.40) )
+      
+process.modEleIsoOtherEleVetoAreaForSelf = cms.EDProducer("BstdZeeModIsolProducer",
+      bstdZeeModIsolParams, vetoGsfEles = cms.InputTag("heepIdNoIsoEles")  )
+process.modEleIsoOtherEleVetoAreaForSelf.intRadiusBarrelTk    = bstdZeeModIsolParams.otherElesIntRadiusBarrelTk
+process.modEleIsoOtherEleVetoAreaForSelf.intRadiusEndcapTk    = bstdZeeModIsolParams.otherElesIntRadiusEndcapTk
+process.modEleIsoOtherEleVetoAreaForSelf.stripBarrelTk        = bstdZeeModIsolParams.otherElesStripBarrelTk
+process.modEleIsoOtherEleVetoAreaForSelf.stripEndcapTk        = bstdZeeModIsolParams.otherElesStripEndcapTk
+process.modEleIsoOtherEleVetoAreaForSelf.intRadiusEcalBarrel  = bstdZeeModIsolParams.otherElesIntRadiusEcalBarrel
+process.modEleIsoOtherEleVetoAreaForSelf.intRadiusEcalEndcaps = bstdZeeModIsolParams.otherElesIntRadiusEcalEndcaps
+process.modEleIsoOtherEleVetoAreaForSelf.jurassicWidth        = bstdZeeModIsolParams.otherElesJurassicWidth
+
+
 #process.innerXSVetoModEleIso.barrelRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEB:stdRECO")
 #process.innerXSVetoModEleIso.endcapRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEE:stdRECO")
 #process.innerSVetoModEleIso.barrelRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEB:stdRECO")
@@ -178,8 +232,13 @@ process.innerXLVetoModEleIso.otherElesJurassicWidth        = cms.double(3.5)
 #process.innerXLVetoModEleIso.barrelRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEB:stdRECO")
 #process.innerXLVetoModEleIso.endcapRecHitsTag = cms.InputTag("ecalRecHit:EcalRecHitsEE:stdRECO")
 
-process.innerVetoModEleIsos = cms.Sequence( process.innerXSVetoModEleIso * process.innerSVetoModEleIso * process.innerMVetoModEleIso
-                                            * process.innerLVetoModEleIso * process.innerXLVetoModEleIso )
+process.innerVetoModEleIsos = cms.Sequence( process.innerXSVetoModEleIso * process.innerSVetoModEleIso * process.innerMVetoModEleIso 
+                                            * process.innerLVetoModEleIso * process.innerXLVetoModEleIso 
+                                            * process.vetoAreaModEleIsoPhantomDr005To010 * process.vetoAreaModEleIsoPhantomDr010To015 
+                                            * process.vetoAreaModEleIsoPhantomDr015To020 * process.vetoAreaModEleIsoPhantomDr020To025
+                                            * process.vetoAreaModEleIsoPhantomDr025To030 * process.vetoAreaModEleIsoPhantomDr030To035
+                                            * process.vetoAreaModEleIsoPhantomDr035To040
+                                            * process.modEleIsoOtherEleVetoAreaForSelf )
 
 
 # ModIso: 2b) Calculating modified iso. values with IsoDeposits framework
@@ -312,7 +371,7 @@ process.demo = cms.EDAnalyzer('BstdZeeNTupler',
                                                                             "HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_v[478]",
                                                                             "HLT_Mu15_Photon20_CaloIdL_v[1-9]"),
                               puDists_mcFile       = cms.untracked.string("Summer12PileUp_true_20120719.root"),
-                              puDists_dataFile     = cms.untracked.string("data12PileUp_true_20120719_r190456-197044.root"),
+                              puDists_dataFile     = cms.untracked.string("data12PileUp_true_20120827_r190456-200601.root"),
                               puDists_mcHistName   = cms.untracked.string("Summer12PileUpHist_true"),
                               puDists_dataHistName = cms.untracked.string("pileup")
      ) 

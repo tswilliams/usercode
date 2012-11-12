@@ -127,6 +127,15 @@ namespace tsw{
 		}
 	}
 
+	void Event::AddStdEleInfo_inrVetoModIsoWithPhantomEle(const std::vector<double>& dEtaPhantomEles, const std::vector<double>& dPhiPhantomEles, const std::vector<double>& trkIsos, const std::vector<double>& ecalIsos, const std::vector<double>& hcalD1Isos)
+	{
+		stdEles_inrVetoModIsoPhantomEles_dEta_.push_back( dEtaPhantomEles );
+		stdEles_inrVetoModIsoPhantomEles_dPhi_.push_back( dPhiPhantomEles );
+		stdEles_inrVetoModIsoPhantomEles_Trk_.push_back( trkIsos );
+		stdEles_inrVetoModIsoPhantomEles_Ecal_.push_back( ecalIsos );
+		stdEles_inrVetoModIsoPhantomEles_HcalD1_.push_back( hcalD1Isos );
+	}
+
 	void Event::AddStdEleInfo_genHadronsDr04(unsigned int nGenHadrons_dR04, double ptSumGenHadrons_dR04){
 		stdEles_nGenHadronsDr04_.push_back(nGenHadrons_dR04);
 		stdEles_ptSumGenHadronsDr04_.push_back(ptSumGenHadrons_dR04);
@@ -138,6 +147,22 @@ namespace tsw{
 		std::cout << "          Mod (inrVeto): Trk=" << stdEles_isoDeps_inrVetoModTrkIso_.at(iEle) << ", Ecal=" << stdEles_isoDeps_inrVetoModEcalIso_.at(iEle) << ", HcalDepth1=" << stdEles_isoDeps_inrVetoModHcalD1Iso_.at(iEle) << std::endl;
 		std::cout << "     InnerVetoMod iso values from bstdZee code ..." << std::endl;
 		std::cout << "          Trk=" << stdEles_inrVetoModIso_Trk_.at(iEle) << ", Ecal=" << stdEles_inrVetoModIso_Ecal_.at(iEle) << ", HcalDepth1=" << stdEles_inrVetoModIso_HcalD1_.at(iEle) << std::endl;
+	}
+
+	void Event::PrintStdEleInfo_inrVetoModIsoWithPhantomEle(unsigned int iEle)
+	{
+		std::vector<double>::const_iterator dEtaIt = stdEles_inrVetoModIsoPhantomEles_dEta_.at(iEle).begin();
+		std::vector<double>::const_iterator dPhiIt = stdEles_inrVetoModIsoPhantomEles_dPhi_.at(iEle).begin();
+		std::vector<double>::const_iterator trkIsoIt    = stdEles_inrVetoModIsoPhantomEles_Trk_.at(iEle).begin();
+		std::vector<double>::const_iterator ecalIsoIt   = stdEles_inrVetoModIsoPhantomEles_Ecal_.at(iEle).begin();
+		std::vector<double>::const_iterator hcalD1IsoIt = stdEles_inrVetoModIsoPhantomEles_HcalD1_.at(iEle).begin();
+
+		for( ; dEtaIt != stdEles_inrVetoModIsoPhantomEles_dEta_.at(iEle).end(); ){
+			std::cout << "     Phantom with d(Eta,Phi)=(" << *dEtaIt << ", " << *dPhiIt << "): " << std::endl
+						 << "       Isos: track=" << *trkIsoIt << " ; ecal=" << *ecalIsoIt << " ; hcalD1=" << *hcalD1IsoIt << std::endl;
+			dEtaIt++;  dPhiIt++;
+			trkIsoIt++;  ecalIsoIt++;  hcalD1IsoIt++;
+		}
 	}
 
 
