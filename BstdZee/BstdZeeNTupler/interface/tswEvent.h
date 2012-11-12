@@ -39,6 +39,7 @@ namespace tsw{
 			void AddStdEleInfo_isoDep_std(double ,double ,double );
 			void AddStdEleInfo_isoDep_inrVeto(double, double, double );
 			void AddStdEleInfo_inrVetoModIso(tsw::Event::InnerVetoSize, double, double, double );
+			void AddStdEleInfo_inrVetoModIsoOtherEleAreaForSelf(const double trackIso, const double ecalIso, const double hcalD1Iso);
 			void AddStdEleInfo_inrVetoModIsoWithPhantomEle(const std::vector<double>&, const std::vector<double>&, const std::vector<double>&, const std::vector<double>&, const std::vector<double>& );
 			void AddStdEleInfo_genHadronsDr04(unsigned int nGenHadrons_dR04, double ptSumGenHadrons_dR04);
 
@@ -106,6 +107,10 @@ namespace tsw{
 			std::vector<Double_t> stdEles_inrVetoXLModIso_Ecal_;
 			std::vector<Double_t> stdEles_inrVetoXLModIso_HcalD1_;
 
+			std::vector<Double_t> stdEles_inrVetoModIso_otherEleAreaForSelf_Trk_;
+			std::vector<Double_t> stdEles_inrVetoModIso_otherEleAreaForSelf_Ecal_;
+			std::vector<Double_t> stdEles_inrVetoModIso_otherEleAreaForSelf_HcalD1_;
+
 			std::vector<std::vector<Double_t> > stdEles_inrVetoModIsoPhantomEles_dEta_;
 			std::vector<std::vector<Double_t> > stdEles_inrVetoModIsoPhantomEles_dPhi_;
 			std::vector<std::vector<Double_t> > stdEles_inrVetoModIsoPhantomEles_Trk_;
@@ -153,7 +158,7 @@ namespace tsw{
 	   	std::vector<Double_t> normMuons_bestTrk_dxy_vtx_;
 	   	std::vector<Double_t> normMuons_bestTrk_dz_vtx_;
 
-			ClassDef(tsw::Event, 16);
+			ClassDef(tsw::Event, 17);
 	};
 }
 

@@ -1912,6 +1912,12 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 	iEvent.getByLabel("innerLVetoModEleIso","hcalDepth1",  h_inrLVetoEleIso_HcalD1);
 	iEvent.getByLabel("innerXLVetoModEleIso","hcalDepth1", h_inrXLVetoEleIso_HcalD1);
 
+	edm::Handle< edm::ValueMap<double> > h_inrVetoModIso_otherEleAreaForSelf_Trk;
+	edm::Handle< edm::ValueMap<double> > h_inrVetoModIso_otherEleAreaForSelf_Ecal;
+	edm::Handle< edm::ValueMap<double> > h_inrVetoModIso_otherEleAreaForSelf_HcalD1;
+	iEvent.getByLabel("modEleIsoOtherEleVetoAreaForSelf", "track",      h_inrVetoModIso_otherEleAreaForSelf_Trk);
+	iEvent.getByLabel("modEleIsoOtherEleVetoAreaForSelf", "ecal",       h_inrVetoModIso_otherEleAreaForSelf_Ecal);
+	iEvent.getByLabel("modEleIsoOtherEleVetoAreaForSelf", "hcalDepth1", h_inrVetoModIso_otherEleAreaForSelf_HcalD1);
 
 	std::vector<std::string> phantomEleValMapLabels;
 	phantomEleValMapLabels.push_back("vetoAreaModEleIsoPhantomDr005To010");
@@ -2199,6 +2205,9 @@ void BstdZeeNTupler::ReadInNormGsfEles(bool beVerbose, const edm::Handle<reco::G
 		event_->AddStdEleInfo_inrVetoModIso(tsw::Event::largeVeto,  (*h_inrLVetoEleIso_Tk )[ithGsfEleRef], (*h_inrLVetoEleIso_Ecal )[ithGsfEleRef], (*h_inrLVetoEleIso_HcalD1 )[ithGsfEleRef] );
 		event_->AddStdEleInfo_inrVetoModIso(tsw::Event::xLargeVeto, (*h_inrXLVetoEleIso_Tk)[ithGsfEleRef], (*h_inrXLVetoEleIso_Ecal)[ithGsfEleRef], (*h_inrXLVetoEleIso_HcalD1)[ithGsfEleRef] );
 
+		event_->AddStdEleInfo_inrVetoModIsoOtherEleAreaForSelf( (*h_inrVetoModIso_otherEleAreaForSelf_Trk)[ithGsfEleRef],
+																					(*h_inrVetoModIso_otherEleAreaForSelf_Ecal)[ithGsfEleRef],
+																					(*h_inrVetoModIso_otherEleAreaForSelf_HcalD1)[ithGsfEleRef] );
 
 		typedef std::vector<edm::Handle< edm::ValueMap<double> > >::const_iterator  DblValMapHandleVecIt ;
 		DblValMapHandleVecIt hIt_inrVetoModIsosPhantomEle_dEta = hVec_inrVetoModIsosPhantomEle_dEta.begin();

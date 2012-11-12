@@ -132,6 +132,13 @@ namespace tsw{
 		}
 	}
 
+	void Event::AddStdEleInfo_inrVetoModIsoOtherEleAreaForSelf(const double trackIso, const double ecalIso, const double hcalD1Iso)
+	{
+		stdEles_inrVetoModIso_otherEleAreaForSelf_Trk_.push_back( trackIso );
+		stdEles_inrVetoModIso_otherEleAreaForSelf_Ecal_.push_back( ecalIso );
+		stdEles_inrVetoModIso_otherEleAreaForSelf_HcalD1_.push_back( hcalD1Iso );
+	}
+
 	void Event::AddStdEleInfo_inrVetoModIsoWithPhantomEle(const std::vector<double>& dEtaPhantomEles, const std::vector<double>& dPhiPhantomEles, const std::vector<double>& trkIsos, const std::vector<double>& ecalIsos, const std::vector<double>& hcalD1Isos)
 	{
 		stdEles_inrVetoModIsoPhantomEles_dEta_.push_back( dEtaPhantomEles );
