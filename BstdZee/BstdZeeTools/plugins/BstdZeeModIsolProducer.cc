@@ -13,7 +13,7 @@
 //
 // Original Author:  Thomas Williams
 //         Created:  Mon Mar  5 18:12:27 GMT 2012
-// $Id: BstdZeeModIsolProducer.cc,v 1.4 2012/08/28 15:21:18 tsw Exp $
+// $Id: BstdZeeModIsolProducer.cc,v 1.5 2012/10/07 23:55:33 tsw Exp $
 //
 //
 
@@ -23,7 +23,9 @@
 #include <memory>
 
 // ROOT includes
+#include "TMath.h"
 #include <Math/VectorUtil.h>
+#include "TRandom3.h"
 
 // CMSSW includes -- Basic/General
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -87,13 +89,23 @@ BstdZeeModIsolProducer::BstdZeeModIsolProducer(const edm::ParameterSet& iConfig)
 	// HCAL depth 1 isolation
 	hcalTowersTag_(iConfig.getParameter<edm::InputTag>("hcalTowers")),
 	hcal_intRadius_(iConfig.getParameter<double>("intRadiusHcal")),
-	hcal_etMin_(iConfig.getParameter<double>("etMinHcal"))
+	hcal_etMin_(iConfig.getParameter<double>("etMinHcal")),
+	// Phantom ele params
+   extraPhantomVetoEle_( iConfig.exists("extraPhantomVetoEle") ? iConfig.getParameter<bool>("extraPhantomVetoEle") : false ),
+   phantomVetoEleDrMin_( iConfig.exists("phantomVetoEleDrMin") ? iConfig.getParameter<double>("phantomVetoEleDrMin") : 0.0 ),
+   phantomVetoEleDrMax_( iConfig.exists("phantomVetoEleDrMax") ? iConfig.getParameter<double>("phantomVetoEleDrMax") : 0.0 ),
+   phantomVetoEleDEta_(0.0), phantomVetoEleDPhi_(0.0)
+
 {
    // Now, register the products
 	produces< std::vector<reco::Track> >("tracksInIsolSum");
 	produces< edm::ValueMap<double> >("track");
 	produces< edm::ValueMap<double> >("ecal");
 	produces< edm::ValueMap<double> >("hcalDepth1");
+	if( extraPhantomVetoEle_ ){
+		produces< edm::ValueMap<double> >("dEtaPhantomEle");
+		produces< edm::ValueMap<double> >("dPhiPhantomEle");
+	}
 }
 
 
@@ -123,6 +135,18 @@ void BstdZeeModIsolProducer::produce(edm::Event& iEvent, const edm::EventSetup& 
 	std::auto_ptr< edm::ValueMap<double> > trackMap( new edm::ValueMap<double> );
 	std::auto_ptr< edm::ValueMap<double> > ecalMap( new edm::ValueMap<double> );
 	std::auto_ptr< edm::ValueMap<double> > hcalD1Map( new edm::ValueMap<double> );
+	std::auto_ptr< edm::ValueMap<double> > dEtaPhantomEleMap( new edm::ValueMap<double> );
+	std::auto_ptr< edm::ValueMap<double> > dPhiPhantomEleMap( new edm::ValueMap<double> );
+
+	// If phantom veto ele requested, then set up it's dEta & dPhi w.r.t. ele whose isolation value is being calculated.
+	TRandom3 randNumGen( iEvent.id().event() );
+	const double phantomVetoEleDR = phantomVetoEleDrMin_ + (phantomVetoEleDrMax_-phantomVetoEleDrMin_)*randNumGen.Rndm();
+	const double phantomVetoEleEtaPhiAngle = 2.0*TMath::Pi()*randNumGen.Rndm();
+	phantomVetoEleDEta_ = phantomVetoEleDR*cos(phantomVetoEleEtaPhiAngle);
+	phantomVetoEleDPhi_ = phantomVetoEleDR*sin(phantomVetoEleEtaPhiAngle);
+
+	std::vector<double> dEtaPhantomEleVec(inputEleHandle->size(), phantomVetoEleDEta_);
+	std::vector<double> dPhiPhantomEleVec(inputEleHandle->size(), phantomVetoEleDPhi_);
 
 //	// Run over the input electrons, calculating the new isolation values for each one
 //	for( reco::GsfElectronCollection::const_iterator gsfEle = inputEleHandle->begin();
@@ -146,12 +170,23 @@ void BstdZeeModIsolProducer::produce(edm::Event& iEvent, const edm::EventSetup& 
 	hcalD1MapFiller.insert(inputEleHandle, hcalD1IsolVec.begin(), hcalD1IsolVec.end());
 	hcalD1MapFiller.fill();
 
+	edm::ValueMap<double>::Filler dEtaPhantomEleMapFiller(*dEtaPhantomEleMap);
+	dEtaPhantomEleMapFiller.insert(inputEleHandle, dEtaPhantomEleVec.begin(), dEtaPhantomEleVec.end());
+	dEtaPhantomEleMapFiller.fill();
+	edm::ValueMap<double>::Filler dPhiPhantomEleMapFiller(*dPhiPhantomEleMap);
+	dPhiPhantomEleMapFiller.insert(inputEleHandle, dPhiPhantomEleVec.begin(), dPhiPhantomEleVec.end());
+	dPhiPhantomEleMapFiller.fill();
+
 	// Store the products
 	std::auto_ptr< std::vector<reco::Track> > tracksToStore( new std::vector<reco::Track>(tracksInIsolSum_) );
 	iEvent.put(tracksToStore, "tracksInIsolSum");
 	iEvent.put(trackMap, "track");
 	iEvent.put(ecalMap, "ecal");
 	iEvent.put(hcalD1Map, "hcalDepth1");
+	if( extraPhantomVetoEle_ ){
+		iEvent.put(dEtaPhantomEleMap, "dEtaPhantomEle");
+		iEvent.put(dPhiPhantomEleMap, "dPhiPhantomEle");
+	}
 }
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -229,16 +264,23 @@ double BstdZeeModIsolProducer::getTrackIsol(const reco::GsfElectron& theEle, con
 		if(!includeInIsolSum)
 			continue;
 
-		//TODO -- Check if the track is in the inner veto area of any of the vetoEles
+		// *** Check if the track is in the inner veto area of any of the vetoEles
+		//   If extraPhantomVetoEle_ true, then instead just check if track is w/i inner veto area of this phantom ele
 		for( reco::GsfElectronCollection::const_iterator otherEleIt = vetoEles.begin(); otherEleIt!=vetoEles.end(); otherEleIt++){
 			reco::GsfTrackRef otherEleTrack = otherEleIt->gsfTrack();
 
 			// Skip if this is the electron who's isol value is being calculated
-			if( fabs(otherEleTrack->eta()-tmpTrack->eta())<0.001 && fabs(otherEleTrack->phi()-tmpTrack->phi())<0.001 )
+			if( !extraPhantomVetoEle_ && fabs(otherEleTrack->eta()-tmpTrack->eta())<0.001 && fabs(otherEleTrack->phi()-tmpTrack->phi())<0.001 )
 				continue;
 
-			double vsOtherEle_dR = ROOT::Math::VectorUtil::DeltaR(itrTr->momentum(), otherEleTrack->momentum() );
-			double vsOtherEle_dEta = (*itrTr).eta() - otherEleTrack->eta();
+			math::XYZVector otherEleTrackP3 = otherEleTrack->momentum();
+			if(extraPhantomVetoEle_){
+				math::RhoEtaPhiVector rhoEtaPhiTrackP3;
+				rhoEtaPhiTrackP3.SetEta(tmpTrack->eta()+phantomVetoEleDEta_).SetPhi(tmpTrack->phi()+phantomVetoEleDPhi_).SetRho(1.0);
+				otherEleTrackP3.SetXYZ(rhoEtaPhiTrackP3.x(), rhoEtaPhiTrackP3.y(), rhoEtaPhiTrackP3.z());
+			}
+			double vsOtherEle_dR = ROOT::Math::VectorUtil::DeltaR(itrTr->momentum(), otherEleTrackP3);
+			double vsOtherEle_dEta = (*itrTr).eta() - (extraPhantomVetoEle_ ? (tmpTrack->eta()+phantomVetoEleDEta_) : otherEleTrack->eta() );
 			if (fabs(tmpElectronEtaAtVertex) < 1.479) {
 				if ( fabs(vsOtherEle_dR) < tk_otherElesIntRadiusBarrel_ || ( fabs(vsOtherEle_dR) < extRadius_ && fabs(vsOtherEle_dEta) < tk_otherElesStripWidthBarrel_ ) )
 					includeInIsolSum = false;
@@ -352,6 +394,7 @@ double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, cons
 					}  //end if vetoClustered_
 
 					// *** Check if recHit is in inner veto area around any of the 'veto' eles
+					//   If extraPhantomVetoEle_ true, then instead just check if recHit is w/i inner veto area of this phantom ele
 					bool vetoedByVetoEles = false;
 					for( reco::GsfElectronCollection::const_iterator otherEleIt = vetoEles.begin(); otherEleIt!=vetoEles.end(); otherEleIt++){
 						reco::SuperClusterRef otherEleSC = otherEleIt->get<reco::SuperClusterRef>();
@@ -359,8 +402,8 @@ double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, cons
 						GlobalPoint otherEle_pclu (otherEle_caloPosition.x () ,
 								otherEle_caloPosition.y () ,
 								otherEle_caloPosition.z () );
-						double otherEle_etaclus = otherEle_pclu.eta();
-						double otherEle_phiclus = otherEle_pclu.phi();
+						double otherEle_etaclus = extraPhantomVetoEle_ ? (etaclus+phantomVetoEleDEta_) : otherEle_pclu.eta();
+						double otherEle_phiclus = extraPhantomVetoEle_ ? (phiclus+phantomVetoEleDPhi_) : otherEle_pclu.phi();
 
 						// Skip if this is the electron who's isol value is being calculated
 						if( fabs(otherEle_etaclus-etaclus)<0.001 && fabs(otherEle_phiclus-phiclus)<0.001 )
@@ -468,12 +511,13 @@ double BstdZeeModIsolProducer::getHcalDepth1Isol(const reco::GsfElectron& theEle
 		if( dr2 < extRadius_*extRadius_ && dr2 >= hcal_intRadius_*hcal_intRadius_ )
 			includeInIsolSum = true;
 
-		// TODO -- Check if caloTower is within inner veto area of any of the other eles
+		// *** Check if caloTower is within inner veto area of any of the other eles
+		//   If extraPhantomVetoEle_ true, then instead just check if caloTower is w/i inner veto area of this phantom ele
 		for( reco::GsfElectronCollection::const_iterator otherEleIt = vetoEles.begin(); otherEleIt!=vetoEles.end(); otherEleIt++){
 			const reco::SuperCluster* otherEleSC = otherEleIt->get<reco::SuperClusterRef>().get();
 			//math::XYZPoint otherEleCaloPosition = otherEleSC->position();
-			double otherEle_eta = otherEleSC->eta();
-			double otherEle_phi = otherEleSC->phi();
+			double otherEle_eta = extraPhantomVetoEle_ ? (candEta+phantomVetoEleDEta_) : otherEleSC->eta();
+			double otherEle_phi = extraPhantomVetoEle_ ? (candPhi+phantomVetoEleDPhi_) : otherEleSC->phi();
 
 			double otherEle_dEta = towerEta - otherEle_eta;
 			double otherEle_dPhi = reco::deltaPhi(towerPhi, otherEle_phi);

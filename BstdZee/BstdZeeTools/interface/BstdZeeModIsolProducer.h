@@ -101,6 +101,12 @@ class BstdZeeModIsolProducer : public edm::EDProducer {
       const edm::InputTag hcalTowersTag_;
       const double hcal_intRadius_;
       const double hcal_etMin_;
+
+      const bool extraPhantomVetoEle_;
+      const double phantomVetoEleDrMin_;
+      const double phantomVetoEleDrMax_;
+      double phantomVetoEleDEta_;
+      double phantomVetoEleDPhi_;
 };
 
 #endif
