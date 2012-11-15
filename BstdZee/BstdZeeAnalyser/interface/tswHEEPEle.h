@@ -142,31 +142,37 @@ namespace tsw{
 			double isol_inrVetoModEmHadD1(const tsw::Event::InnerVetoSize) const;
 			const bool isolCut_inrVetoModEmHadD1(const tsw::Event::InnerVetoSize) const;
 
+			double isol_inrVetoModTrk_otherEleAreaForSelf()    const { return eleStr_.isol_inrVetoModTrk_otherEleAreaForSelf_; }
+			double isol_inrVetoModEcal_otherEleAreaForSelf()   const { return eleStr_.isol_inrVetoModEcal_otherEleAreaForSelf_; }
+			double isol_inrVetoModHcalD1_otherEleAreaForSelf() const { return eleStr_.isol_inrVetoModHcalD1_otherEleAreaForSelf_; }
+
 			unsigned int isol_nGenHadronsDr04() const { return eleStr_.isol_nGenHadronsDr04_; }
 			double isol_ptSumGenHadronsDr04()   const { return eleStr_.isol_ptSumGenHadronsDr04_; }
 
 			double isol_rhoCorrnEmH1(const tsw::EventHelper& evtHelper) const {
 				return 0.28*(evtHelper.GetPURho()); }
 			unsigned int numMissInnerHits()  const  { return eleStr_.numMissInnerHits_; }
+			double dxy() const { return eleStr_.dxy_; }
 
 			// Methods for applying HEEP cuts
 			bool heepFidCut_v40() const;
 			bool heepFidCut() const { return heepFidCut_v40();  }
 
 			int heepIdNoIsoCutCode_v40() const;
-			int heepIdNoIsoCutCode() const { return heepIdNoIsoCutCode_v40(); }
+			int heepIdNoIsoCutCode_v41() const;
+			int heepIdNoIsoCutCode() const { return heepIdNoIsoCutCode_v41(); }
 			bool heepIdNoIsoCut() const { return (heepIdNoIsoCutCode()==0); }
 
-			int heepIdModIsoCutCode_v40_v00(const tsw::EventHelper& evtHelper) const;
-			int heepIdModIsoCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoCutCode_v40_v00(evtHelper);}
+			int heepIdModIsoCutCode_v41_v00(const tsw::EventHelper& evtHelper) const;
+			int heepIdModIsoCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoCutCode_v41_v00(evtHelper);}
 			bool heepIdModIsoCut(const tsw::EventHelper& evtHelper) const { return (heepIdModIsoCutCode(evtHelper)==0); }
 
-			int heepIdModIsoStdThrCutCode_v40(const tsw::EventHelper& evtHelper) const;
-			int heepIdModIsoStdThrCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoStdThrCutCode_v40(evtHelper); }
+			int heepIdModIsoStdThrCutCode_v41(const tsw::EventHelper& evtHelper) const;
+			int heepIdModIsoStdThrCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoStdThrCutCode_v41(evtHelper); }
 			bool heepIdModIsoStdThrCut(const tsw::EventHelper& evtHelper) const { return (heepIdModIsoStdThrCutCode(evtHelper)==0); }
 
-			int heepIdStdIsoCutCode_v40(const tsw::EventHelper& evtHelper) const;
-			int heepIdStdIsoCutCode(const tsw::EventHelper& evtHelper) const { return heepIdStdIsoCutCode_v40(evtHelper); }
+			int heepIdStdIsoCutCode_v41(const tsw::EventHelper& evtHelper) const;
+			int heepIdStdIsoCutCode(const tsw::EventHelper& evtHelper) const { return heepIdStdIsoCutCode_v41(evtHelper); }
 			bool heepIdStdIsoCut(const tsw::EventHelper& evtHelper) const { return (heepIdStdIsoCutCode(evtHelper)==0); }
 
 			/// Fake rate pre-selection cut code method
@@ -260,6 +266,7 @@ namespace tsw{
 			static const int cutCode_isoHad2_  = 0x0200;
 			static const int cutCode_isoTrk_   = 0x0400;
 			static const int cutCode_missHits_ = 0x0800;
+			static const int cutCode_dxy_      = 0x1000;
 
 			// Static public members storing the index for each cut in fake rate pre-selection cut codes
 			static const int cutCode_frPre_Et_       = 0x0001;
@@ -517,7 +524,6 @@ bool tsw::HEEPEle::heepFidCut_v40() const
 	return isFid;
 }
 
-
 int tsw::HEEPEle::heepIdNoIsoCutCode_v40() const
 {
 	const bool isInEB = (fabs(scEta()) < 1.442);
@@ -557,12 +563,31 @@ int tsw::HEEPEle::heepIdNoIsoCutCode_v40() const
 }
 
 
-int tsw::HEEPEle::heepIdModIsoCutCode_v40_v00(const tsw::EventHelper& evtHelper) const
+int tsw::HEEPEle::heepIdNoIsoCutCode_v41() const
+{
+	const bool isInEB = (fabs(scEta()) < 1.442);
+	const float thr_dxy = isInEB ? 0.02 : 0.05 ;
+
+	// Grab V4.0 cut code & reset missing hit cut bit
+	int cutCode = heepIdNoIsoCutCode_v40();
+	cutCode = cutCode & (~cutCode_missHits_);
+
+	// Missing hits cut
+	if( numMissInnerHits()>1 )
+		cutCode |= cutCode_missHits_;
+	if( !(abs(dxy())<thr_dxy) )
+		cutCode |= cutCode_dxy_;
+
+	return cutCode;
+}
+
+
+int tsw::HEEPEle::heepIdModIsoCutCode_v41_v00(const tsw::EventHelper& evtHelper) const
 {
 	const bool isInEB = (fabs(scEta()) < 1.442);
 
 	// Grab 'heepNoIso' cut code
-	int cutCode = heepIdNoIsoCutCode_v40();
+	int cutCode = heepIdNoIsoCutCode_v41();
 
 	// ... add in iso bits with mod isolation cuts
 	const float modEmH1isol = isol_inrVetoModEmHadD1(tsw::Event::mediumVeto) - isol_rhoCorrnEmH1(evtHelper);
@@ -575,13 +600,13 @@ int tsw::HEEPEle::heepIdModIsoCutCode_v40_v00(const tsw::EventHelper& evtHelper)
 	return cutCode;
 }
 
-int tsw::HEEPEle::heepIdModIsoStdThrCutCode_v40(const tsw::EventHelper& evtHelper) const
+int tsw::HEEPEle::heepIdModIsoStdThrCutCode_v41(const tsw::EventHelper& evtHelper) const
 {
 	const bool isInEB = (fabs(scEta()) < 1.442);
 	const float thr_isoEmH1 = isInEB ? (2.0+0.03*et()) : ( et()<50.0 ? 2.5 : (2.5+0.03*(et()-50.0)) ) ;
 
 	// Grab 'heepNoIso' cut code
-	int cutCode = heepIdNoIsoCutCode_v40();
+	int cutCode = heepIdNoIsoCutCode_v41();
 
 	// ... add in iso bits with mod isolation cuts
 	const float modEmH1isol = isol_inrVetoModEmHadD1(tsw::Event::mediumVeto) - isol_rhoCorrnEmH1(evtHelper);
@@ -595,13 +620,13 @@ int tsw::HEEPEle::heepIdModIsoStdThrCutCode_v40(const tsw::EventHelper& evtHelpe
 
 }
 
-int tsw::HEEPEle::heepIdStdIsoCutCode_v40(const tsw::EventHelper& evtHelper) const
+int tsw::HEEPEle::heepIdStdIsoCutCode_v41(const tsw::EventHelper& evtHelper) const
 {
 	const bool isInEB = (fabs(scEta()) < 1.442);
 	const float thr_isoEmH1 = isInEB ? (2.0+0.03*et()) : ( et()<50.0 ? 2.5 : (2.5+0.03*(et()-50.0)) ) ;
 
 	// Grab 'HEEPIdNoIso' cut code ...
-	int cutCode = heepIdNoIsoCutCode_v40();
+	int cutCode = heepIdNoIsoCutCode_v41();
 
 	// ... then add in iso bits using STANDARD iso cut
 	const float stdEmH1isol = isolEmHadDepth1() - isol_rhoCorrnEmH1(evtHelper);

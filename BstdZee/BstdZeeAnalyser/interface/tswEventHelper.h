@@ -2,8 +2,9 @@
 #define tswEventHelper_h
 
 // BstdZee includes
-#include "TSWilliams/BstdZeeAnalyser/interface/tswMuonCollection.h"
 #include "TSWilliams/BstdZeeNTupler/interface/tswEvent.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswEleStruct.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswMuonCollection.h"
 
 namespace tsw{
 	class EventHelper{
@@ -130,10 +131,33 @@ namespace tsw{
 			double GetNormEle_ptSumGenHadronsDr04(const unsigned int iEle) const {
 				return theEvent_->stdEles_ptSumGenHadronsDr04_.at(iEle); }
 
+			void SetEleStructValues(const unsigned int eleIdx, tsw::EleStruct& ) const;
+
 			tsw::MuonCollection GetNormMuons();
 	};
+}
 
-	tsw::MuonCollection EventHelper::GetNormMuons(){
+void tsw::EventHelper::SetEleStructValues(const unsigned int eleIdx, tsw::EleStruct& theStruct) const
+{
+	theStruct.dxy_ = theEvent_->stdEles_dxy_.at(eleIdx);
+
+	theStruct.isol_inrVetoModTrk_otherEleAreaForSelf_    = theEvent_->stdEles_inrVetoModIso_otherEleAreaForSelf_Trk_.at(eleIdx);
+	theStruct.isol_inrVetoModEcal_otherEleAreaForSelf_   = theEvent_->stdEles_inrVetoModIso_otherEleAreaForSelf_Ecal_.at(eleIdx);
+	theStruct.isol_inrVetoModHcalD1_otherEleAreaForSelf_ = theEvent_->stdEles_inrVetoModIso_otherEleAreaForSelf_HcalD1_.at(eleIdx);
+
+	for(unsigned int i=0; i<theEvent_->stdEles_inrVetoModIsoPhantomEles_dEta_.at(eleIdx).size(); i++){
+		tsw::ModEleIsoWithPhantom phantomEleModIsoStruct;
+		phantomEleModIsoStruct.dEta   = theEvent_->stdEles_inrVetoModIsoPhantomEles_dEta_.at(eleIdx).at(i);
+		phantomEleModIsoStruct.dPhi   = theEvent_->stdEles_inrVetoModIsoPhantomEles_dPhi_.at(eleIdx).at(i);
+		phantomEleModIsoStruct.trk    = theEvent_->stdEles_inrVetoModIsoPhantomEles_Trk_.at(eleIdx).at(i);
+		phantomEleModIsoStruct.ecal   = theEvent_->stdEles_inrVetoModIsoPhantomEles_Ecal_.at(eleIdx).at(i);
+		phantomEleModIsoStruct.hcalD1 = theEvent_->stdEles_inrVetoModIsoPhantomEles_HcalD1_.at(eleIdx).at(i);
+
+		theStruct.isol_inrVetoModIsosWithPhantomEle_.push_back( phantomEleModIsoStruct );
+	}
+}
+
+	tsw::MuonCollection tsw::EventHelper::GetNormMuons(){
 		std::vector<tsw::Muon> vecOfMuons; vecOfMuons.clear();
 		unsigned int numOfMuons = theEvent_->normMuons_charge_.size();
 
@@ -185,6 +209,5 @@ namespace tsw{
 		MuonCollection theMuColln(&vecOfMuons, "normal muons");
 		return theMuColln;
 	}
-}
 
 #endif

@@ -1739,6 +1739,8 @@ void BstdZeeFirstAnalyser::SetupEleClassVectors(){
 		ithEleStruct.isol_nGenHadronsDr04_     = eventHelper_.GetNormEle_nGenHadronsDr04(iEle);
 		ithEleStruct.isol_ptSumGenHadronsDr04_ = eventHelper_.GetNormEle_ptSumGenHadronsDr04(iEle);
 
+		eventHelper_.SetEleStructValues(iEle, ithEleStruct);
+
 //		ithEleStruct.SC_posn_eta_ = normHEEPEles_SCposn_eta_->at(iEle);							/* TEMP v1f/g FIX */
 //		ithEleStruct.SC_posn_phi_ = normHEEPEles_SCposn_phi_->at(iEle);							/* TEMP v1f/g FIX */
 //		ithEleStruct.SC_rawEnergy_ = normHEEPEles_SC_rawEnergy_->at(iEle);						/* TEMP v1f/g FIX */

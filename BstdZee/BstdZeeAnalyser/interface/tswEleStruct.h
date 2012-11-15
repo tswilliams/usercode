@@ -5,6 +5,10 @@
 #include "Math/Vector4Dfwd.h"
 
 namespace tsw {
+	// Forward declaration
+	struct ModEleIsoWithPhantom;
+
+	// Main ele data struct
    struct EleStruct {
    	EleStruct() : et_(-999.9), gsfEt_(-999.9), scEt_(-999.9), energy_(-999.9), gsfEnergy_(-999.9), caloEnergy_(-999.9), ecalEnergyError_(-999.9), eta_(-999.9), scEta_(-999.9), detEta_(-999.9), detEtaAbs_(-999.9), phi_(-999.9), scPhi_(-999.9), detPhi_(-999.9), zVtx_(-999.9), p4_(ROOT::Math::XYZTVector(0.0,0.0,0.0,0.0)), gsfP4_(ROOT::Math::XYZTVector(0.0,0.0,0.0,0.0)),
    			classification_(false), isEcalDriven_(false), isTrackerDriven_(false), isEB_(false), isEE_(false),
@@ -19,7 +23,7 @@ namespace tsw {
    	   	isol_inrXSVetoModEm_(-999.9),isol_inrSVetoModEm_(-999.9),isol_inrMVetoModEm_(-999.9),isol_inrLVetoModEm_(-999.9),isol_inrXLVetoModEm_(-999.9),
    	   	isol_inrXSVetoModHadD1_(-999.9),isol_inrSVetoModHadD1_(-999.9),isol_inrMVetoModHadD1_(-999.9),isol_inrLVetoModHadD1_(-999.9),isol_inrXLVetoModHadD1_(-999.9),
    	   	isol_nGenHadronsDr04_(9999), isol_ptSumGenHadronsDr04_(9999.9),
-   	   	numMissInnerHits_(9999),
+   	   	numMissInnerHits_(9999), dxy_(-999.9),
    	   	SC_posn_eta_(-999.9), SC_posn_phi_(-999.9), SC_rawEnergy_(-999.9), SC_recHits_Et_(), SC_recHits_eta_(), SC_recHits_phi_(), SC_recHits_isFromEB_(), SC_totEnergyRecHits_(-999.9), SC_totNumRecHits_(0),
    	   	gsfTrk_eta_(-999.9), gsfTrk_phi_(-999.9), gsfTrk_vz_(-999.9),
    	   	innerIsoConeTrks_pt_(), innerIsoConeTrks_eta_(), innerIsoConeTrks_phi_(), innerIsoConeTrks_vz_()
@@ -122,12 +126,19 @@ namespace tsw {
 	  	double isol_inrLVetoModHadD1_;
 	  	double isol_inrXLVetoModHadD1_;
 
+	  	double isol_inrVetoModTrk_otherEleAreaForSelf_;
+	  	double isol_inrVetoModEcal_otherEleAreaForSelf_;
+	  	double isol_inrVetoModHcalD1_otherEleAreaForSelf_;
+
+	  	std::vector<tsw::ModEleIsoWithPhantom> isol_inrVetoModIsosWithPhantomEle_;
+
 	  	// Number & pT sum of final-state gen-level hadrons within dR cone of 0.4
 	  	unsigned int isol_nGenHadronsDr04_;
 	  	double isol_ptSumGenHadronsDr04_;
 
 	  	// Number of missing hits
 	  	unsigned int numMissInnerHits_;
+	   double dxy_;
 
 	  	// Information about this ele's SC, and it's recHits ...
 	  	float SC_posn_eta_;
@@ -218,6 +229,18 @@ namespace tsw {
 		eleStruct.isolPtTrks_      = -999.9;
 		eleStruct.isolEmHadDepth1_ = -999.9;
 	}
+
+   struct ModEleIsoWithPhantom{
+   public:
+   	ModEleIsoWithPhantom() :
+   		dEta(-999.9), dPhi(-999.9),
+   		trk(-999.9), ecal(-999.9), hcalD1(-999.9)
+   	{  }
+   	~ModEleIsoWithPhantom() { }
+   	double dEta, dPhi;
+   	double trk, ecal, hcalD1;
+   };
+
 }
 
 #endif
