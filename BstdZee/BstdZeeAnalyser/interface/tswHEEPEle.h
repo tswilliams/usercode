@@ -881,10 +881,47 @@ float tsw::HEEPEle::modEmHad1Iso_v1(tsw::HEEPEle* theOtherEle){
 	return isolEmHad1;
 }
 
-
+// *** HELPER FUNCTIONS *** //
 
 namespace tsw{
-	std::vector<tsw::HEEPEle> OrderHEEPElesByEt(std::vector<tsw::HEEPEle> vecOfEles){
+	std::vector<unsigned int> IndicesOfElesPassingCuts(std::vector<tsw::HEEPEle> theElectrons, const std::vector<bool>& passCutsFlags, const int ecalRegionFlag);
+	std::vector<tsw::HEEPEle> OrderHEEPElesByEt(std::vector<tsw::HEEPEle> vecOfEles);
+} //end of namespace tsw
+
+
+std::vector<unsigned int> tsw::IndicesOfElesPassingCuts(std::vector<tsw::HEEPEle> theElectrons, const std::vector<bool>& passCutsFlags, const int ecalRegionFlag)
+{
+	//ecalRegionFlag:
+	//			=0 => Consider electrons in all regions
+	//			=1 => Consider only EB electrons
+	//			=2 => Consider only EE electrons
+	std::vector<unsigned int> indicesVector;
+	indicesVector.clear();
+
+	if(ecalRegionFlag==0){
+		for(unsigned int idx=0; idx<passCutsFlags.size(); idx++){
+			if(passCutsFlags.at(idx))
+				indicesVector.push_back(idx);
+		}
+	}
+	else if(ecalRegionFlag==1){
+		for(unsigned int idx=0; idx<passCutsFlags.size(); idx++){
+			if( passCutsFlags.at(idx) && theElectrons.at(idx).isEB() )
+				indicesVector.push_back(idx);
+		}
+	}
+	else if(ecalRegionFlag==2){
+		for(unsigned int idx=0; idx<passCutsFlags.size(); idx++){
+			if( passCutsFlags.at(idx) && theElectrons.at(idx).isEE() )
+				indicesVector.push_back(idx);
+		}
+	}
+
+	return indicesVector;
+}
+
+	std::vector<tsw::HEEPEle> tsw::OrderHEEPElesByEt(std::vector<tsw::HEEPEle> vecOfEles)
+	{
 		// Declare variables used to temporarily store i'th and (i+1)'th electron
 		tsw::HEEPEle ithEle;
 		tsw::HEEPEle iPlusOnethEle;
@@ -973,6 +1010,7 @@ namespace tsw{
 		return vecOfEles;
 	}
 
-} //end of namespace tsw
+
+
 
 #endif
