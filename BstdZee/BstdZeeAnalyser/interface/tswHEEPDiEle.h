@@ -1,6 +1,9 @@
 #ifndef tswHEEPDiEle_h
 #define tswHEEPDiEle_h
 
+#include "TSWilliams/BstdZeeAnalyser/interface/tswAnaFunctions.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswHEEPEle.h"
+
 namespace tsw{
 	class HEEPDiEle{
 		public:
