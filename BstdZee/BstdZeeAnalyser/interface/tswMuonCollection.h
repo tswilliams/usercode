@@ -24,9 +24,8 @@ namespace tsw{
 
 			// Methods for extracting information about the muons ...
 			int NumOfMuons(){ return vecOfMuons_.size(); }
-			std::vector<Muon> ReturnVecOfMuons(){ return vecOfMuons_; }
-			Muon at(int muonIdx){
-				return vecOfMuons_.at(muonIdx);}
+			const std::vector<Muon>& vec() const { return vecOfMuons_; }
+			const tsw::Muon& at(int muonIdx) const { return vecOfMuons_.at(muonIdx);}
 
 			Muon HighestPtMuon(){
 				if(orderedByPt_)
@@ -66,14 +65,6 @@ namespace tsw{
 						tmpMuonsVec.push_back( vecOfMuons_.at(muIdx) );
 				}
 				return MuonCollection(&tmpMuonsVec, muonType_+", in barrel");
-			}
-			MuonCollection GetTightMuons(){
-				std::vector<Muon> tightMuonsVec; tightMuonsVec.clear();
-				for(unsigned int muIdx=0; muIdx<vecOfMuons_.size(); muIdx++){
-					if(vecOfMuons_.at(muIdx).isTightMuon())
-						tightMuonsVec.push_back( vecOfMuons_.at(muIdx) );
-				}
-				return MuonCollection(&tightMuonsVec, muonType_+", afterTightCuts");
 			}
 	};
 

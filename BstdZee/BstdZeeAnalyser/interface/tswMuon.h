@@ -17,127 +17,116 @@ namespace tsw{
 			~Muon(){}
 
 			// Methods for access to the cut variables ...
-			TLorentzVector p4(){
-				return ConvertToTLorentzVector( &(muStr_.p4) );}
-			double p(){   return p4().P(); }
-			double pT(){  return p4().Pt(); }
-			double eta(){ return p4().Eta(); }
-			double phi(){ return p4().Phi(); }
-			int charge(){
-				return muStr_.charge;}
-			bool isGlobalMuon(){
-				return muStr_.isGlobalMuon;}
-			bool isTrackerMuon(){
-				return muStr_.isTrackerMuon;}
-			bool isStandAloneMuon(){
-				return muStr_.isStandAloneMuon;}
-			int numMatchedMuonStns(){
-				return muStr_.numMatchedMuonStns;}
-			double isolR03_sumPt(){
-				return muStr_.isolR03_sumPt;}
+			TLorentzVector p4() const { return ConvertToTLorentzVector( &(muStr_.p4) ); }
+			double p()   const {   return p4().P(); }
+			double pT()  const {  return p4().Pt(); }
+			double eta() const { return p4().Eta(); }
+			double phi() const { return p4().Phi(); }
+			int charge() const { return muStr_.charge; }
+			bool isGlobalMuon()      const { return muStr_.isGlobalMuon; }
+			bool isTrackerMuon()     const { return muStr_.isTrackerMuon; }
+			bool isStandAloneMuon()  const { return muStr_.isStandAloneMuon; }
+			int numMatchedMuonStns() const { return muStr_.numMatchedMuonStns; }
+			double isolR03_sumPt()   const { return muStr_.isolR03_sumPt; }
 
-			bool glob_exists(){
-				return muStr_.globTrk_exists;}
-			double glob_pT(){
-				return muStr_.globTrk_pT;}
-	   	double glob_eta(){
-	   		return muStr_.globTrk_eta;}
-	   	double glob_phi(){
-	   		return muStr_.globTrk_phi;}
-	   	int glob_charge(){
-	   		return muStr_.globTrk_charge;}
-	   	int glob_numValidMuonHits(){
-	   		return muStr_.globTrk_numberOfValidMuonHits;}
-	   	double glob_normalisedChi2(){
-	   		return muStr_.globTrk_normalisedChi2;}
+			bool glob_exists() const { return muStr_.globTrk_exists; }
+			double glob_pT()   const { return muStr_.globTrk_pT; }
+	   	double glob_eta()  const { return muStr_.globTrk_eta; }
+	   	double glob_phi()  const { return muStr_.globTrk_phi; }
+	   	int glob_charge()  const { return muStr_.globTrk_charge; }
+	   	int glob_numValidMuonHits() const { return muStr_.globTrk_numberOfValidMuonHits; }
+	   	double glob_normalisedChi2() const { return muStr_.globTrk_normalisedChi2; }
 
-	   	bool inner_exists(){
-	   		return muStr_.inTrk_exists;}
-	   	double inner_pT(){
-	   		return muStr_.inTrk_pT;}
-	   	double inner_eta(){
-	   		return muStr_.inTrk_eta;}
-	   	double inner_phi(){
-	   		return muStr_.inTrk_phi;}
-	   	int inner_charge(){
-	   		return muStr_.inTrk_charge;}
-	   	int inner_numValidPixHits(){
-	   		return muStr_.inTrk_numValidPixHits;}
-	   	int inner_numValidTrkrHits(){
-	   		return muStr_.inTrk_numValidTrkrHits;}
-	   	double inner_dxyVsOrigin(){
-	   		return muStr_.inTrk_dxyVsOrigin;}
+	   	bool inner_exists() const { return muStr_.inTrk_exists; }
+	   	double inner_pT()   const { return muStr_.inTrk_pT; }
+	   	double inner_eta()  const { return muStr_.inTrk_eta; }
+	   	double inner_phi()  const { return muStr_.inTrk_phi; }
+	   	int inner_charge()  const { return muStr_.inTrk_charge;}
+	   	int inner_numValidPixHits()  const { return muStr_.inTrk_numValidPixHits; }
+	   	int inner_numValidTrkrHits() const { return muStr_.inTrk_numValidTrkrHits; }
+	   	double inner_dxyVsOrigin()   const { return muStr_.inTrk_dxyVsOrigin; }
 
-	   	bool outer_exists(){
-	   		return muStr_.outTrk_exists;}
-	   	double outer_pT(){
-	   		return muStr_.outTrk_pT;}
-	   	double outer_eta(){
-	   		return muStr_.outTrk_eta;}
-	   	double outer_phi(){
-	   		return muStr_.outTrk_phi;}
-	   	int outer_charge(){
-	   		return muStr_.outTrk_charge;}
+	   	int trk_trkrLayerWHits() const { return muStr_.trk_trkrLayersWHits; }
+
+	   	bool outer_exists()  const { return muStr_.outTrk_exists; }
+	   	double outer_pT()    const { return muStr_.outTrk_pT; }
+	   	double outer_eta()   const { return muStr_.outTrk_eta; }
+	   	double outer_phi()   const { return muStr_.outTrk_phi; }
+	   	int outer_charge()   const { return muStr_.outTrk_charge; }
+
+	   	bool   bestTrk_exists()    const { return muStr_.bestTrk_exists; }
+	   	double bestTrk_dxy_bspot() const { return muStr_.bestTrk_dxy_bspot; }
+			double bestTrk_dxy_vtx()   const { return muStr_.bestTrk_dxy_vtx; }
+			double bestTrk_dz_vtx()    const { return muStr_.bestTrk_dz_vtx; }
 
 	   	// Methods for which region the muon is in - ALL regions are MUTUALLY exclusive ...
-	   	bool isInBarrel(){
-	   		if( fabs(eta())<=0.9)
-	   			return true;
-	   		else
-	   			return false;
-	   	}
-	   	bool isInOverlap(){
-	   		if( fabs(eta())>0.9 && fabs(eta())<=1.2 )
-	   			return true;
-	   		else
-	   			return false;
-	   	}
-	   	bool isInEndcap(){
-	   		if( fabs(eta())>1.2 && fabs(eta())<=2.4 )
-	   			return true;
-	   		else
-	   			return false;
-	   	}
-	   	bool isWithinCMS(){
-	   		if( fabs(eta())<=2.4 )
-	   			return true;
-	   		else
-	   			return false;
-	   	}
+	   	bool isInBarrel() const { return (fabs(eta())<=0.9); }
+	   	bool isInOverlap() const { return (fabs(eta())>0.9 && fabs(eta())<=1.2); }
+	   	bool isInEndcap()  const { return (fabs(eta())>1.2 && fabs(eta())<=2.4); }
+	   	bool isWithinCMS() const { return (fabs(eta())<=2.4); }
+	   	bool isWithinAcc() const { return isWithinCMS(); }
 
 			// Methods for applying cuts to the muon ...
-			bool isWithinAcc();
-			bool isTightMuon();
+			int highPtIdCutCode(float minPt, float maxEta) const;
+			int highPtIdCut(float minPt, float maxEta) const { return (highPtIdCutCode(minPt, maxEta)==0); }
+
+			//  STATIC CONSTS - CUT CODES  //
+
+			static const int mCutCode_fiducial    = 0x0001;
+			static const int mCutCode_isGlobal    = 0x0002;
+			static const int mCutCode_isPFMuon    = 0x0004;
+			static const int mCutCode_normChi2    = 0x0008;
+			static const int mCutCode_nrValidHits = 0x0010;
+			static const int mCutCode_nrStations  = 0x0020;
+			static const int mCutCode_bestTrkDxy  = 0x0040;
+			static const int mCutCode_bestTrkDz   = 0x0080;
+			static const int mCutCode_nrPixHits   = 0x0100;
+			static const int mCutCode_nrTkLayers  = 0x0200;
+			static const int mCutCode_dPtOverPt   = 0x0400;
 	};
+}//end namespace tsw
 
-	bool Muon::isWithinAcc(){
-		bool passFailFlag = true;
-		passFailFlag = passFailFlag && isWithinCMS();
-		return passFailFlag;
-	}
 
-	bool Muon::isTightMuon(){
-		bool passFailFlag = true;
+int tsw::Muon::highPtIdCutCode(float minPt, float maxEta) const
+{
+	int cutCode = 0;
 
-		passFailFlag = passFailFlag && ( fabs(eta())<1.442 );
-		passFailFlag = passFailFlag && ( pT()>35.0 );
-		passFailFlag = passFailFlag && isGlobalMuon();
-		passFailFlag = passFailFlag && ( glob_normalisedChi2()<10 );
-		passFailFlag = passFailFlag && ( glob_numValidMuonHits()>0 );
-		passFailFlag = passFailFlag && ( numMatchedMuonStns()>1 );
-		// Isolation ...
-		passFailFlag = passFailFlag && ( isolR03_sumPt()<10.0 );
-		// Tracker stuff ...
-		passFailFlag = passFailFlag && ( inner_exists() );
-		passFailFlag = passFailFlag && ( inner_numValidPixHits()>0 );
-		passFailFlag = passFailFlag && ( inner_numValidTrkrHits()>10 );
-		// --- N.B: dxy cut has temporarily been removed as it is highly inefficient under the current way that I'm calculating the value of dxy
-		// -------- [i.e. calculating dxy rel. to (0,0) RATHER THAN prim vertex/beamspot ]
-		// -------- This cut also currently results in weird phi distributions (i.e. tight muons only having phi from 0.4->1.4 and -1.7 to -2.7)
-		//passFailFlag = passFailFlag && ( fabs(inner_dxyVsOrigin())<0.2 ); // N.B: It may be this cut that's responsible for weird behaviour
+	if( fabs(eta())>maxEta || pT()<minPt  )
+		cutCode |= mCutCode_fiducial;
 
-		return passFailFlag;
-	}
+	// is global muon
+	if( !isGlobalMuon() )
+		cutCode |= mCutCode_isGlobal;
+
+	// is PF muon -- NOT IN HIGH PT
+	// norm'd chi^2 -- NOT IN HIGH PT
+
+	// number muon chamber hits in global track-fit
+	if( !glob_exists() || glob_numValidMuonHits()<=0 )
+		cutCode |= mCutCode_nrValidHits;
+
+	// Num muon segements in muon stations
+	if( numMatchedMuonStns()<=1 )
+		cutCode |= mCutCode_nrStations;
+
+	// Best track impact parameters
+	if( !bestTrk_exists() || fabs(bestTrk_dxy_vtx())>=0.2 )
+		cutCode |= mCutCode_bestTrkDxy;
+	if( !bestTrk_exists() || fabs(bestTrk_dz_vtx())>=0.5 )
+		cutCode |= mCutCode_bestTrkDz;
+
+	// Number pixel hits
+	if( !inner_exists() || inner_numValidPixHits()<=0 )
+		cutCode |= mCutCode_nrPixHits;
+
+	// Number tracker layers with hits
+	if( trk_trkrLayerWHits()<=8 )
+		cutCode |= mCutCode_nrTkLayers;
+
+	//TODO -- Add dPt/Pt cut when relevant info is in NTuple
+//	static const int mCutCode_dPtOverPt   = 0x0400;
+
+	return cutCode;
 }
 
 #endif
