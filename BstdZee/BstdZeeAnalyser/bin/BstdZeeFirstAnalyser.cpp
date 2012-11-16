@@ -12,7 +12,6 @@
 #include "boost/program_options/parsers.hpp"
 
 // ROOT includes
-
 #include "TFile.h"
 #include "TTree.h"
 #include "TChain.h"
@@ -32,25 +31,23 @@
 //    gROOT->ProcessLine("#include <vector>");
 
 
-// BstdZee includes
-#include "TSWilliams/BstdZeeAnalyser/interface/tswEventHelper.h"
-#include "TSWilliams/BstdZeeAnalyser/interface/tswHEEPEle.h"
-#include "TSWilliams/BstdZeeAnalyser/interface/tswReconValidationHistos.h"
+// BstdZeeNTupler includes
 #include "TSWilliams/BstdZeeNTupler/interface/tswUsefulFunctions.h"
-#include "TSWilliams/BstdZeeAnalyser/interface/tswHEEPDiEle.h"
-#include "TSWilliams/BstdZeeAnalyser/interface/tswDiEleDistns.h"
-#include "TSWilliams/BstdZeeAnalyser/interface/tswDiEleDistnsByRgn.h"
-#include "TSWilliams/BstdZeeAnalyser/interface/tswMCParticle.h"
-#include "TSWilliams/BstdZeeAnalyser/interface/tswMCParticleDistns.h"
 
+// BstdZeeAnalyser includes
+#include "TSWilliams/BstdZeeAnalyser/interface/tswAnaFunctions.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswEventHelper.h"
+
+#include "TSWilliams/BstdZeeAnalyser/interface/tswHEEPEle.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswHEEPDiEle.h"
+#include "TSWilliams/BstdZeeAnalyser/interface/tswMCParticle.h"
 #include "TSWilliams/BstdZeeAnalyser/interface/tswEleMuObject.h"
+
 
 #ifdef __MAKECINT__
 #pragma link C++ class vector<Int_t>+;
 #pragma link C++ class vector< vector<float> >;
 #endif
-
-//Functions...
 
 
 //=====================================================================================================
@@ -1099,9 +1096,6 @@ class BstdZeeFirstAnalyser{
 		}
 
 	private:
-		//Methods for storing histograms in output file...
-		void SaveReconValidationHistos(TFile* histosFile);
-
 		//Methods called by the constructor (e.g. Initialise methods)...
 		void SetMemberVariablesToDefaultValues();
 		void SetupBranchLinks();
@@ -1326,99 +1320,6 @@ class BstdZeeFirstAnalyser{
 
 		tsw::EleMuTree eleMuTree_fullId_;
 
-		//----------------------------------------------//
-		//Histograms...
-		//Special reco'n validation histos:
-		tsw::ReconValidationHistos normEles_reconValidationHistos_;
-		tsw::ReconValidationHistos normEles_simpleCuts_reconValHistos_;
-		tsw::ReconValidationHistos normEles_HEEPCuts_reconValHistos_;
-		tsw::ReconValidationHistos bstdEles_reconValidationHistos_;
-		tsw::ReconValidationHistos bstdEles_simpleCuts_reconValHistos_;
-		tsw::ReconValidationHistos bstdEles_HEEPCuts_reconValHistos_;
-
-		//Di-electron pair histograms ...
-		tsw::DiEleDistns normDiEle_AllHEEP_Histos_;
-		tsw::DiEleDistns normDiEle_AllHEEP_trgA_Histos_;
-		tsw::DiEleDistns normDiEle_AllHEEP_MZ_Histos_;
-		tsw::DiEleDistns normDiEle_AllHEEP_MZ_trgA_Histos_;
-		tsw::DiEleDistnsByRgn normDiEle_AllHEEP_MZ_trgA_Rgnl_Histos_;
-		tsw::DiEleDistns normDiEle_HEEPNoIso_Histos_;
-		tsw::DiEleDistns normDiEle_HEEPNoIso_trgA_Histos_;
-		tsw::DiEleDistns normDiEle_HEEPNoIso_MZ_Histos_;
-		tsw::DiEleDistns normDiEle_HEEPNoIso_MZ_trgA_Histos_;
-		tsw::DiEleDistnsByRgn normDiEle_HEEPNoIso_MZ_trgA_Rgnl_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_trgA_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIso_MZ_stdHEEPIso_Histos_;
-
-		// ---------------------------------------------------- //
-		// Event counters for checking effect of order of cuts in QCD estimation histos ...
-		unsigned int numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_;
-		unsigned int numEvts_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_;
-		unsigned int numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_DiffFrom_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_;
-		//
-		// Di-ele histograms for QCD estimation ...
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothHEEPNoIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothHEEPNoIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothModAllHEEP_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothModAllHEEP_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneHEEPNoIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneModAllHEEP_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroHEEPNoIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroModAllHEEP_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneHEEPNoIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneModAllHEEP_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothHEEPNoIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothHEEPNoIso_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothModAllHEEP_Histos_;
-		tsw::DiEleDistns normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothModAllHEEP_Histos_;
-
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_Histos_;
-		tsw::DiEleDistns normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_modHEEPIsoOnHEEPNoIso_Histos_;
-		// ---------------------------------------------------- //
-
-		tsw::DiEleDistns bstdDiEle_AllHEEP_Histos_;
-		tsw::DiEleDistns bstdDiEle_M0_AllHEEP_Histos_;
-		tsw::DiEleDistns bstdDiEle_Mleq0_AllHEEP_Histos_;
-		tsw::DiEleDistns bstdDiEle_diffSC_AllHEEP_Histos_;
-		tsw::DiEleDistns bstdDiEle_HEEPNoIso_Histos_;
-		tsw::DiEleDistns bstdDiEle_diffSC_HEEPNoIso_Histos_;
-
-		// DiEle distributions for various different signal triggger Et thresholds ...
-		tsw::DiEleDistns bstdDiEle_diffSC_HEEPNoIso_5e32_Histos_;
-		tsw::DiEleDistns bstdDiEle_diffSC_HEEPNoIso_1e33_Histos_;
-		tsw::DiEleDistns bstdDiEle_diffSC_HEEPNoIso_2e33_Histos_;
-		tsw::DiEleDistns bstdDiEle_diffSC_HEEPNoIso_TrgEt80_Histos_;
-		tsw::DiEleDistns bstdDiEle_diffSC_HEEPNoIso_TrgEt100_Histos_;
-		tsw::DiEleDistns bstdDiEle_diffSC_HEEPNoIso_TrgEt120_Histos_;
-
-		// Continuing previous set ...
-		tsw::DiEleDistns normDiEle_AllHEEP_EBEB_Histos_;
-		tsw::DiEleDistns bstdDiEle_AllHEEP_EBEB_Histos_;
-		tsw::DiEleDistns bstdDiEle_HEEPNoIso_EBEB_Histos_;
-
-		// MC particle distributions ...
-		tsw::MCParticleDistns mcZboson_allEvts_Histos_;
-		tsw::MCParticleDistns mcZboson_withinCMS_Histos_;
-		tsw::MCParticleDistns mcZboson_withinAcc_Histos_;
-		tsw::MCParticleDistns mcZboson_withinAcc_EBEB_Histos_;
-		tsw::MCParticleDistns mcZboson_withinAcc_EEEE_Histos_;
-		tsw::MCParticleDistns mcZboson_stdReconNoIsoEvts_Histos_;
-		tsw::MCParticleDistns mcZboson_stdReconNoIsoEvts_EBEB_Histos_;
-		tsw::MCParticleDistns mcZboson_stdReconNoIsoEvts_EEEE_Histos_;
-		tsw::MCParticleDistns mcZboson_modReconNoIsoEvts_Histos_;
-		tsw::MCParticleDistns mcZboson_modReconNoIsoEvts_EBEB_Histos_;
-		tsw::MCParticleDistns mcZboson_modReconNoIsoEvts_EEEE_Histos_;
-
 };
 
 
@@ -1446,87 +1347,7 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	modIsoZCandDiEleTree_("modIsoZBosonTree", outputFileName_ + "_modIsoZCandTree.root"),
 	zCandEffiTree_(outputFileName_ + "_zEffiTree.root"),
 	heepTagProbeTree_("tagProbeTree", "qcdGsfGsfTree", outputFileName_+"_heepTpTree.root"),
-	eleMuTree_fullId_("eleMuTree", outputFileName_ + "_eleMuTree.root"),
-	//
-	normEles_reconValidationHistos_(    "h_normEles_",      "standard",  "",              1,  false),
-	normEles_simpleCuts_reconValHistos_("h_normEles_sCuts_", "standard", ", simple cuts", 1,  false), //was 2
-	normEles_HEEPCuts_reconValHistos_(  "h_normEles_HEEP_",  "standard", ", HEEP cuts",   1,  true),  //was 8
-	bstdEles_reconValidationHistos_(    "h_bstdEles_",       "special",   "",             4,  false),//was 4
-	bstdEles_simpleCuts_reconValHistos_("h_bstdEles_sCuts_", "special",  ", simple cuts", 4, false), //was 38
-	bstdEles_HEEPCuts_reconValHistos_(  "h_bstdEles_HEEP_",  "special",  ", HEEP cuts",   4,  true),  //was 6
-	//
-	normDiEle_AllHEEP_Histos_(          "h_normDiEle_AllHEEP_",         "standard", "all HEEP cuts",              1, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_AllHEEP_trgA_Histos_(     "h_normDiEle_AllHEEP_trgA_",    "standard", "all HEEP cuts, trgA",        1, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_AllHEEP_MZ_Histos_(       "h_normDiEle_AllHEEP_MZ_",      "standard", "all HEEP cuts, Z mass",      1, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_AllHEEP_MZ_trgA_Histos_(  "h_normDiEle_AllHEEP_MZ_trgA_", "standard", "all HEEP cuts, Z mass, trgA",1, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_AllHEEP_MZ_trgA_Rgnl_Histos_("h_normDiEle_AllHEEP_MZ_trgA_", "standard", "all HEEP cuts, Z mass, trgA",1, 1, nbins_mass, nbins_pt, ptmax),//
-	//
-	normDiEle_HEEPNoIso_Histos_(        "h_normDiEle_HEEPNoIso_",         "standard", "HEEP cuts w/o isol",              2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_HEEPNoIso_trgA_Histos_(   "h_normDiEle_HEEPNoIso_trgA_",    "standard", "HEEP cuts w/o isol, trgA",        2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_HEEPNoIso_MZ_Histos_(     "h_normDiEle_HEEPNoIso_MZ_",      "standard", "HEEP cuts w/o isol, Z mass",      2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_HEEPNoIso_MZ_trgA_Histos_("h_normDiEle_HEEPNoIso_MZ_trgA_", "standard", "HEEP cuts w/o isol, Z mass, trgA",2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_HEEPNoIso_MZ_trgA_Rgnl_Histos_("h_normDiEle_HEEPNoIso_MZ_trgA_Rgnl_", "standard", "HEEP cuts w/o isol, Z mass, trgA",2, 1, nbins_mass, nbins_pt, ptmax),//
-	//
-	normDiEle_EB_HEEPNoIso_Histos_(        "h_normDiEle_EB_HEEPNoIso_",         "standard", "EB and HEEP cuts w/o isol",              2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIso_trgA_Histos_(   "h_normDiEle_EB_HEEPNoIso_trgA_",    "standard", "EB and HEEP cuts w/o isol, trgA",        2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIso_MZ_Histos_(     "h_normDiEle_EB_HEEPNoIso_MZ_",      "standard", "EB and HEEP cuts w/o isol, Z mass",      2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_(     "h_normDiEle_EB_HEEPNoIso_MZ_trkIso_",      "standard", "EB and HEEP cuts w/o isol, Z mass, trkIso",      2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_(  "h_normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_",   "standard", "EB and HEEP cuts w/o isol, Z mass, EmHad1Iso",   2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_Histos_("h_normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_",   "standard", "EB and HEEP cuts w/o isol, Z mass, EmHad1Iso AND trkIso",   2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_Histos_("h_normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_",   "standard", "EB and HEEP cuts w/o isol, Z mass, EmHad1Iso AND trkIso, trgA passed",   2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_Histos_(  "h_normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_",   "standard", "EB and HEEP cuts w/o isol, Z mass, notEmHad1Iso",   2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_("h_normDiEle_EB_HEEPNoIso_MZ_trgA_", "standard", "EB and HEEP cuts w/o isol, Z mass, trgA",2, 1, nbins_mass, nbins_pt, ptmax),//
-	normDiEle_EB_HEEPNoIso_MZ_stdHEEPIso_Histos_("h_normDiEle_EB_HEEPNoIso_MZ_stdHEEPIso_", "standard", "EB and HEEP cuts w/o isol, Z mass, stdHEEPIso",2, 1, nbins_mass, nbins_pt, ptmax),//
-	// QCD estimation member vars ...
-	numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_(0),
-	numEvts_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_(0),
-	numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_DiffFrom_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_(0),
-	//
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_Histos_(                  "normDiEle_EB_fidECALDrFRPre_trgA_MZ_",                 "standard", "EB and fidECAL and FRPre, trgA, Z mass",                 2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothHEEPNoIso_Histos_(    "normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothHEEPNoIso_",   "standard", "EB and fidECAL and FRPre, trgA, Z mass, bothHEEPNoIso",  2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothHEEPNoIso_Histos_( "normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothHEEPNoIso_",   "standard", "EB and fidECAL and FRPre, trgA, Z mass, <=1 pass HEEPNoIso",  2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothModAllHEEP_Histos_(   "normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothModAllHEEP_",  "standard", "EB and fidECAL and FRPre, trgA, Z mass, bothModAllHEEP", 2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothModAllHEEP_Histos_("normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothModAllHEEP_",  "standard", "EB and fidECAL and FRPre, trgA, Z mass, <=1 pass ModAllHEEP", 2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneHEEPNoIso_Histos_(    "normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneHEEPNoIso_",    "standard", "EB and fidECAL and FRPre, trgA, Z mass, oneHEEPNoIso",   2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneModAllHEEP_Histos_(   "normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneModAllHEEP_",   "standard", "EB and fidECAL and FRPre, trgA, Z mass, oneModAllHEEP",  2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroHEEPNoIso_Histos_(   "normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroHEEPNoIso_",   "standard", "EB and fidECAL and FRPre, trgA, Z mass, zeroHEEPNoIso",  2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroModAllHEEP_Histos_(  "normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroModAllHEEP_",  "standard", "EB and fidECAL and FRPre, trgA, Z mass, zeroModAllHEEP", 2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneHEEPNoIso_Histos_( "normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneHEEPNoIso_", "standard", "EB and fidECAL and FRPre, trgA, Z mass, geqOneHEEPNoIso",2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneModAllHEEP_Histos_("normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneModAllHEEP_","standard", "EB and fidECAL and FRPre, trgA, Z mass, geqOneModAllHEEP",2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_Histos_(                  "normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_",                 "standard", "EB and fidECAL and FRPre, trgA, > Z mass",                 2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothHEEPNoIso_Histos_(    "normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothHEEPNoIso_",   "standard", "EB and fidECAL and FRPre, trgA, > Z mass, bothHEEPNoIso",  2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothHEEPNoIso_Histos_( "normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothHEEPNoIso_",   "standard", "EB and fidECAL and FRPre, trgA, > Z mass, <=1 pass HEEPNoIso",  2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothModAllHEEP_Histos_(   "normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothModAllHEEP_",  "standard", "EB and fidECAL and FRPre, trgA, > Z mass, bothModAllHEEP", 2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothModAllHEEP_Histos_("normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothModAllHEEP_",  "standard", "EB and fidECAL and FRPre, trgA, > Z mass, <=1 pass ModAllHEEP", 2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_Histos_(                      "normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_",                      "standard", "EB HEEPNoIso + inclGSF, trgA, Z mass",2, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_modHEEPIsoOnHEEPNoIso_Histos_("normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_modHEEPIsoOnHEEPNoIso_","standard", "EB HEEPNoIso + inclGSF, trgA, Z mass, modHEEPIsoOnHEEPNoIso",2, 1, nbins_mass, nbins_pt, ptmax),
-	//
-	bstdDiEle_AllHEEP_Histos_(          "h_bstdDiEle_AllHEEP_",   "special", "all HEEP cuts",    4, 1, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_M0_AllHEEP_Histos_(       "h_bstdDiEle_M0_AllHEEP_","special", "all HEEP cuts, M!=0", 2, 1, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_Mleq0_AllHEEP_Histos_(       "h_bstdDiEle_Mleq0_AllHEEP_","special", "all HEEP cuts, M==0", 8, 1, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_diffSC_AllHEEP_Histos_(   "h_bstdDiEle_diffSC_AllHEEP_", "special", "all HEEP cuts, diff SC", 4, 1, nbins_mass, nbins_pt, ptmax), //was 8, 7
-	bstdDiEle_HEEPNoIso_Histos_(        "h_bstdDiEle_HEEPNoIso_", "special",  "HEEP cuts no iso", 6, 1, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_diffSC_HEEPNoIso_Histos_( "h_bstdDiEle_diffSC_HEEPNoIso_", "special", "HEEP cuts no iso diff SC", 6, 1, nbins_mass, nbins_pt, ptmax), //was 2, 2
-	bstdDiEle_diffSC_HEEPNoIso_5e32_Histos_( "h_bstdDiEle_diffSC_HEEPNoIso_5e32_", "special", "5e32 trigger, HEEP cuts no iso diff SC", 6, 1, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_diffSC_HEEPNoIso_1e33_Histos_( "h_bstdDiEle_diffSC_HEEPNoIso_1e33_", "special", "1e33 trigger, HEEP cuts no iso diff SC", 6, 1, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_diffSC_HEEPNoIso_2e33_Histos_( "h_bstdDiEle_diffSC_HEEPNoIso_2e33_", "special", "2e33 trigger, HEEP cuts no iso diff SC", 6, 1, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_diffSC_HEEPNoIso_TrgEt80_Histos_( "h_bstdDiEle_diffSC_HEEPNoIso_TrgEt80_", "special", "trigger E_{T}^{thr}=80GeVc^{-1}, HEEP cuts no iso diff SC", 6, 1, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_diffSC_HEEPNoIso_TrgEt100_Histos_( "h_bstdDiEle_diffSC_HEEPNoIso_TrgEt100_", "special", "trigger E_{T}^{thr}=100GeVc^{-1}, HEEP cuts no iso diff SC", 6, 1, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_diffSC_HEEPNoIso_TrgEt120_Histos_( "h_bstdDiEle_diffSC_HEEPNoIso_TrgEt120_", "special", "trigger E_{T}^{thr}=120GeVc^{-1}, HEEP cuts no iso diff SC", 6, 1, nbins_mass, nbins_pt, ptmax),
-	normDiEle_AllHEEP_EBEB_Histos_(          "h_normDiEle_AllHEEP_EBEB_",  "standard", "all HEEP cuts",     1, 7, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_AllHEEP_EBEB_Histos_(          "h_bstdDiEle_AllHEEP_EBEB_",   "special",  "all HEEP cuts",    4, 7, nbins_mass, nbins_pt, ptmax),
-	bstdDiEle_HEEPNoIso_EBEB_Histos_(        "h_bstdDiEle_HEEPNoIso_EBEB_", "special",  "HEEP cuts no iso", 6, 7, nbins_mass, nbins_pt, ptmax),
-	mcZboson_allEvts_Histos_(        "h_mcZboson_allEvts_",           "Z bosons", "all events",                          1, 5, nbins_pt, ptmax),
-	mcZboson_withinCMS_Histos_(      "h_mcZboson_withinCMS_",         "Z bosons", "both eles |#eta|<2.5",                1, 1, nbins_pt, ptmax),
-	mcZboson_withinAcc_Histos_(      "h_mcZboson_withinAcc_",         "Z bosons", "both eles in (p_{T}, #eta) acc",      9, 1, nbins_pt, ptmax),
-	mcZboson_withinAcc_EBEB_Histos_( "h_mcZboson_withinAcc_EBEB_",    "Z bosons", "both eles in (p_{T}, #eta (EB)) acc", 9, 1, nbins_pt, ptmax),
-	mcZboson_withinAcc_EEEE_Histos_( "h_mcZboson_withinAcc_EEEE_",    "Z bosons", "both eles in (p_{T}, #eta (EE)) acc", 9, 1, nbins_pt, ptmax),
-	mcZboson_stdReconNoIsoEvts_Histos_(      "h_mcZboson_stdReconNoIsoEvts_",      "Z bosons", "std recon events",       4, 1, nbins_pt, ptmax),
-	mcZboson_stdReconNoIsoEvts_EBEB_Histos_( "h_mcZboson_stdReconNoIsoEvts_EBEB_", "Z bosons", "std recon EB-EB events", 4, 1, nbins_pt, ptmax),
-	mcZboson_stdReconNoIsoEvts_EEEE_Histos_( "h_mcZboson_stdReconNoIsoEvts_EEEE_", "Z bosons", "std recon EE-EE events", 4, 1, nbins_pt, ptmax),
-	mcZboson_modReconNoIsoEvts_Histos_(      "h_mcZboson_modReconNoIsoEvts_",      "Z bosons", "mod recon events",       2, 1, nbins_pt, ptmax),
-	mcZboson_modReconNoIsoEvts_EBEB_Histos_( "h_mcZboson_modReconNoIsoEvts_EBEB_", "Z bosons", "mod recon EB-EB events", 2, 1, nbins_pt, ptmax),
-	mcZboson_modReconNoIsoEvts_EEEE_Histos_( "h_mcZboson_modReconNoIsoEvts_EEEE_", "Z bosons", "mod recon EE-EE events", 2, 1, nbins_pt, ptmax)
+	eleMuTree_fullId_("eleMuTree", outputFileName_ + "_eleMuTree.root")
 {
 
 	timer_DoAnalysis_readIn_.Stop(); timer_DoAnalysis_readIn_.Reset();
@@ -1962,14 +1783,6 @@ void BstdZeeFirstAnalyser::PrintOutBranchVariables()
 
 void BstdZeeFirstAnalyser::FinishOffAnalysis()
 {
-	TFile f_histos((outputFileName_+"_histos.root").c_str(),"RECREATE");
-	f_histos.Write();
-
-	//Save all of the histograms from analysis ...
-	SaveReconValidationHistos(&f_histos);
-	//Close the output file ...
-	f_histos.Close();
-
 	// Save the ABCD QCD estimation tree ...
 //	frPreDiEleTree_.SaveToFile("/opt/ppd/newscratch/williams/Datafiles/abcdDiEleTrees/" + outputFile_name_ + "_abcdTree.root");
 
@@ -1978,26 +1791,15 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis()
 	noIsoZCandDiEleTree_.saveToFile();
 	modIsoZCandDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
 	modIsoZCandDiEleTree_.saveToFile();
-	zCandEffiTree_.setEventCounter( this->GetNumEvtsRunOver() );
-	zCandEffiTree_.saveToFile();
+	if(isMC_){
+		zCandEffiTree_.setEventCounter( this->GetNumEvtsRunOver() );
+		zCandEffiTree_.saveToFile();
+	}
 	heepTagProbeTree_.setEventCounter( this->GetNumEvtsRunOver() );
 	heepTagProbeTree_.saveToFile();
 	eleMuTree_fullId_.setEventCounter( this->GetNumEvtsRunOver() );
 	eleMuTree_fullId_.saveToFile();
 
-	// Output information to screen about diff ordering of cuts in QCD estimation
-	//numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_
-	std::cout << std::endl;
-	std::cout << " ***** ---------------- QCD nos ----------------- *****" << std::endl;
-	std::cout << " * Number of events with normDiEle_EB_HEEPNoIso_MZ_trgA:" << std::endl;
-	std::cout << " *             " << numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_ << std::endl;
-	//numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_DiffFrom_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_
-	std::cout << " * Number of these events in which normDiEle_EB_HEEPNoIso_MZ_trgA != normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso:" << std::endl;
-	std::cout << " *             " << numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_DiffFrom_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_ << std::endl;
-	//numEvts_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_
-	std::cout << " * Number of events with normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso:" << std::endl;
-	std::cout << " *             " << numEvts_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_ << std::endl;
-	std::cout << " ***** ------------------------------------------ *****" << std::endl;
 }
 
 
@@ -2053,41 +1855,22 @@ tsw::HEEPDiEle* BstdZeeFirstAnalyser::getMcMatchedDiEle(const TLorentzVector& p4
 
 void BstdZeeFirstAnalyser::FillHistograms()
 {
-	const Double_t evtWeight = eventHelper_.totWeight();
+	// ------------------------
+	// PRELIMINARIES
+	// (i.e. Checking which eles pass various cuts)
 
-	//Currently a placeholder ...
-//	std::vector<bool> normEles_sCutsFlags;           normEles_sCutsFlags.clear();
 	std::vector<bool> normEles_HEEPCutsFlags;        normEles_HEEPCutsFlags.clear();
 	std::vector<bool> normEles_HEEPCutsNoIsoFlags;   normEles_HEEPCutsNoIsoFlags.clear();
 	std::vector<bool> normEles_EB_HEEPCutsNoIsoFlags;normEles_EB_HEEPCutsNoIsoFlags.clear();
 	std::vector<bool> normEles_EB_heepIdModIsoFlags;
-//	std::vector<bool> normEles_EB_isFidAndEcalDrivenFlags; normEles_EB_isFidAndEcalDrivenFlags.clear();
 	std::vector<bool> normEles_EB_isFidEcalDrAndFRPreFlags; normEles_EB_isFidEcalDrAndFRPreFlags.clear();
 
 	std::vector<bool> bstdEles_sCutsFlags;         bstdEles_sCutsFlags.clear();
 	std::vector<bool> bstdEles_HEEPCutsFlags;      bstdEles_HEEPCutsFlags.clear();
 	std::vector<bool> bstdEles_HEEPCutsNoIsoFlags; bstdEles_HEEPCutsNoIsoFlags.clear();
 
-	mcZboson_allEvts_Histos_.FillHistos(mcZboson_, mcZ_daughters_dR_, mcZ_daughters_dEta_, mcZ_daughters_dPhi_, mcZ_daughters_openingAngle_, evtWeight);
-	if( fabs(mcZ_daughterA_p4_.Eta())<=2.5 && fabs(mcZ_daughterB_p4_.Eta())<=2.5 ){
-		mcZboson_withinCMS_Histos_.FillHistos(mcZboson_, mcZ_daughters_dR_, mcZ_daughters_dEta_, mcZ_daughters_dPhi_, mcZ_daughters_openingAngle_, evtWeight);
 
-		bool bothElesWithinEtaAcceptance = true;
-		bothElesWithinEtaAcceptance = bothElesWithinEtaAcceptance && ( fabs(mcZ_daughterA_p4_.Eta())>=1.56 || fabs(mcZ_daughterA_p4_.Eta())<=1.442 );
-		bothElesWithinEtaAcceptance = bothElesWithinEtaAcceptance && ( fabs(mcZ_daughterB_p4_.Eta())>=1.56 || fabs(mcZ_daughterB_p4_.Eta())<=1.442 );
-
-		if( (mcZ_daughterA_p4_.Pt()>=25.0 && mcZ_daughterB_p4_.Pt()>=25.0) && bothElesWithinEtaAcceptance ){
-			mcZboson_withinAcc_Histos_.FillHistos(mcZboson_, mcZ_daughters_dR_, mcZ_daughters_dEta_, mcZ_daughters_dPhi_, mcZ_daughters_openingAngle_, evtWeight);
-			if( fabs(mcZ_daughterA_p4_.Eta())<=1.5 && fabs(mcZ_daughterB_p4_.Eta())<=1.5 )
-				mcZboson_withinAcc_EBEB_Histos_.FillHistos(mcZboson_, mcZ_daughters_dR_, mcZ_daughters_dEta_, mcZ_daughters_dPhi_, mcZ_daughters_openingAngle_, evtWeight);
-			else if( fabs(mcZ_daughterA_p4_.Eta())>=1.5 && fabs(mcZ_daughterB_p4_.Eta())>=1.5 )
-				mcZboson_withinAcc_EEEE_Histos_.FillHistos(mcZboson_, mcZ_daughters_dR_, mcZ_daughters_dEta_, mcZ_daughters_dPhi_, mcZ_daughters_openingAngle_, evtWeight);
-		}
-	}
-
-	normEles_reconValidationHistos_.FillNumberElesHist(normGsfEles_number_ , evtWeight);
 	for(std::vector<tsw::HEEPEle>::const_iterator eleIt = normEles_.begin(); eleIt != normEles_.end(); eleIt++){
-		normEles_reconValidationHistos_.FillHistos( *eleIt, evtWeight);
 
 		normEles_HEEPCutsFlags.push_back( eleIt->heepIdStdIsoCut(eventHelper_) );
 		normEles_HEEPCutsNoIsoFlags.push_back( eleIt->heepIdNoIsoCut()  );
@@ -2096,13 +1879,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 		normEles_EB_heepIdModIsoFlags.push_back( eleIt->heepIdModIsoCut(eventHelper_) && eleIt->isEB() );
 
 		normEles_EB_isFidEcalDrAndFRPreFlags.push_back( eleIt->isEcalDriven() && eleIt->fakeRatePreSelnCut() && eleIt->isHEEPEB() );
-
-		//if(normEles_.at(iEle).et()>highestEleEt){
-		//	highestEleEt = normEles_.at(iEle).et();
-		//	idx_highestEtEle = iEle;
-		//}
 	}
-	normEles_HEEPCuts_reconValHistos_.FillHistos(normEles_, normEles_HEEPCutsFlags, evtWeight);
 
 
 	//	if(readInBstdEles_){
@@ -2128,113 +1905,22 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	//		bstdEles_HEEPCuts_reconValHistos_.FillHistos(bstdEles_, bstdEles_HEEPCutsFlags, evtWeight);
 	//	} // End of if(readInBstdEles_)
 
-	/////////////////////////////////////////////////
-	// Form the di-electron pairs ...
-	tsw::HEEPDiEle normDiEle_EB_fidECALDrFRPre;
-	tsw::HEEPDiEle normDiEle_AllHEEP;
-	tsw::HEEPDiEle normDiEle_HEEPNoIso;
-	tsw::HEEPDiEle normDiEle_EB_HEEPNoIso;
-
-	tsw::HEEPDiEle bstdDiEle_AllHEEP;
-	tsw::HEEPDiEle bstdDiEle_HEEPNoIso;
-
-	// ------------------------------
-	// HEEP (ALL cuts) di-electrons ...
-	if(tsw::NumPassingCuts(normEles_HEEPCutsFlags)>1){
-		normDiEle_AllHEEP = tsw::HEEPDiEle( normEles_, normEles_HEEPCutsFlags );
-		normDiEle_AllHEEP_Histos_.FillHistos(normDiEle_AllHEEP, evtWeight);
-		if( normDiEle_AllHEEP.eleA().isEB() && normDiEle_AllHEEP.eleB().isEB() )
-			normDiEle_AllHEEP_EBEB_Histos_.FillHistos(normDiEle_AllHEEP, evtWeight);
-
-		if(trg_PathA_decision_)
-			normDiEle_AllHEEP_trgA_Histos_.FillHistos(normDiEle_AllHEEP, evtWeight);
-
-		// Check if the di-electron mass is in the Z mass range ...
-		if(normDiEle_AllHEEP.isInZMassRange()){
-			normDiEle_AllHEEP_MZ_Histos_.FillHistos(normDiEle_AllHEEP, evtWeight);
-			if(trg_PathA_decision_){
-				normDiEle_AllHEEP_MZ_trgA_Histos_.FillHistos(normDiEle_AllHEEP, evtWeight);
-				normDiEle_AllHEEP_MZ_trgA_Rgnl_Histos_.FillHistos(normDiEle_AllHEEP, evtWeight);}
-		}
-	}
-
-	// ------------------------
-	// HEEPNoIso di-electrons ...
-	if(tsw::NumPassingCuts(normEles_HEEPCutsNoIsoFlags)>1){
-		// Set some of the emu method diele tree branch variablles here ...
-		normDiEle_HEEPNoIso = tsw::HEEPDiEle( normEles_, normEles_HEEPCutsNoIsoFlags );
-
-		normDiEle_HEEPNoIso_Histos_.FillHistos(normDiEle_HEEPNoIso, evtWeight);
-		if(trg_PathA_decision_)
-			normDiEle_HEEPNoIso_trgA_Histos_.FillHistos(normDiEle_HEEPNoIso, evtWeight);
-
-		// Check if the di-electron mass is in the Z mass range ...
-		if(normDiEle_HEEPNoIso.isInZMassRange()){
-			normDiEle_HEEPNoIso_MZ_Histos_.FillHistos(normDiEle_HEEPNoIso, evtWeight);
-			if(trg_PathA_decision_){
-				normDiEle_HEEPNoIso_MZ_trgA_Histos_.FillHistos(normDiEle_HEEPNoIso, evtWeight);
-				normDiEle_HEEPNoIso_MZ_trgA_Rgnl_Histos_.FillHistos(normDiEle_HEEPNoIso, evtWeight);}
-
-			mcZboson_stdReconNoIsoEvts_Histos_.FillHistos(mcZboson_, mcZ_daughters_dR_, mcZ_daughters_dEta_, mcZ_daughters_dPhi_, mcZ_daughters_openingAngle_, evtWeight);
-
-			if( fabs(mcZ_daughterA_p4_.Eta())<=1.5 && fabs(mcZ_daughterB_p4_.Eta())<=1.5 )
-				mcZboson_stdReconNoIsoEvts_EBEB_Histos_.FillHistos(mcZboson_, mcZ_daughters_dR_, mcZ_daughters_dEta_, mcZ_daughters_dPhi_, mcZ_daughters_openingAngle_, evtWeight);
-			else if( fabs(mcZ_daughterA_p4_.Eta())>=1.56 && fabs(mcZ_daughterB_p4_.Eta())>=1.56 )
-				mcZboson_stdReconNoIsoEvts_EEEE_Histos_.FillHistos(mcZboson_, mcZ_daughters_dR_, mcZ_daughters_dEta_, mcZ_daughters_dPhi_, mcZ_daughters_openingAngle_, evtWeight);
-		}
-	}
-
 	// ------------------------
 	// EB HEEPNoIso di-electrons...
 	if(tsw::NumPassingCuts(normEles_EB_HEEPCutsNoIsoFlags)>1){
-		normDiEle_EB_HEEPNoIso = tsw::HEEPDiEle( normEles_, normEles_EB_HEEPCutsNoIsoFlags);
-		//		//-----------------------------------------------
-		//		// Code for testing ApplyDiEleTrkIsolCut method ...
-		//		std::cout << std::endl << "   ****------------------------------------------------------------------****" << std::endl;
-		//		std::cout << "   * EB HEEPNoIso di-electron formed in this event!!" << std::endl;
-		//		normDiEle_EB_HEEPNoIso.PrintOutInfo();
-		//		if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
-		//			std::cout << " ->* This di-electron pair has passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
-		//		else
-		//			std::cout << " ->* This di-electron pair has NOT passed cut in ApplyDiEleTrkIsolCut() method." << std::endl;
-		////		}
-		//		normDiEle_EB_HEEPNoIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
-		//		if(trg_PathA_decision_)
-		//			normDiEle_EB_HEEPNoIso_trgA_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
-		//		//-----------------------------------------------
+		tsw::HEEPDiEle normDiEle_EB_HEEPNoIso( normEles_, normEles_EB_HEEPCutsNoIsoFlags);
 
 		// Check if the di-electron mass is in the Z mass range ...
 //		zCandEffiTree_.FillTree(&normDiEle_EB_HEEPNoIso, mcZ_daughterA_p4_, mcZ_daughterB_p4_, evt_runNum_, evt_lumiSec_, evt_evtNum_, eventHelper_, evtWeight);
 		if(normDiEle_EB_HEEPNoIso.isInZMassRange()){
-			normDiEle_EB_HEEPNoIso_MZ_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 
 			noIsoZCandDiEleTree_.fillTree(normDiEle_EB_HEEPNoIso, eventHelper_, trg_PathA_decision_);
 
-			if(normDiEle_EB_HEEPNoIso.eleA().heepIdStdIsoCut(eventHelper_) && normDiEle_EB_HEEPNoIso.eleB().heepIdStdIsoCut(eventHelper_))
-				normDiEle_EB_HEEPNoIso_MZ_stdHEEPIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
-
-			if(trg_PathA_decision_){
-				numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_++;
-				normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight);
-
-				// Check if this di-ele is the same as would have been produced when applying HEEPNoIso cut to di-ele formed from two highest Et fiducial ECAL-driven eles AND then applying HEEPNoIso cuts
-				unsigned int idx_eleA_HEEPNoIso = IndicesOfElesPassingCuts(normEles_, normEles_EB_HEEPCutsNoIsoFlags, 0).at(0); // Grab indices of two highest Et EB HEEPNoIso eles
-				unsigned int idx_eleB_HEEPNoIso = IndicesOfElesPassingCuts(normEles_, normEles_EB_HEEPCutsNoIsoFlags, 0).at(1);
-				if(tsw::NumPassingCuts(normEles_EB_isFidEcalDrAndFRPreFlags)>1){
-					unsigned int idx_eleA_fidEcalDrAndFRPre = IndicesOfElesPassingCuts(normEles_, normEles_EB_isFidEcalDrAndFRPreFlags, 0).at(0);// Grab indices of two highest Et EB fidECALDrFRPre eles
-					unsigned int idx_eleB_fidEcalDrAndFRPre = IndicesOfElesPassingCuts(normEles_, normEles_EB_isFidEcalDrAndFRPreFlags, 0).at(1);
-
-					// The two di-eles previously discussed will not be the same if the eles forming them are different ...
-					if( (idx_eleA_HEEPNoIso!=idx_eleA_fidEcalDrAndFRPre) || (idx_eleB_HEEPNoIso!=idx_eleB_fidEcalDrAndFRPre) )
-						numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_DiffFrom_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_++;
-				}
-				else
-					numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_DiffFrom_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_++;
-
-			}
 		}
 	}
 
+	// ------------------------
+	// Fill MC-matched Z boson effi tree (iff running over MC)
 	if(isMC_){
 		const TLorentzVector& mcZ_eleA_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterA_p4_ : mcEles_HighestEt_p4_);
 		const TLorentzVector& mcZ_eleB_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterB_p4_ : mcEles_2ndHighestEt_p4_);
@@ -2249,7 +1935,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	}
 
 	// ------------------------
-	// EB HEEPNoIso di-electrons...
+	// EB HEEPModIso di-electrons...
 	if(tsw::NumPassingCuts(normEles_EB_heepIdModIsoFlags)>1){
 		tsw::HEEPDiEle heepIdModIsoEbDiEle( normEles_, normEles_EB_heepIdModIsoFlags);
 
@@ -2278,118 +1964,8 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	}
 
 	//-----------------------------------
-	// ABCD method selection code:
-	// EB fid, ECAL-driven, fake rate (FR) pre-selection di-electrons
-	if( tsw::NumPassingCuts(normEles_EB_isFidEcalDrAndFRPreFlags)>1 ){
-		// Form the di-electron
-		normDiEle_EB_fidECALDrFRPre = tsw::HEEPDiEle( normEles_, normEles_EB_isFidEcalDrAndFRPreFlags);
-		// Require signal trigger to have fired
-		if(trg_PathA_decision_){
-			std::string trigPathA_name = *trg_PathA_name_ptr_;
-//			frPreDiEleTree_.FillTree(&normDiEle_EB_fidECALDrFRPre, trigPathA_name, trg_PathA_decision_, evtWeight);
-			//Apply Z mass window cut
-			if(normDiEle_EB_fidECALDrFRPre.isInZMassRange()){
-				normDiEle_EB_fidECALDrFRPre_trgA_MZ_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
+	// Selection for ABCD tree
 
-				// Setup bools for whether eleA and eleB pass HEEPNoIso ...
-				bool eleA_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleA().heepIdNoIsoCut();
-				bool eleB_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleB().heepIdNoIsoCut();
-				// Setup bools for whether eleA and eleB pass HEEPNoIso+modIso ...
-				bool eleA_modAllHEEP = ( eleA_HEEPNoIso && ( normDiEle_EB_fidECALDrFRPre.eleA_modTrkIsolCut() && normDiEle_EB_fidECALDrFRPre.eleA_modEmHad1IsoCut() ) );
-				bool eleB_modAllHEEP = ( eleB_HEEPNoIso && ( normDiEle_EB_fidECALDrFRPre.eleB_modTrkIsolCut() && normDiEle_EB_fidECALDrFRPre.eleB_modEmHad1IsoCut() ) );
-
-				// Region A: Both electrons pass HEEP cuts
-				if(eleA_HEEPNoIso && eleB_HEEPNoIso){
-					numEvts_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_++;
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothHEEPNoIso_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-				}
-				else // (Region B in bothModHEEP vs invMass)
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothHEEPNoIso_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-
-				if(eleA_modAllHEEP && eleB_modAllHEEP)
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothModAllHEEP_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-				else // (Region B in bothModHEEP vs invMass)
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothModAllHEEP_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-
-				// Region B/C: Exactly one of electrons passes HEEP cuts
-				if( (eleA_HEEPNoIso && (!eleB_HEEPNoIso)) || (eleB_HEEPNoIso && (!eleA_HEEPNoIso)) )
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneHEEPNoIso_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-				if( (eleA_modAllHEEP && (!eleB_modAllHEEP)) || (eleB_modAllHEEP && (!eleA_modAllHEEP)) )
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneModAllHEEP_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-
-				// Region D: Neither electron passes HEEP cuts
-				if( (!eleA_HEEPNoIso) && (!eleB_HEEPNoIso))
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroHEEPNoIso_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-				if( (!eleA_modAllHEEP) && (!eleB_modAllHEEP) )
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroModAllHEEP_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-
-				// Other QCD plot: >=1 electron passes HEEP cuts
-				if( eleA_HEEPNoIso || eleB_HEEPNoIso )
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneHEEPNoIso_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-				if( eleA_modAllHEEP || eleB_modAllHEEP )
-					normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneModAllHEEP_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-
-			} // End-if: isInZMassRange
-			else if(normDiEle_EB_fidECALDrFRPre.isAboveZMassRange()){
-				normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-
-				// Setup bools for whether eleA and eleB pass HEEPNoIso ...
-				bool eleA_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleA().heepIdNoIsoCut();
-				bool eleB_HEEPNoIso = normDiEle_EB_fidECALDrFRPre.eleB().heepIdNoIsoCut();
-				// Setup bools for whether eleA and eleB pass HEEPNoIso+modIso ...
-				bool eleA_modAllHEEP = ( eleA_HEEPNoIso && ( normDiEle_EB_fidECALDrFRPre.eleA_modTrkIsolCut() && normDiEle_EB_fidECALDrFRPre.eleA_modEmHad1IsoCut() ) );
-				bool eleB_modAllHEEP = ( eleB_HEEPNoIso && ( normDiEle_EB_fidECALDrFRPre.eleB_modTrkIsolCut() && normDiEle_EB_fidECALDrFRPre.eleB_modEmHad1IsoCut() ) );
-
-				// Region C: Both electrons pass HEEP cuts
-				if(eleA_HEEPNoIso && eleB_HEEPNoIso)
-					normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothHEEPNoIso_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-				else // (Region D in bothModHEEP vs invMass)
-					normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothHEEPNoIso_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-
-				if(eleA_modAllHEEP && eleB_modAllHEEP)
-					normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothModAllHEEP_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-				else // (Region D in bothModHEEP vs invMass)
-					normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothModAllHEEP_Histos_.FillHistos(normDiEle_EB_fidECALDrFRPre, evtWeight);
-			}
-		}// End-if: trg_PathA_decision_
-	}
-
-	// QCD estimation (additional) code:
-	// EB HEEP + incl. GSF di-electrons
-	if( tsw::NumPassingCuts(normEles_EB_isFidEcalDrAndFRPreFlags)>1 && tsw::NumPassingCuts(normEles_EB_HEEPCutsNoIsoFlags)>0 ){
-		// Find the indices of the two electrons ...
-		unsigned int highestEtHEEPNoIsoEle_idx = IndicesOfElesPassingCuts(normEles_, normEles_EB_HEEPCutsNoIsoFlags, 0).at(0);
-		unsigned int highestEtDifffidECALDrFRPreEle_idx = IndicesOfElesPassingCuts(normEles_, normEles_EB_isFidEcalDrAndFRPreFlags, 0).at(0);
-		if(highestEtDifffidECALDrFRPreEle_idx==highestEtHEEPNoIsoEle_idx)
-			highestEtDifffidECALDrFRPreEle_idx = IndicesOfElesPassingCuts(normEles_, normEles_EB_isFidEcalDrAndFRPreFlags, 0).at(1);
-
-		bool HEEPNoIsoEle_higherEtEleOfPair = (normEles_.at(highestEtHEEPNoIsoEle_idx).et() > normEles_.at(highestEtDifffidECALDrFRPreEle_idx).et());
-
-		// Form the di-electron object
-		tsw::HEEPDiEle normDiEle_EB_HEEPNoIsoPLUSgsf = tsw::HEEPDiEle(normEles_.at(highestEtHEEPNoIsoEle_idx),
-																						normEles_.at(highestEtDifffidECALDrFRPreEle_idx) );
-
-		// Require signal trigger to have fired
-		if(trg_PathA_decision_){
-			// Apply Z mass window cut
-			if(normDiEle_EB_HEEPNoIsoPLUSgsf.isInZMassRange()){
-
-				normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_Histos_.FillHistos(normDiEle_EB_HEEPNoIsoPLUSgsf, evtWeight);
-
-				// Now check to see if the 'HEEPNoIso' electron also passes the modified HEEP isol. cuts ...
-				bool heepNoIsoEle_passesModHEEPIso;
-				if(HEEPNoIsoEle_higherEtEleOfPair)
-					heepNoIsoEle_passesModHEEPIso = ( normDiEle_EB_HEEPNoIsoPLUSgsf.eleA_modTrkIsolCut() && normDiEle_EB_HEEPNoIsoPLUSgsf.eleA_modEmHad1IsoCut() );
-				else
-					heepNoIsoEle_passesModHEEPIso = ( normDiEle_EB_HEEPNoIsoPLUSgsf.eleB_modTrkIsolCut() && normDiEle_EB_HEEPNoIsoPLUSgsf.eleB_modEmHad1IsoCut() );
-
-				if(heepNoIsoEle_passesModHEEPIso)
-					normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_modHEEPIsoOnHEEPNoIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIsoPLUSgsf, evtWeight);
-
-			} // End-if: isInZMassRange
-		} // End-if: trg_PathA_decision_
-
-	}
 
 	//	//Modfied reconstruction di-electron pairs ...
 	//	if(readInBstdEles_){
@@ -2478,90 +2054,6 @@ void BstdZeeFirstAnalyser::DoEMuAnalysis()
 		eleMuTree_fullId_.fillTree( eleMu_EB_HEEPNoIso_muB_highPtId, eventHelper_, eventHelper_.GetTrigInfo_eMuPath_decision() );
 }
 
-//--------------------------------------------------------//
-//---- Methods for storing histograms in output file...   //
-//--------------------------------------------------------//
-void BstdZeeFirstAnalyser::SaveReconValidationHistos(TFile* histosFile)
-{
-	normEles_reconValidationHistos_.WriteHistos(histosFile);
-	normEles_simpleCuts_reconValHistos_.WriteHistos(histosFile);
-	normEles_HEEPCuts_reconValHistos_.WriteHistos(histosFile);
-	bstdEles_reconValidationHistos_.WriteHistos(histosFile);
-	bstdEles_simpleCuts_reconValHistos_.WriteHistos(histosFile);
-	bstdEles_HEEPCuts_reconValHistos_.WriteHistos(histosFile);
-
-	normDiEle_AllHEEP_Histos_.WriteHistos(histosFile);
-	normDiEle_AllHEEP_trgA_Histos_.WriteHistos(histosFile);
-	normDiEle_AllHEEP_MZ_Histos_.WriteHistos(histosFile);
-	normDiEle_AllHEEP_MZ_trgA_Histos_.WriteHistos(histosFile);
-	normDiEle_AllHEEP_MZ_trgA_Rgnl_Histos_.WriteHistos(histosFile);
-	normDiEle_HEEPNoIso_Histos_.WriteHistos(histosFile);
-	normDiEle_HEEPNoIso_trgA_Histos_.WriteHistos(histosFile);
-	normDiEle_HEEPNoIso_MZ_Histos_.WriteHistos(histosFile);
-	normDiEle_HEEPNoIso_MZ_trgA_Histos_.WriteHistos(histosFile);
-	normDiEle_HEEPNoIso_MZ_trgA_Rgnl_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_trgA_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_MZ_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_MZ_trgA_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIso_MZ_stdHEEPIso_Histos_.WriteHistos(histosFile);
-
-	// Di-ele histograms for QCD estimation ...
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothHEEPNoIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothHEEPNoIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_bothModAllHEEP_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_NOTbothModAllHEEP_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneHEEPNoIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_oneModAllHEEP_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroHEEPNoIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_zeroModAllHEEP_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneHEEPNoIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_MZ_geqOneModAllHEEP_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothHEEPNoIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothHEEPNoIso_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_bothModAllHEEP_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_fidECALDrFRPre_trgA_aboveMZ_NOTbothModAllHEEP_Histos_.WriteHistos(histosFile);
-
-	normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_Histos_.WriteHistos(histosFile);
-	normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_modHEEPIsoOnHEEPNoIso_Histos_.WriteHistos(histosFile);
-
-	bstdDiEle_AllHEEP_Histos_.WriteHistos(histosFile);
-	bstdDiEle_HEEPNoIso_Histos_.WriteHistos(histosFile);
-
-	normDiEle_AllHEEP_EBEB_Histos_.WriteHistos(histosFile);
-	bstdDiEle_AllHEEP_EBEB_Histos_.WriteHistos(histosFile);
-	bstdDiEle_HEEPNoIso_EBEB_Histos_.WriteHistos(histosFile);
-	bstdDiEle_diffSC_HEEPNoIso_Histos_.WriteHistos(histosFile);
-	bstdDiEle_diffSC_HEEPNoIso_5e32_Histos_.WriteHistos(histosFile);
-	bstdDiEle_diffSC_HEEPNoIso_1e33_Histos_.WriteHistos(histosFile);
-	bstdDiEle_diffSC_HEEPNoIso_2e33_Histos_.WriteHistos(histosFile);
-	bstdDiEle_diffSC_HEEPNoIso_TrgEt80_Histos_.WriteHistos(histosFile);
-	bstdDiEle_diffSC_HEEPNoIso_TrgEt100_Histos_.WriteHistos(histosFile);
-	bstdDiEle_diffSC_HEEPNoIso_TrgEt120_Histos_.WriteHistos(histosFile);
-
-	bstdDiEle_diffSC_AllHEEP_Histos_.WriteHistos(histosFile);
-	bstdDiEle_M0_AllHEEP_Histos_.WriteHistos(histosFile);
-	bstdDiEle_Mleq0_AllHEEP_Histos_.WriteHistos(histosFile);
-
-	mcZboson_allEvts_Histos_.WriteHistos(histosFile);
-	mcZboson_withinCMS_Histos_.WriteHistos(histosFile);
-	mcZboson_withinAcc_Histos_.WriteHistos(histosFile);
-	mcZboson_withinAcc_EBEB_Histos_.WriteHistos(histosFile);
-	mcZboson_withinAcc_EEEE_Histos_.WriteHistos(histosFile);
-	mcZboson_stdReconNoIsoEvts_Histos_.WriteHistos(histosFile);
-	mcZboson_stdReconNoIsoEvts_EBEB_Histos_.WriteHistos(histosFile);
-	mcZboson_stdReconNoIsoEvts_EEEE_Histos_.WriteHistos(histosFile);
-	mcZboson_modReconNoIsoEvts_Histos_.WriteHistos(histosFile);
-	mcZboson_modReconNoIsoEvts_EBEB_Histos_.WriteHistos(histosFile);
-	mcZboson_modReconNoIsoEvts_EEEE_Histos_.WriteHistos(histosFile);
-}
 
 //----------------------------------------------------------------//
 //Methods called by the constructor (e.g. Initialise methods)...
