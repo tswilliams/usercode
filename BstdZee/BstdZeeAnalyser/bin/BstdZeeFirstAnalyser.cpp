@@ -42,11 +42,8 @@
 #include "TSWilliams/BstdZeeAnalyser/interface/tswDiEleDistnsByRgn.h"
 #include "TSWilliams/BstdZeeAnalyser/interface/tswMCParticle.h"
 #include "TSWilliams/BstdZeeAnalyser/interface/tswMCParticleDistns.h"
-#include "TSWilliams/BstdZeeAnalyser/interface/tswMuonDistns.h"
 
 #include "TSWilliams/BstdZeeAnalyser/interface/tswEleMuObject.h"
-#include "TSWilliams/BstdZeeAnalyser/interface/tswEleMuDistns.h"
-
 
 #ifdef __MAKECINT__
 #pragma link C++ class vector<Int_t>+;
@@ -936,6 +933,123 @@ namespace tsw{
 	}
 
 
+	///////////////////////////////////////////////////////////////////////////////
+	// EleMuTree: Simple class for generating trees containing info about ele-mu objects
+	//
+	class EleMuTree : public TreeHandlerBase {
+	private:
+		// PRIVATE MEMBERS
+
+		// For the event-level branches ...
+		Double_t evt_weight_;
+		Double_t evt_genWeight_;
+		Double_t evt_puWeight_;
+		Double_t evt_xsecWeight_;
+
+		UInt_t evt_runNum_;
+		UInt_t evt_lumiNum_;
+		UInt_t evt_evtNum_;
+
+		Bool_t evt_trgDecision_;
+		UInt_t evt_nVtx_;
+
+		// Ele-mu pair info
+		TLorentzVector* eleMu_p4ptr_;
+		TLorentzVector eleMu_p4_;
+		Double_t eleMu_dR_;
+		Double_t eleMu_dEta_;
+		Double_t eleMu_dPhi_;
+
+		// Electron info
+		TLorentzVector* ele_p4ptr_;
+		TLorentzVector ele_p4_;
+		Int_t ele_codeHeepNoIso_;
+		Int_t ele_charge_;
+
+		// Muon info
+		TLorentzVector* muon_p4ptr_;
+		TLorentzVector muon_p4_;
+		Int_t muon_codeHighPtId_;
+		Int_t muon_charge_;
+
+
+
+	public:
+		// CTOR & DTOR //
+		EleMuTree(const std::string& treeName, const std::string& fileName);
+		~EleMuTree()  {}
+
+		// PUBLIC METHODS //
+		void fillTree(const tsw::EleMuObject& eleMu, const tsw::EventHelper& evtHelper, bool trigDecision);
+
+	}; //End: EleMuTree
+
+	EleMuTree::EleMuTree(const std::string& treeName, const std::string& fileName) :
+		TreeHandlerBase(treeName, "Tree of ele-mu pairs ("+treeName+")", fileName),
+		eleMu_p4ptr_( &eleMu_p4_ ),
+		ele_p4ptr_( &ele_p4_ ),  muon_p4ptr_( &muon_p4_ )
+	{
+		// Setting up the event / di-ele branches ...
+		mainAnaTree_->Branch("weight",     &evt_weight_,     "weight/D");
+		mainAnaTree_->Branch("genWeight",  &evt_genWeight_,  "genWeight/D");
+		mainAnaTree_->Branch("puWeight",   &evt_puWeight_,   "puWeight/D");
+		mainAnaTree_->Branch("xsecWeight", &evt_xsecWeight_, "xsecWeight/D");
+
+		mainAnaTree_->Branch("run",    &evt_runNum_,   "run/i");
+		mainAnaTree_->Branch("lumi",   &evt_lumiNum_,  "lumi/i");
+		mainAnaTree_->Branch("evtNum", &evt_evtNum_,   "evtNum/i");
+
+		mainAnaTree_->Branch("trgDecision", &evt_trgDecision_, "trgDecision/O");
+		mainAnaTree_->Branch("nVtx", &evt_nVtx_, "nVtx/i");
+
+		mainAnaTree_->Branch("eleMu_p4", &eleMu_p4ptr_);
+		mainAnaTree_->Branch("eleMu_dR", &eleMu_dR_, "eleMu_dR/D");
+		mainAnaTree_->Branch("eleMu_dEta", &eleMu_dEta_, "eleMu_dEta/D");
+		mainAnaTree_->Branch("eleMu_dPhi", &eleMu_dPhi_, "eleMu_dPhi/D");
+
+		mainAnaTree_->Branch("ele_p4", &ele_p4_);
+		mainAnaTree_->Branch("ele_heepNoIso", &ele_codeHeepNoIso_, "ele_heepNoIso/I" );
+		mainAnaTree_->Branch("ele_charge", &ele_charge_, "ele_charge/I");
+
+		mainAnaTree_->Branch("muon_p4", &muon_p4_);
+		mainAnaTree_->Branch("muon_highPtId", &muon_codeHighPtId_, "muon_highPtId/I");
+		mainAnaTree_->Branch("muon_charge", &muon_charge_, "muon_charge/I");
+	}
+
+	void EleMuTree::fillTree(const tsw::EleMuObject& eleMu, const tsw::EventHelper& evtHelper, bool trigDecision)
+	{
+		evt_weight_     = evtHelper.totWeight();
+		evt_genWeight_  = evtHelper.genWeight();
+		evt_puWeight_   = evtHelper.puWeight();
+		evt_xsecWeight_ = evtHelper.xsecWeight();
+
+		evt_runNum_ = evtHelper.runNum();
+		evt_lumiNum_ = evtHelper.lumiSec();
+		evt_evtNum_ = evtHelper.eventNum();
+
+		evt_trgDecision_ = trigDecision;
+		evt_nVtx_ = evtHelper.GetRecoVtx_nGoodVtxs();
+
+		eleMu_p4_   = eleMu.p4();
+		eleMu_dR_   = eleMu.deltaR();
+		eleMu_dEta_ = eleMu.deltaEta();
+		eleMu_dPhi_ = eleMu.deltaPhi();
+
+		// Electron info
+		ele_p4_            = eleMu.ele().p4();
+		ele_codeHeepNoIso_ = eleMu.ele().heepIdNoIsoCutCode();
+		ele_charge_        = eleMu.ele().charge();
+
+		// Muon info
+		muon_p4_           = eleMu.muon().p4();
+		muon_codeHighPtId_ = eleMu.muon().highPtIdCutCode(35.0, 1.44);
+		muon_charge_       = eleMu.muon().charge();
+
+		// And finally fill the tree ...
+		mainAnaTree_->Fill();
+	}
+
+
 }
 
 //-----------------------------------------------------------------------------------------------------
@@ -991,8 +1105,6 @@ class BstdZeeFirstAnalyser{
 		//Methods called by the constructor (e.g. Initialise methods)...
 		void SetMemberVariablesToDefaultValues();
 		void SetupBranchLinks();
-		void SetupEMuMethodTrees();
-
 	
 	//Member variables...
 	private:
@@ -1204,20 +1316,6 @@ class BstdZeeFirstAnalyser{
 		//----------------------------------------------//
 		// Muon collections ...
 		tsw::MuonCollection normMuons_;
-		tsw::MuonCollection normMuons_tight_;
-		tsw::MuonCollection normMuons_barrel_tight_;
-
-		// Muon histograms ...
-		tsw::MuonDistns normMuons_1stpT_Histos_;
-		tsw::MuonDistns normMuons_tight_1stpT_Histos_;
-		tsw::MuonDistns normMuons_barrel_tight_1stpT_Histos_;
-
-		// emu method: emu object & output tree stuff
-		tsw::HEEPEle normEles_EB_HEEPNoIso_1stpT_;
-		bool normEles_EB_HEEPNoIso_1stpT_exists_;
-		tsw::HEEPDiEle normDiEle_HEEPNoIso_;
-		bool normDiEle_HEEPNoIso_exists_;
-		tsw::EleMuObject eleMu_EB_HEEPNoIso_muB_tight_;
 
 //		tsw::ABCDMethodTree frPreDiEleTree_;
 		tsw::DiEleTree noIsoZCandDiEleTree_;
@@ -1226,15 +1324,7 @@ class BstdZeeFirstAnalyser{
 
 		tsw::TagProbeTree heepTagProbeTree_;
 
-		TTree* eleMuTree_;
-		Double_t eleMuTreeVar_mass_;
-		Double_t eleMuTreeVar_pT_;
-		Double_t eleMuTreeVar_weight_;
-
-		TTree* diEleTree_;
-		Double_t diEleTreeVar_mass_;
-		Double_t diEleTreeVar_pT_;
-		Double_t diEleTreeVar_weight_;
+		tsw::EleMuTree eleMuTree_fullId_;
 
 		//----------------------------------------------//
 		//Histograms...
@@ -1296,11 +1386,6 @@ class BstdZeeFirstAnalyser{
 		tsw::DiEleDistns normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_modHEEPIsoOnHEEPNoIso_Histos_;
 		// ---------------------------------------------------- //
 
-		// E-mu object histograms ...
-		tsw::EleMuDistns h_eleMu_EB_HEEPNoIso_muB_tight_MZ_;
-		tsw::EleMuDistns h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_;
-		tsw::EleMuDistns h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_HEEPIso_;
-
 		tsw::DiEleDistns bstdDiEle_AllHEEP_Histos_;
 		tsw::DiEleDistns bstdDiEle_M0_AllHEEP_Histos_;
 		tsw::DiEleDistns bstdDiEle_Mleq0_AllHEEP_Histos_;
@@ -1356,14 +1441,12 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	skipThr_lowMCZpTEvts_(-99999.9),
 	dummyEvent_(),
 	event_(0),
-	normMuons_1stpT_Histos_(             "h_normMuons_1stpT_",       "normal", "",           1, 1, 50, 1000.0, 50, 1000.0),
-	normMuons_tight_1stpT_Histos_(       "h_normMuons_tight_1stpT_", "normal", "tight cuts", 2, 1, 50, 1000.0, 50, 1000.0),
-	normMuons_barrel_tight_1stpT_Histos_("h_normMuons_barrel_tight_1stpT_", "normal", "barrel, tight cuts", 2, 1, 50, 1000.0, 50, 1000.0),
 	//
 	noIsoZCandDiEleTree_("noIsoZBosonTree", outputFileName_ + "_noIsoZCandTree.root"),
 	modIsoZCandDiEleTree_("modIsoZBosonTree", outputFileName_ + "_modIsoZCandTree.root"),
 	zCandEffiTree_(outputFileName_ + "_zEffiTree.root"),
 	heepTagProbeTree_("tagProbeTree", "qcdGsfGsfTree", outputFileName_+"_heepTpTree.root"),
+	eleMuTree_fullId_("eleMuTree", outputFileName_ + "_eleMuTree.root"),
 	//
 	normEles_reconValidationHistos_(    "h_normEles_",      "standard",  "",              1,  false),
 	normEles_simpleCuts_reconValHistos_("h_normEles_sCuts_", "standard", ", simple cuts", 1,  false), //was 2
@@ -1418,10 +1501,6 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_Histos_(                      "normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_",                      "standard", "EB HEEPNoIso + inclGSF, trgA, Z mass",2, 1, nbins_mass, nbins_pt, ptmax),
 	normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_modHEEPIsoOnHEEPNoIso_Histos_("normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_modHEEPIsoOnHEEPNoIso_","standard", "EB HEEPNoIso + inclGSF, trgA, Z mass, modHEEPIsoOnHEEPNoIso",2, 1, nbins_mass, nbins_pt, ptmax),
 	//
-	h_eleMu_EB_HEEPNoIso_muB_tight_MZ_( "h_eleMu_EB_HEEPNoIso_muB_tight_MZ_", "standard", "EB+HEEPNoIso cuts, barrel+tight cuts, Z mass", 2, 1, nbins_mass, nbins_pt, ptmax ),
-	h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_( "h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_", "standard", "EB+HEEPNoIso cuts, barrel+tight cuts, Z mass, e-mu trigger", 2, 1, nbins_mass, nbins_pt, ptmax ),
-	h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_HEEPIso_( "h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_HEEPIso_", "standard", "EB+HEEPNoIso cuts, barrel+tight cuts, Z mass, e-mu trigger, HEEPIso", 2, 1, nbins_mass, nbins_pt, ptmax ),
-	//
 	bstdDiEle_AllHEEP_Histos_(          "h_bstdDiEle_AllHEEP_",   "special", "all HEEP cuts",    4, 1, nbins_mass, nbins_pt, ptmax),
 	bstdDiEle_M0_AllHEEP_Histos_(       "h_bstdDiEle_M0_AllHEEP_","special", "all HEEP cuts, M!=0", 2, 1, nbins_mass, nbins_pt, ptmax),
 	bstdDiEle_Mleq0_AllHEEP_Histos_(       "h_bstdDiEle_Mleq0_AllHEEP_","special", "all HEEP cuts, M==0", 8, 1, nbins_mass, nbins_pt, ptmax),
@@ -1457,9 +1536,6 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	
 	//Set default (typically clearly 'incorrect') values for non-histo variables...
 	SetMemberVariablesToDefaultValues();
-
-	//Setting up the emu method trees ...
-	SetupEMuMethodTrees();
 
 	// ----- SETTING UP TCHAIN AND ASSOCIATED BRANCH LINKS ----- //
 	unsigned int inputTrees_numEvts = 0;
@@ -1810,19 +1886,6 @@ void BstdZeeFirstAnalyser::SetupMuonCollection()
 		std::cout << "   ***-------------------------------------***" << std::endl;
 	}
 
-	//Now, applying the tight cuts to the muons, printing out the new collection, ordering it by (descending) pT, and then re-printing out the collection
-	if(vFlg_>0){
-		std::cout << "   ***---***---***---***---***---***---***---***" << std::endl;
-		std::cout << "   ***---***   (TIGHT CUTS APPLIED!)   ***---***" << std::endl;
-	}
-	normMuons_tight_ = normMuons_.GetTightMuons();
-	normMuons_tight_.OrderBypT();
-
-	normMuons_barrel_tight_ = normMuons_tight_.GetBarrelMuons();
-	normMuons_barrel_tight_.OrderBypT();
-
-	if(vFlg_>0)
-		normMuons_tight_.Print();
 }
 
 void BstdZeeFirstAnalyser::PrintOutBranchVariables()
@@ -1897,13 +1960,8 @@ void BstdZeeFirstAnalyser::PrintOutBranchVariables()
 
 }
 
-void BstdZeeFirstAnalyser::FinishOffAnalysis(){
-
-	//Calculate errors on histogram bins ...
-
-
-
-	//Open the output file ...
+void BstdZeeFirstAnalyser::FinishOffAnalysis()
+{
 	TFile f_histos((outputFileName_+"_histos.root").c_str(),"RECREATE");
 	f_histos.Write();
 
@@ -1911,17 +1969,6 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 	SaveReconValidationHistos(&f_histos);
 	//Close the output file ...
 	f_histos.Close();
-
-	// Open up eMu method files, save the appropriate tree, and then
-	TFile f_eleMuTree((outputFileName_ + "_eMuTree.root").c_str(),"RECREATE");
-	eleMuTree_->Write();
-	f_eleMuTree.Close();
-	delete eleMuTree_;
-
-	TFile f_diEleTree((outputFileName_ + "_diEleTree.root").c_str(),"RECREATE");
-	diEleTree_->Write();
-	f_diEleTree.Close();
-	delete diEleTree_;
 
 	// Save the ABCD QCD estimation tree ...
 //	frPreDiEleTree_.SaveToFile("/opt/ppd/newscratch/williams/Datafiles/abcdDiEleTrees/" + outputFile_name_ + "_abcdTree.root");
@@ -1935,6 +1982,8 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 	zCandEffiTree_.saveToFile();
 	heepTagProbeTree_.setEventCounter( this->GetNumEvtsRunOver() );
 	heepTagProbeTree_.saveToFile();
+	eleMuTree_fullId_.setEventCounter( this->GetNumEvtsRunOver() );
+	eleMuTree_fullId_.saveToFile();
 
 	// Output information to screen about diff ordering of cuts in QCD estimation
 	//numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_
@@ -1949,8 +1998,6 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis(){
 	std::cout << " * Number of events with normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso:" << std::endl;
 	std::cout << " *             " << numEvts_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_ << std::endl;
 	std::cout << " ***** ------------------------------------------ *****" << std::endl;
-
-	//numEvts_normDiEle_EB_HEEPNoIso_MZ_trgA_DiffFrom_normDiEle_EB_fidEcal_trgA_MZ_HEEPNoIso_
 }
 
 
@@ -2008,9 +2055,6 @@ void BstdZeeFirstAnalyser::FillHistograms()
 {
 	const Double_t evtWeight = eventHelper_.totWeight();
 
-	normDiEle_HEEPNoIso_exists_ = false;
-	normEles_EB_HEEPNoIso_1stpT_exists_ = false;
-
 	//Currently a placeholder ...
 //	std::vector<bool> normEles_sCutsFlags;           normEles_sCutsFlags.clear();
 	std::vector<bool> normEles_HEEPCutsFlags;        normEles_HEEPCutsFlags.clear();
@@ -2060,6 +2104,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	}
 	normEles_HEEPCuts_reconValHistos_.FillHistos(normEles_, normEles_HEEPCutsFlags, evtWeight);
 
+
 	//	if(readInBstdEles_){
 	//		bstdEles_reconValidationHistos_.FillNumberElesHist(bstdGsfEles_number_ , evtWeight);
 	//		for(unsigned int iEle=0; iEle<bstdGsfEles_number_; iEle++){
@@ -2082,13 +2127,6 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	//		//	bstdEles_reconValidationHistos_.FillHighestEtEleHistos( bstdEles_.at(idx_highestEtEle) );
 	//		bstdEles_HEEPCuts_reconValHistos_.FillHistos(bstdEles_, bstdEles_HEEPCutsFlags, evtWeight);
 	//	} // End of if(readInBstdEles_)
-
-
-	if(tsw::NumPassingCuts(normEles_EB_HEEPCutsNoIsoFlags)>0){
-		std::vector<unsigned int> idxs_elesPassedCuts = IndicesOfElesPassingCuts(normEles_, normEles_EB_HEEPCutsNoIsoFlags, 0);
-		normEles_EB_HEEPNoIso_1stpT_ = normEles_.at( idxs_elesPassedCuts.at(0) );
-		normEles_EB_HEEPNoIso_1stpT_exists_ = true;
-	}
 
 	/////////////////////////////////////////////////
 	// Form the di-electron pairs ...
@@ -2171,28 +2209,6 @@ void BstdZeeFirstAnalyser::FillHistograms()
 			normDiEle_EB_HEEPNoIso_MZ_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 
 			noIsoZCandDiEleTree_.fillTree(normDiEle_EB_HEEPNoIso, eventHelper_, trg_PathA_decision_);
-			// Apply modified track isolation cut ...
-			if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut())
-				normDiEle_EB_HEEPNoIso_MZ_trkIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
-			// Apply modified emHad1 isolation cut ...
-			if(normDiEle_EB_HEEPNoIso.ApplyDiEleEmHad1IsolCut()){
-				normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
-				// Apply modified track isolation cut ...
-				if(normDiEle_EB_HEEPNoIso.ApplyDiEleTrkIsolCut()){
-					normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
-
-
-					// Check that signal trigger has fired ...
-					if(trg_PathA_decision_){
-						normDiEle_EB_HEEPNoIso_MZ_EmHad1Iso_trkIso_trgA_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
-						// Set-up tree variables for e-mu method di-ele tree
-						normDiEle_HEEPNoIso_ = normDiEle_EB_HEEPNoIso;
-						normDiEle_HEEPNoIso_exists_ =  true;
-					}
-				}// if-End: DiEleTrkIsolCut
-			}// if-End: DiEleEmHad1IsoCut
-			else
-				normDiEle_EB_HEEPNoIso_MZ_notEmHad1Iso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
 
 			if(normDiEle_EB_HEEPNoIso.eleA().heepIdStdIsoCut(eventHelper_) && normDiEle_EB_HEEPNoIso.eleB().heepIdStdIsoCut(eventHelper_))
 				normDiEle_EB_HEEPNoIso_MZ_stdHEEPIso_Histos_.FillHistos(normDiEle_EB_HEEPNoIso, evtWeight, true);
@@ -2219,16 +2235,18 @@ void BstdZeeFirstAnalyser::FillHistograms()
 		}
 	}
 
-	const TLorentzVector& mcZ_eleA_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterA_p4_ : mcEles_HighestEt_p4_);
-	const TLorentzVector& mcZ_eleB_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterB_p4_ : mcEles_2ndHighestEt_p4_);
+	if(isMC_){
+		const TLorentzVector& mcZ_eleA_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterA_p4_ : mcEles_HighestEt_p4_);
+		const TLorentzVector& mcZ_eleB_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterB_p4_ : mcEles_2ndHighestEt_p4_);
 
-	if( tsw::HEEPDiEle* mcMatchedDiEle = getMcMatchedDiEle(mcZ_eleA_p4, mcZ_eleB_p4, normEles_) )
-	{
-		zCandEffiTree_.fillTree(mcMatchedDiEle, mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
-		delete mcMatchedDiEle;
+		if( tsw::HEEPDiEle* mcMatchedDiEle = getMcMatchedDiEle(mcZ_eleA_p4, mcZ_eleB_p4, normEles_) )
+		{
+			zCandEffiTree_.fillTree(mcMatchedDiEle, mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
+			delete mcMatchedDiEle;
+		}
+		else
+			zCandEffiTree_.fillTree_NotReconstructed(mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
 	}
-	else
-		zCandEffiTree_.fillTree_NotReconstructed(mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
 
 	// ------------------------
 	// EB HEEPNoIso di-electrons...
@@ -2237,7 +2255,6 @@ void BstdZeeFirstAnalyser::FillHistograms()
 
 		if( heepIdModIsoEbDiEle.isInZMassRange() )
 			modIsoZCandDiEleTree_.fillTree(heepIdModIsoEbDiEle, eventHelper_, trg_PathA_decision_);
-
 	}
 
 	//-----------------------------------
@@ -2259,7 +2276,6 @@ void BstdZeeFirstAnalyser::FillHistograms()
 				heepTagProbeTree_.fillQcdTree(*tagEleIt, *probeEleIt, eventHelper_, trg_PathA_decision_);
 		}
 	}
-
 
 	//-----------------------------------
 	// ABCD method selection code:
@@ -2424,49 +2440,42 @@ void BstdZeeFirstAnalyser::FillHistograms()
 }
 
 //--------------------------------------------------------//
-//---- Method for implementing emu analysis ...           //
+//---- Method for implementing emu analysis  ...          //
 void BstdZeeFirstAnalyser::DoEMuAnalysis()
 {
-	const Double_t evtWeight = eventHelper_.totWeight();
-
-	//  Filling histograms with the properties of the highest pT muon (no cuts), and the highest pT tight Muon ...
-	if(normMuons_.NumOfMuons()>0)
-		normMuons_1stpT_Histos_.FillHistos( normMuons_.HighestPtMuon(), 1.0);
-	if(normMuons_tight_.NumOfMuons()>0)
-		normMuons_tight_1stpT_Histos_.FillHistos( normMuons_tight_.HighestPtMuon(), 1.0);
-	if(normMuons_barrel_tight_.NumOfMuons()>0)
-		normMuons_barrel_tight_1stpT_Histos_.FillHistos( normMuons_barrel_tight_.HighestPtMuon(), 1.0 );
-
-	// Forming the emu object (IFF there is at least 1 HEEP non-isol electron, and at least one tight muon) ...
-	if(normMuons_barrel_tight_.NumOfMuons()>0 && normEles_EB_HEEPNoIso_1stpT_exists_){
-		eleMu_EB_HEEPNoIso_muB_tight_ = tsw::EleMuObject(normEles_EB_HEEPNoIso_1stpT_, normMuons_barrel_tight_.HighestPtMuon());
-
-		// Check that ele-mu object is in Z mass range
-		if(eleMu_EB_HEEPNoIso_muB_tight_.isInZMassRange()){
-			h_eleMu_EB_HEEPNoIso_muB_tight_MZ_.FillHistos(eleMu_EB_HEEPNoIso_muB_tight_, evtWeight);
-
-			// Check that e-mu trigger has fired
-			if(eventHelper_.GetTrigInfo_eMuPath_decision()){
-				h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_.FillHistos(eleMu_EB_HEEPNoIso_muB_tight_, evtWeight);
-				//Now, setting the branch variables, and adding a new event to the tree ...
-				eleMuTreeVar_mass_   = eleMu_EB_HEEPNoIso_muB_tight_.mass();
-				eleMuTreeVar_pT_     = eleMu_EB_HEEPNoIso_muB_tight_.pT();
-				eleMuTreeVar_weight_ = evtWeight;
-				eleMuTree_->Fill();
-				// Apply HEEP isol. cuts to electron
-				if(eleMu_EB_HEEPNoIso_muB_tight_.GetElectron()->heepIdStdIsoCut(eventHelper_))
-					h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_HEEPIso_.FillHistos(eleMu_EB_HEEPNoIso_muB_tight_, evtWeight);
-			}
+	// Grab highest Et electron passing HEEP V4.1 (w/o iso)
+	const tsw::HEEPEle* ptr_ele_EB_HEEPNoIso_1stpT = 0;
+	for(std::vector<tsw::HEEPEle>::const_iterator eleIt = normEles_.begin(); eleIt != normEles_.end(); eleIt++){
+		if(!ptr_ele_EB_HEEPNoIso_1stpT){
+			if( eleIt->heepIdNoIsoCut() )
+				ptr_ele_EB_HEEPNoIso_1stpT = &(*eleIt);
+		}
+		else{
+			if( eleIt->et()>ptr_ele_EB_HEEPNoIso_1stpT->et() && eleIt->heepIdNoIsoCut() )
+				ptr_ele_EB_HEEPNoIso_1stpT = &(*eleIt);
 		}
 	}
 
-	//Settting the branch variables for the diEle tree - IFF a di-ele has been constructed ...
-	if(normDiEle_HEEPNoIso_exists_){
-		diEleTreeVar_mass_ = normDiEle_HEEPNoIso_.invMass();
-		diEleTreeVar_pT_ = normDiEle_HEEPNoIso_.pT();
-		diEleTreeVar_weight_ = evtWeight;
-		diEleTree_->Fill();
+	// Grab highest Pt muon passing highPt selection
+	const tsw::Muon* ptr_muon_barrelHighPtId_1stpT = 0;
+	for(std::vector<tsw::Muon>::const_iterator muonIt = normMuons_.vec().begin(); muonIt != normMuons_.vec().end(); muonIt++){
+		if( !ptr_muon_barrelHighPtId_1stpT ){
+			if( muonIt->highPtIdCut(35.0, 1.44) )
+				ptr_muon_barrelHighPtId_1stpT = &(*muonIt);
+		}
+		else{
+			if( muonIt->pT()>ptr_muon_barrelHighPtId_1stpT->pT() && muonIt->highPtIdCut(35.0, 1.44) )
+				ptr_muon_barrelHighPtId_1stpT = &(*muonIt);
+		}
 	}
+
+	// Fill eleMuTree, if ele-mu pair was found & has invariant mass in Z window
+	if( !ptr_ele_EB_HEEPNoIso_1stpT || !ptr_muon_barrelHighPtId_1stpT )
+		return;
+
+	const tsw::EleMuObject eleMu_EB_HEEPNoIso_muB_highPtId(*ptr_ele_EB_HEEPNoIso_1stpT, *ptr_muon_barrelHighPtId_1stpT);
+	if( eleMu_EB_HEEPNoIso_muB_highPtId.isInZMassRange() )
+		eleMuTree_fullId_.fillTree( eleMu_EB_HEEPNoIso_muB_highPtId, eventHelper_, eventHelper_.GetTrigInfo_eMuPath_decision() );
 }
 
 //--------------------------------------------------------//
@@ -2522,14 +2531,6 @@ void BstdZeeFirstAnalyser::SaveReconValidationHistos(TFile* histosFile)
 
 	normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_Histos_.WriteHistos(histosFile);
 	normDiEle_EB_HEEPNoIsoPLUSgsf_trgA_MZ_modHEEPIsoOnHEEPNoIso_Histos_.WriteHistos(histosFile);
-
-	h_eleMu_EB_HEEPNoIso_muB_tight_MZ_.WriteHistos(histosFile);
-	h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_.WriteHistos(histosFile);
-	h_eleMu_EB_HEEPNoIso_muB_tight_MZ_eMuTrg_HEEPIso_.WriteHistos(histosFile);
-
-	normMuons_1stpT_Histos_.WriteHistos(histosFile);
-	normMuons_tight_1stpT_Histos_.WriteHistos(histosFile);
-	normMuons_barrel_tight_1stpT_Histos_.WriteHistos(histosFile);
 
 	bstdDiEle_AllHEEP_Histos_.WriteHistos(histosFile);
 	bstdDiEle_HEEPNoIso_Histos_.WriteHistos(histosFile);
@@ -2928,42 +2929,6 @@ void BstdZeeFirstAnalyser::SetupBranchLinks()
 	inputFilesTChain_->SetBranchAddress("normHEEPEles_numMissInnerHits", &normHEEPEles_numMissInnerHits_);				/* TEMP v1f/g FIX */
 
 }
-
-//==============================================================
-void BstdZeeFirstAnalyser::SetupEMuMethodTrees(){
-	eleMuTree_ = new TTree("myTree","eleMu data");
-	eleMuTree_->SetDirectory(0); // This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
-	/* Error is as follows:
-	 * Error in <TTree::Fill>: Failed filling branch:myTree.mass, nbytes=-1, entry=3990
-	 *  This error is symptomatic of a Tree created as a memory-resident Tree
-	 *  Instead of doing:
-	 *     TTree *T = new TTree(...)
-	 *     TFile *f = new TFile(...)
-	 *  you should do:
-	 *     TFile *f = new TFile(...)
-	 *     TTree *T = new TTree(...)
-	 */
-	eleMuTree_->Branch("mass",   &eleMuTreeVar_mass_,   "mass/D");
-	eleMuTree_->Branch("pT",     &eleMuTreeVar_pT_,     "pT/D");
-	eleMuTree_->Branch("weight", &eleMuTreeVar_weight_, "weight/D");
-
-	diEleTree_ = new TTree("myTree","diEle data");
-	diEleTree_->SetDirectory(0);// This line is needed as a 'QUICK FIX' to stop the following error when running over very large nos. of events ...
-	/* Error is as follows:
-	 * Error in <TTree::Fill>: Failed filling branch:myTree.mass, nbytes=-1, entry=3990
-	 *  This error is symptomatic of a Tree created as a memory-resident Tree
-	 *  Instead of doing:
-	 *     TTree *T = new TTree(...)
-	 *     TFile *f = new TFile(...)
-	 *  you should do:
-	 *     TFile *f = new TFile(...)
-	 *     TTree *T = new TTree(...)
-	 */
-	diEleTree_->Branch("mass",   &diEleTreeVar_mass_,   "mass/D");
-	diEleTree_->Branch("pT",   &diEleTreeVar_pT_,   "pT/D");
-	diEleTree_->Branch("weight", &diEleTreeVar_weight_, "weight/D");
-}
-
 
 //=====================================================================================================
 //-----------------------------------------------------------------------------------------------------
