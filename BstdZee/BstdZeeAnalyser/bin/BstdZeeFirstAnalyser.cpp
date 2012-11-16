@@ -456,7 +456,12 @@ namespace tsw{
 
 	public:
 		EffiCalcTree(const std::string& fileName) :
-			TreeHandlerBase("zBosonEffiTree", "Tree of Z candidate information for signal MC effi calc'ns", fileName)
+			TreeHandlerBase("zBosonEffiTree", "Tree of Z candidate information for signal MC effi calc'ns", fileName),
+			treeVar_mcZ_ele1_p4Ptr_( &treeVar_mcZ_ele1_p4_ ),
+			treeVar_mcZ_ele2_p4Ptr_( &treeVar_mcZ_ele2_p4_ ),
+			treeVar_Zp4Ptr_( &treeVar_Zp4_ ),
+			treeVar_eleA_p4Ptr_( &treeVar_eleA_p4_ ),
+			treeVar_eleB_p4Ptr_( &treeVar_eleB_p4_ )
 		{
 			// Setting up the event / di-ele branches ...
 			mainAnaTree_->Branch("genWeight",      &treeVar_genWeight_, "genWeight/D");
@@ -466,20 +471,20 @@ namespace tsw{
 			mainAnaTree_->Branch("lumi", &treeVar_lumiSec_, "lumi/i");
 			mainAnaTree_->Branch("evtNum", &treeVar_evtNum_, "evtNum/i");
 
-			mainAnaTree_->Branch("mcZ_ele1_p4", &treeVar_mcZ_ele1_p4Ptr_);	treeVar_mcZ_ele1_p4Ptr_ = &treeVar_mcZ_ele1_p4_;
-			mainAnaTree_->Branch("mcZ_ele2_p4", &treeVar_mcZ_ele2_p4Ptr_);	treeVar_mcZ_ele2_p4Ptr_ = &treeVar_mcZ_ele2_p4_;
+			mainAnaTree_->Branch("mcZ_ele1_p4", &treeVar_mcZ_ele1_p4Ptr_);
+			mainAnaTree_->Branch("mcZ_ele2_p4", &treeVar_mcZ_ele2_p4Ptr_);
 			mainAnaTree_->Branch("mc_detRegion",   &treeVar_detRegion_, "mcAccept_pt/i");
 			mainAnaTree_->Branch("bothRecod", &treeVar_bothRecod_, "bothRecod/O");
 
-			mainAnaTree_->Branch("Zp4", &treeVar_Zp4Ptr_); treeVar_Zp4Ptr_ = &treeVar_Zp4_;
+			mainAnaTree_->Branch("Zp4", &treeVar_Zp4Ptr_);
 			mainAnaTree_->Branch("ZpT", &treeVar_ZpT_,     "ZpT/D");
 			mainAnaTree_->Branch("ZdEta", &treeVar_ZdEta_,     "ZdEta/D");
 			mainAnaTree_->Branch("ZdPhi", &treeVar_ZdPhi_,     "ZdPhi/D");
 			mainAnaTree_->Branch("ZdR", &treeVar_ZdR_, "ZdR/D");
-			mainAnaTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);	treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;
+			mainAnaTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);
 			mainAnaTree_->Branch("eleA_scEta", &treeVar_eleA_scEta_, "eleA_scEta/D");
 			mainAnaTree_->Branch("eleA_dRmc", &treeVar_eleA_dRmc_, "eleA_dRmc/D");
-			mainAnaTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);	treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;
+			mainAnaTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);
 			mainAnaTree_->Branch("eleB_scEta", &treeVar_eleB_scEta_, "eleB_scEta/D");
 			mainAnaTree_->Branch("eleB_dRmc", &treeVar_eleB_dRmc_, "eleB_dRmc/D");
 
