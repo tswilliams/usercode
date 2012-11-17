@@ -154,98 +154,6 @@ namespace tsw{
 		return treePtr;
 	}
 
-
-	class ABCDMethodTree : public TreeHandlerBase {
-	private:
-		// PRIVATE MEMBERS
-
-		// For the event & di-ele branches ...
-		Bool_t treeVar_trgDecision_;
-		std::string* treeVar_trgNamePtr_; std::string treeVar_trgName_;
-		Double_t treeVar_weight_;
-
-		TLorentzVector* treeVar_p4Ptr_; TLorentzVector treeVar_p4_;
-		Double_t treeVar_mass_;
-		Double_t treeVar_pT_;
-		Bool_t treeVar_passHEEPNoIso_;
-		Bool_t treeVar_passModHEEPIso_;
-		Bool_t treeVar_passModTrkIso_;
-		Bool_t treeVar_passModEmHad1Iso_;
-
-		// For the eleA & eleB branches ...
-		TLorentzVector* treeVar_eleA_p4Ptr_; TLorentzVector treeVar_eleA_p4_;
-		Int_t treeVar_eleA_charge_;
-		Double_t treeVar_eleA_EOverP_;
-		Bool_t treeVar_eleA_passHEEPNoIso_;
-
-		TLorentzVector* treeVar_eleB_p4Ptr_; TLorentzVector treeVar_eleB_p4_;
-		Int_t treeVar_eleB_charge_;
-		Double_t treeVar_eleB_EOverP_;
-		Bool_t treeVar_eleB_passHEEPNoIso_;
-
-	public:
-		ABCDMethodTree(const std::string& fileName) :
-			TreeHandlerBase("abcdTree","ABCD method di-ele data", fileName)
-		{
-			// Setting up the event / di-ele branches ...
-			mainAnaTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
-			mainAnaTree_->Branch("trgName",     &treeVar_trgNamePtr_);
-			treeVar_trgNamePtr_ = &treeVar_trgName_;
-			mainAnaTree_->Branch("weight",      &treeVar_weight_, "weight/D");
-
-			treeVar_p4Ptr_ = &treeVar_p4_;  mainAnaTree_->Branch("diEle_p4",   &treeVar_p4Ptr_);
-			mainAnaTree_->Branch("diEle_mass", &treeVar_mass_,   "mass/D");
-			mainAnaTree_->Branch("diEle_pT",   &treeVar_pT_,     "pT/D");
-			mainAnaTree_->Branch("diEle_passHEEPNoIso",  &treeVar_passHEEPNoIso_,  "diEle_passHEEPNoIso/O");
-			mainAnaTree_->Branch("diEle_passModHEEPIso", &treeVar_passModHEEPIso_, "diEle_passModHEEPIso/O");
-			mainAnaTree_->Branch("diEle_passModTrkIso", &treeVar_passModTrkIso_, "diEle_passModTrkIso/O");
-			mainAnaTree_->Branch("diEle_passModEmHad1Iso", &treeVar_passModEmHad1Iso_, "diEle_passModEmHad1Iso/O");
-
-			// Setting up the branches for each electron ...
-			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;  mainAnaTree_->Branch("eleA_p4",     &treeVar_eleA_p4Ptr_);
-			mainAnaTree_->Branch("eleA_charge",   &treeVar_eleA_charge_,   "eleA_charge/I"); //Int_t
-			mainAnaTree_->Branch("eleA_EOverP", &treeVar_eleA_EOverP_, "eleA_EOverP/D"); //Double_t
-			mainAnaTree_->Branch("eleA_passHEEPNoIso", &treeVar_eleA_passHEEPNoIso_, "eleA_passHEEPNoIso/O");
-
-			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;   mainAnaTree_->Branch("eleB_p4",     &treeVar_eleB_p4Ptr_);
-			mainAnaTree_->Branch("eleB_charge",   &treeVar_eleB_charge_,   "eleB_charge/I"); //Int_t
-			mainAnaTree_->Branch("eleB_EOverP", &treeVar_eleB_EOverP_, "eleB_EOverP/D"); //Double_t
-			mainAnaTree_->Branch("eleB_passHEEPNoIso", &treeVar_eleB_passHEEPNoIso_, "eleB_passHEEPNoIso/O");
-		}
-		~ABCDMethodTree(){}
-
-		void fillTree(tsw::HEEPDiEle* diEle, std::string trgName, bool trgDecision, double evtWeight){
-			// Setting values of variables for eleA & eleB branches ...
-			tsw::HEEPEle diEle_eleA = diEle->eleA();
-			treeVar_eleA_p4_ = diEle_eleA.p4();
-			treeVar_eleA_charge_ = diEle_eleA.charge();
-			treeVar_eleA_EOverP_ = diEle_eleA.epIn();
-			treeVar_eleA_passHEEPNoIso_ = diEle_eleA.heepIdNoIsoCut();
-
-			tsw::HEEPEle diEle_eleB = diEle->eleB();
-			treeVar_eleB_p4_ = diEle_eleB.p4();
-			treeVar_eleB_charge_ = diEle_eleB.charge();
-			treeVar_eleB_EOverP_ = diEle_eleB.epIn();
-			treeVar_eleB_passHEEPNoIso_ = diEle_eleB.heepIdNoIsoCut();
-
-			// Setting values of variables for event & di-ele branches ...
-			treeVar_trgDecision_ = trgDecision;
-			treeVar_trgName_ = trgName;
-			treeVar_weight_ = evtWeight;
-
-			treeVar_p4_ = diEle->totalP4();
-			treeVar_mass_ = diEle->invMass();
-			treeVar_pT_ = diEle->pT();
-			treeVar_passHEEPNoIso_ = (treeVar_eleA_passHEEPNoIso_ && treeVar_eleB_passHEEPNoIso_);
-			treeVar_passModTrkIso_ = diEle->ApplyDiEleTrkIsolCut();
-			treeVar_passModEmHad1Iso_ = diEle->ApplyDiEleEmHad1IsolCut();
-			treeVar_passModHEEPIso_ = (treeVar_passModTrkIso_ && treeVar_passModEmHad1Iso_);
-
-			// And finally fill the tree ...
-			mainAnaTree_->Fill();
-		}
-	};
-
 	///////////////////////////////////////////////////////////////////////////////
 	// DiEleTree: Simple class for generating trees containing info about di-ele Z boson candidates
 	//
@@ -276,6 +184,10 @@ namespace tsw{
 		TLorentzVector* treeVar_eleA_p4Ptr_; TLorentzVector treeVar_eleA_p4_;
 		TLorentzVector* treeVar_eleB_p4Ptr_; TLorentzVector treeVar_eleB_p4_;
 
+		Int_t treeVar_eleA_charge_;
+		Int_t treeVar_eleB_charge_;
+		Int_t treeVar_eleA_frPreCutCode_;
+		Int_t treeVar_eleB_frPreCutCode_;
 		Int_t treeVar_eleA_stdHeepCutCode_;
 		Int_t treeVar_eleB_stdHeepCutCode_;
 		Int_t treeVar_eleA_modHeepStdThrCutCode_;
@@ -284,7 +196,7 @@ namespace tsw{
 		Int_t treeVar_eleB_modHeepColThrCutCode_;
 
 	public:
-		DiEleTree(const std::string& treeName, const std::string& fileName) :
+		DiEleTree(const std::string& treeName, const std::string& fileName, bool fullInfoInTree=false) :
 			TreeHandlerBase(treeName, "Tree of Z candidates ("+treeName+")", fileName)
 		{
 			// Setting up the event / di-ele branches ...
@@ -310,6 +222,12 @@ namespace tsw{
 			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;  mainAnaTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);
 			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;  mainAnaTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);
 
+			if(fullInfoInTree){
+				mainAnaTree_->Branch("eleA_charge", &treeVar_eleA_charge_, "eleA_charge/I");
+				mainAnaTree_->Branch("eleB_charge", &treeVar_eleB_charge_, "eleB_charge/I");
+				mainAnaTree_->Branch("eleA_frPre", &treeVar_eleA_frPreCutCode_, "eleA_frPre/I");
+				mainAnaTree_->Branch("eleB_frPre", &treeVar_eleB_frPreCutCode_, "eleB_frPre/I");
+			}
 			mainAnaTree_->Branch("eleA_stdHeep", &treeVar_eleA_stdHeepCutCode_, "eleA_stdHeep/I");
 			mainAnaTree_->Branch("eleB_stdHeep", &treeVar_eleB_stdHeepCutCode_, "eleB_stdHeep/I");
 			mainAnaTree_->Branch("eleA_modHeepStdThr", &treeVar_eleA_modHeepStdThrCutCode_, "eleA_modHeepStdThr/I");
@@ -342,6 +260,12 @@ namespace tsw{
 
 			treeVar_eleA_p4_ = diEle.eleA().p4();
 			treeVar_eleB_p4_ = diEle.eleB().p4();
+
+			treeVar_eleA_charge_ = diEle.eleA().charge();
+			treeVar_eleB_charge_ = diEle.eleB().charge();
+
+			treeVar_eleA_frPreCutCode_ = diEle.eleA().fakeRatePreSelnCutCode();
+			treeVar_eleB_frPreCutCode_ = diEle.eleB().fakeRatePreSelnCutCode();
 
 			treeVar_eleA_stdHeepCutCode_ = diEle.eleA().heepIdStdIsoCutCode(evtHelper);
 			treeVar_eleB_stdHeepCutCode_ = diEle.eleB().heepIdStdIsoCutCode(evtHelper);
@@ -1319,6 +1243,9 @@ class BstdZeeFirstAnalyser{
 //		tsw::ABCDMethodTree frPreDiEleTree_;
 		tsw::DiEleTree noIsoZCandDiEleTree_;
 		tsw::DiEleTree modIsoZCandDiEleTree_;
+
+		tsw::DiEleTree abcdDiGsfFrPreTree_;
+
 		tsw::EffiCalcTree zCandEffiTree_;
 
 		tsw::TagProbeTree heepTagProbeTree_;
@@ -1350,6 +1277,7 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	//
 	noIsoZCandDiEleTree_("noIsoZBosonTree", outputFileName_ + "_noIsoZCandTree.root"),
 	modIsoZCandDiEleTree_("modIsoZBosonTree", outputFileName_ + "_modIsoZCandTree.root"),
+	abcdDiGsfFrPreTree_("abcdDiGsfFrPreTree", outputFileName_ + "_abcdDiGsfTree.root", true),
 	zCandEffiTree_(outputFileName_ + "_zEffiTree.root"),
 	heepTagProbeTree_("tagProbeTree", "qcdGsfGsfTree", outputFileName_+"_heepTpTree.root"),
 	eleMuTree_fullId_("eleMuTree", outputFileName_ + "_eleMuTree.root")
@@ -1788,14 +1716,14 @@ void BstdZeeFirstAnalyser::PrintOutBranchVariables()
 
 void BstdZeeFirstAnalyser::FinishOffAnalysis()
 {
-	// Save the ABCD QCD estimation tree ...
-//	frPreDiEleTree_.SaveToFile("/opt/ppd/newscratch/williams/Datafiles/abcdDiEleTrees/" + outputFile_name_ + "_abcdTree.root");
 
 	// Set the event counters for the tree handlers, and write trees to file ...
 	noIsoZCandDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
 	noIsoZCandDiEleTree_.saveToFile();
 	modIsoZCandDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
 	modIsoZCandDiEleTree_.saveToFile();
+	abcdDiGsfFrPreTree_.setEventCounter( this->GetNumEvtsRunOver() );
+	abcdDiGsfFrPreTree_.saveToFile();
 	if(isMC_){
 		zCandEffiTree_.setEventCounter( this->GetNumEvtsRunOver() );
 		zCandEffiTree_.saveToFile();
@@ -1864,15 +1792,15 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	// PRELIMINARIES
 	// (i.e. Checking which eles pass various cuts)
 
-	std::vector<bool> normEles_HEEPCutsFlags;        normEles_HEEPCutsFlags.clear();
-	std::vector<bool> normEles_HEEPCutsNoIsoFlags;   normEles_HEEPCutsNoIsoFlags.clear();
-	std::vector<bool> normEles_EB_HEEPCutsNoIsoFlags;normEles_EB_HEEPCutsNoIsoFlags.clear();
+	std::vector<bool> normEles_HEEPCutsFlags;
+	std::vector<bool> normEles_HEEPCutsNoIsoFlags;
+	std::vector<bool> normEles_EB_HEEPCutsNoIsoFlags;
 	std::vector<bool> normEles_EB_heepIdModIsoFlags;
-	std::vector<bool> normEles_EB_isFidEcalDrAndFRPreFlags; normEles_EB_isFidEcalDrAndFRPreFlags.clear();
+	std::vector<bool> normEles_EB_isFidEcalDrAndFRPreFlags;
 
-	std::vector<bool> bstdEles_sCutsFlags;         bstdEles_sCutsFlags.clear();
-	std::vector<bool> bstdEles_HEEPCutsFlags;      bstdEles_HEEPCutsFlags.clear();
-	std::vector<bool> bstdEles_HEEPCutsNoIsoFlags; bstdEles_HEEPCutsNoIsoFlags.clear();
+	std::vector<bool> bstdEles_sCutsFlags;
+	std::vector<bool> bstdEles_HEEPCutsFlags;
+	std::vector<bool> bstdEles_HEEPCutsNoIsoFlags;
 
 
 	for(std::vector<tsw::HEEPEle>::const_iterator eleIt = normEles_.begin(); eleIt != normEles_.end(); eleIt++){
@@ -1883,7 +1811,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 
 		normEles_EB_heepIdModIsoFlags.push_back( eleIt->heepIdModIsoCut(eventHelper_) && eleIt->isEB() );
 
-		normEles_EB_isFidEcalDrAndFRPreFlags.push_back( eleIt->isEcalDriven() && eleIt->fakeRatePreSelnCut() && eleIt->isHEEPEB() );
+		normEles_EB_isFidEcalDrAndFRPreFlags.push_back( eleIt->fakeRatePreSelnCut() && eleIt->isHEEPEB() );
 	}
 
 
@@ -1922,6 +1850,15 @@ void BstdZeeFirstAnalyser::FillHistograms()
 			noIsoZCandDiEleTree_.fillTree(normDiEle_EB_HEEPNoIso, eventHelper_, trg_PathA_decision_);
 
 		}
+	}
+
+	// ------------------------
+	// EB Fr-preselection di-GSFs for ABCD method QCD estimate ...
+	if(tsw::NumPassingCuts(normEles_EB_isFidEcalDrAndFRPreFlags)>1){
+		tsw::HEEPDiEle frPreEbDiEle( normEles_, normEles_EB_isFidEcalDrAndFRPreFlags);
+
+		if( frPreEbDiEle.invMass()>50.0 && frPreEbDiEle.invMass()<140.0 )
+			abcdDiGsfFrPreTree_.fillTree(frPreEbDiEle, eventHelper_, trg_PathA_decision_);
 	}
 
 	// ------------------------
