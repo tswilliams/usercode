@@ -59,7 +59,7 @@ namespace tsw{
 
 		for(std::vector<std::string>::const_iterator fileNameIt=origFileNamesVec.begin(); fileNameIt<origFileNamesVec.end(); fileNameIt++){
 			if(fileNameIt->find("/pnfs/pp.rl.ac.uk")==0)
-				newFileNamesVec.push_back("dcap://dcappp.rl.ac.uk" + (*fileNameIt) );
+				newFileNamesVec.push_back("dcap://dcap.pp.rl.ac.uk" + (*fileNameIt) );
 			else if(fileNameIt->find("/store/")==0)
 				newFileNamesVec.push_back("dcap://dcap.pp.rl.ac.uk/pnfs/pp.rl.ac.uk/data/cms" + (*fileNameIt) );
 			else
