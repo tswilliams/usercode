@@ -75,16 +75,16 @@ namespace tsw{
 //			float pCalo(){return eleStr_.pCalo_;}
 			float ptVtx(){return eleStr_.ptVtx_;}
 			float ptCalo(){return eleStr_.ptCalo_;}
-			bool  closestCtfTrk_exists(){
+			bool  closestCtfTrk_exists() const {
 				if(closestCtfTrk_pt()<-0.1){
 					//std::cout << std::endl << "    ***** closestCtfTrackRef is NULL *****" << std::endl << std::endl;
 					return false;}
 				else
 					return true;
 			}
-		  	float closestCtfTrk_pt(){return eleStr_.closestCtfTrk_pt_;}
-		  	float closestCtfTrk_eta(){return eleStr_.closestCtfTrk_eta_;}
-		  	float closestCtfTrk_phi(){return eleStr_.closestCtfTrk_phi_;}
+		  	float closestCtfTrk_pt()  const {return eleStr_.closestCtfTrk_pt_;}
+		  	float closestCtfTrk_eta() const {return eleStr_.closestCtfTrk_eta_;}
+		  	float closestCtfTrk_phi() const {return eleStr_.closestCtfTrk_phi_;}
 //		  	float closestCtfTrk_innerPt(){return eleStr_.closestCtfTrk_innerPt_;}
 //		  	float closestCtfTrk_innerEta(){return eleStr_.closestCtfTrk_innerEta_;}
 //		  	float closestCtfTrk_innerPhi(){return eleStr_.closestCtfTrk_innerPhi_;}
@@ -185,38 +185,38 @@ namespace tsw{
 			// METHODS FOR CALCULATING OLD MODIFIED ISOLATION CUTS
 
 			//SC information (incl. individual recHits) ...
-			float SC_eta(){ return eleStr_.SC_posn_eta_; }
-			float SC_phi(){ return eleStr_.SC_posn_phi_; }
-			float SC_rawEnergy(){ return eleStr_.SC_rawEnergy_; }
-			unsigned int numStoredRecHits(){return eleStr_.SC_recHits_Et_.size();}
-			float recHits_Et(int recHitIdx){return eleStr_.SC_recHits_Et_.at(recHitIdx);}
-			float recHits_eta(int recHitIdx){return eleStr_.SC_recHits_eta_.at(recHitIdx);}
-			float recHits_phi(int recHitIdx){return eleStr_.SC_recHits_phi_.at(recHitIdx);}
-			bool recHits_isFromEB(int recHitIdx){return eleStr_.SC_recHits_isFromEB_.at(recHitIdx);}
-			float SC_totEnergyRecHits(){ return eleStr_.SC_totEnergyRecHits_; }
-			float ratio_CaloToRecHitEnergy(){ return this->caloEnergy()/this->SC_totEnergyRecHits(); }
-			unsigned int SC_totNumRecHits(){ return eleStr_.SC_totNumRecHits_; }
+			float SC_eta() const { return eleStr_.SC_posn_eta_; }
+			float SC_phi() const { return eleStr_.SC_posn_phi_; }
+			float SC_rawEnergy() const { return eleStr_.SC_rawEnergy_; }
+			unsigned int numStoredRecHits()  const {return eleStr_.SC_recHits_Et_.size();}
+			float recHits_Et(int recHitIdx)  const {return eleStr_.SC_recHits_Et_.at(recHitIdx);}
+			float recHits_eta(int recHitIdx) const {return eleStr_.SC_recHits_eta_.at(recHitIdx);}
+			float recHits_phi(int recHitIdx) const {return eleStr_.SC_recHits_phi_.at(recHitIdx);}
+			bool recHits_isFromEB(int recHitIdx) const {return eleStr_.SC_recHits_isFromEB_.at(recHitIdx);}
+			float SC_totEnergyRecHits() const { return eleStr_.SC_totEnergyRecHits_; }
+			float ratio_CaloToRecHitEnergy() const { return this->caloEnergy()/this->SC_totEnergyRecHits(); }
+			unsigned int SC_totNumRecHits()  const { return eleStr_.SC_totNumRecHits_; }
 
 			// Access to GSF track variables
-			float gsfTrk_eta(){return eleStr_.gsfTrk_eta_;}
-			float gsfTrk_phi(){return eleStr_.gsfTrk_phi_;}
-			float gsfTrk_vz(){return eleStr_.gsfTrk_vz_;}
+			float gsfTrk_eta() const {return eleStr_.gsfTrk_eta_;}
+			float gsfTrk_phi() const {return eleStr_.gsfTrk_phi_;}
+			float gsfTrk_vz()  const {return eleStr_.gsfTrk_vz_;}
 
 			// Accesss to information about CTF tracks that are within this electron's inner isol. cone.
-			unsigned int numInnerIsoConeTrks(){return eleStr_.innerIsoConeTrks_pt_.size();}
-			float innerIsoConeTrks_pt(const int trkIdx)
+			unsigned int numInnerIsoConeTrks() const {return eleStr_.innerIsoConeTrks_pt_.size();}
+			float innerIsoConeTrks_pt(const int trkIdx) const
 					{return eleStr_.innerIsoConeTrks_pt_.at(trkIdx);}
-			float innerIsoConeTrks_eta(const int trkIdx)
+			float innerIsoConeTrks_eta(const int trkIdx) const
 					{return eleStr_.innerIsoConeTrks_eta_.at(trkIdx);}
-			float innerIsoConeTrks_phi(const int trkIdx)
+			float innerIsoConeTrks_phi(const int trkIdx) const
 					{return eleStr_.innerIsoConeTrks_phi_.at(trkIdx);}
-			float innerIsoConeTrks_vz(const int trkIdx)
+			float innerIsoConeTrks_vz(const int trkIdx) const
 					{return eleStr_.innerIsoConeTrks_vz_.at(trkIdx);}
 
 			/////////////////////////////////////////////////////
 
 			// Method that modifies the standard tracker isolation value
-			float modTrkIso(tsw::HEEPEle* theOtherEle);
+			float modTrkIso(const tsw::HEEPEle* theOtherEle) const;
 
 			//Methods used in applying the modified EmHad1 isolation HEEP cut ...
 			float dR_SCs(tsw::HEEPEle* theOtherEle){
@@ -245,9 +245,9 @@ namespace tsw{
 				}
 				return isolEmHad1;
 			}
-			float modEmIso(tsw::HEEPEle* theOtherEle);
-			float modHad1Iso(tsw::HEEPEle* theOtherEle);
-			float modEmHad1Iso(tsw::HEEPEle* anotherEle){
+			float modEmIso(const tsw::HEEPEle* theOtherEle) const ;
+			float modHad1Iso(const tsw::HEEPEle* theOtherEle) const ;
+			float modEmHad1Iso(const tsw::HEEPEle* anotherEle) const {
 				return (this->modEmIso(anotherEle)+this->modHad1Iso(anotherEle));}
 			float modEmHad1Iso_v1(tsw::HEEPEle* theOtherEle);
 
@@ -674,7 +674,7 @@ int tsw::HEEPEle::fakeRatePreSelnCutCode_ichep2012() const
 // METHODS FOR CALCULATING SC-BASED MODIFIED ISOLATION VALUES (written Nov/Dec 2011)
 //////////////////////////////////////////////////////////////////////////////////////
 
-float tsw::HEEPEle::modTrkIso(tsw::HEEPEle* theOtherEle)
+float tsw::HEEPEle::modTrkIso(const tsw::HEEPEle* theOtherEle) const
 {
 	const bool coutDebugTxt = false;
 	float isolPtTrkValue = this->isolPtTrks();
@@ -725,7 +725,8 @@ float tsw::HEEPEle::modTrkIso(tsw::HEEPEle* theOtherEle)
 	return isolPtTrkValue;
 }
 
-float tsw::HEEPEle::modEmIso(tsw::HEEPEle* theOtherEle){
+float tsw::HEEPEle::modEmIso(const tsw::HEEPEle* theOtherEle) const
+{
 	bool coutDebugTxt = false;
 	double isolEm = this->isolEm();
 
@@ -788,7 +789,8 @@ float tsw::HEEPEle::modEmIso(tsw::HEEPEle* theOtherEle){
 	return isolEm;
 }
 
-float tsw::HEEPEle::modHad1Iso(tsw::HEEPEle* theOtherEle){
+float tsw::HEEPEle::modHad1Iso(const tsw::HEEPEle* theOtherEle) const
+{
 	bool coutDebugTxt = false;
 	double isolHad1 = this->isolHadDepth1();
 

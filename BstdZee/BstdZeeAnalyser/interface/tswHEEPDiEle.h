@@ -92,10 +92,10 @@ namespace tsw{
 			}
 
 			//Methods for applying the modified track isolation HEEP cut - w/ modification occuring using innerIsoConeTrks information
-			float eleA_modTrkIso(){ return eleA_.modTrkIso(&eleB_); }
-			float eleB_modTrkIso(){ return eleB_.modTrkIso(&eleA_); }
-			bool eleA_modTrkIsolCut();
-			bool eleB_modTrkIsolCut();
+			float eleA_modTrkIso() const { return eleA_.modTrkIso(&eleB_); }
+			float eleB_modTrkIso() const { return eleB_.modTrkIso(&eleA_); }
+			bool eleA_modTrkIsolCut() const ;
+			bool eleB_modTrkIsolCut() const ;
 			bool ApplyDiEleTrkIsolCut();
 
 			// The old (simpler) methods for applying the modified track isolation HEEP cut.
@@ -108,39 +108,39 @@ namespace tsw{
 
 		private:
 			// Member variables for the caching of the modified electron isolation values ...
-			float cache_eleA_modEmHad1Iso_;
-			float cache_eleB_modEmHad1Iso_;
-			float cache_eleA_modHad1Iso_;
-			float cache_eleB_modHad1Iso_;
-			bool eleA_modEmHad1Iso_isCached_;
-			bool eleB_modEmHad1Iso_isCached_;
-			bool eleA_modHad1Iso_isCached_;
-			bool eleB_modHad1Iso_isCached_;
+			mutable float cache_eleA_modEmHad1Iso_;
+			mutable float cache_eleB_modEmHad1Iso_;
+			mutable float cache_eleA_modHad1Iso_;
+			mutable float cache_eleB_modHad1Iso_;
+			mutable bool eleA_modEmHad1Iso_isCached_;
+			mutable bool eleB_modEmHad1Iso_isCached_;
+			mutable bool eleA_modHad1Iso_isCached_;
+			mutable bool eleB_modHad1Iso_isCached_;
 
 		public:
 			//Methods for applying the modified EmHad1 isolation HEEP cut ...
-			float eleA_modEmHad1Iso(){
+			float eleA_modEmHad1Iso() const {
 				if(!eleA_modEmHad1Iso_isCached_){
 					cache_eleA_modEmHad1Iso_ = eleA_.modEmHad1Iso(&eleB_);
 					eleA_modEmHad1Iso_isCached_ = true;
 				}
 				return cache_eleA_modEmHad1Iso_;
 			}
-			float eleB_modEmHad1Iso(){
+			float eleB_modEmHad1Iso() const {
 				if(!eleB_modEmHad1Iso_isCached_){
 					cache_eleB_modEmHad1Iso_ = eleB_.modEmHad1Iso(&eleA_);
 					eleB_modEmHad1Iso_isCached_ = true;
 				}
 				return cache_eleB_modEmHad1Iso_;
 			}
-			float eleA_modHad1Iso(){
+			float eleA_modHad1Iso() const {
 				if(!eleA_modHad1Iso_isCached_){
 					cache_eleA_modHad1Iso_ = eleA_.modHad1Iso(&eleB_);
 					eleA_modHad1Iso_isCached_ = true;
 				}
 				return cache_eleA_modHad1Iso_;
 			}
-			float eleB_modHad1Iso(){
+			float eleB_modHad1Iso() const {
 				if(!eleB_modHad1Iso_isCached_){
 					cache_eleB_modHad1Iso_ = eleB_.modHad1Iso(&eleA_);
 					eleB_modHad1Iso_isCached_ = true;
@@ -155,8 +155,8 @@ namespace tsw{
 //			}
 
 			//Methods that return the electrons ...
-			tsw::HEEPEle eleA()  const  { return eleA_; }
-			tsw::HEEPEle eleB()  const  { return eleB_; }
+			const tsw::HEEPEle& eleA()  const  { return eleA_; }
+			const tsw::HEEPEle& eleB()  const  { return eleB_; }
 
 			//Method to write out general quantities of interest about the di-ele
 			void PrintOutInfo();
@@ -206,7 +206,7 @@ namespace tsw{
 
 	//-------------------------------------------------------------------***
 	//Methods for applying the modified track isolation HEEP cut ...
-	bool HEEPDiEle::eleA_modTrkIsolCut()
+	bool HEEPDiEle::eleA_modTrkIsolCut() const
 	{
 		float eleA_isolPtTrks = eleA_modTrkIso();
 		bool eleA_cutFlag = false;
@@ -220,7 +220,7 @@ namespace tsw{
 
 		return eleA_cutFlag;
 	}
-	bool HEEPDiEle::eleB_modTrkIsolCut()
+	bool HEEPDiEle::eleB_modTrkIsolCut() const
 	{
 		float eleB_isolPtTrks = eleB_modTrkIso();
 		bool eleB_cutFlag = false;
