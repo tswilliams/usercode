@@ -8,20 +8,26 @@ namespace tsw{
 	class Muon{
 		private:
 			MuStruct muStr_;
+			TLorentzVector stdP4_;  ///< 4-momentum returned by reco::Muon::p4
+			TLorentzVector corrP4_; ///< 4-momentum of reco muon, corrected to pT of TuneP (i.e. 'best') track if exists
 		public:
 			//CTOR and DTOR ...
 			Muon(): muStr_()
 				{}
-			Muon(tsw::MuStruct struct_theMuon): muStr_(struct_theMuon)
-				{}
+			Muon(tsw::MuStruct struct_theMuon) :
+				muStr_(struct_theMuon),
+				stdP4_( ConvertToTLorentzVector( &(muStr_.p4) ) ),
+				corrP4_(bestTrk_exists() ? bestTrk_pT()/stdP4_.Pt()*stdP4_ : stdP4_)
+			{}
 			~Muon(){}
 
 			// Methods for access to the cut variables ...
-			TLorentzVector p4() const { return ConvertToTLorentzVector( &(muStr_.p4) ); }
+			const TLorentzVector& p4() const { return corrP4_; }
 			double p()   const {   return p4().P(); }
 			double pT()  const {  return p4().Pt(); }
 			double eta() const { return p4().Eta(); }
 			double phi() const { return p4().Phi(); }
+			const TLorentzVector& stdRecoP4() const { return stdP4_; }
 			int charge() const { return muStr_.charge; }
 			bool isGlobalMuon()      const { return muStr_.isGlobalMuon; }
 			bool isTrackerMuon()     const { return muStr_.isTrackerMuon; }
@@ -55,6 +61,8 @@ namespace tsw{
 	   	int outer_charge()   const { return muStr_.outTrk_charge; }
 
 	   	bool   bestTrk_exists()    const { return muStr_.bestTrk_exists; }
+	   	double bestTrk_pT()        const { return muStr_.bestTrk_pT; }
+	   	double bestTrk_ptError()   const { return muStr_.bestTrk_ptError; }
 	   	double bestTrk_dxy_bspot() const { return muStr_.bestTrk_dxy_bspot; }
 			double bestTrk_dxy_vtx()   const { return muStr_.bestTrk_dxy_vtx; }
 			double bestTrk_dz_vtx()    const { return muStr_.bestTrk_dz_vtx; }
@@ -120,11 +128,12 @@ int tsw::Muon::highPtIdCutCode(float minPt, float maxEta) const
 		cutCode |= mCutCode_nrPixHits;
 
 	// Number tracker layers with hits
-	if( trk_trkrLayerWHits()<=8 )
+	if( trk_trkrLayerWHits()<=5 )
 		cutCode |= mCutCode_nrTkLayers;
 
-	//TODO -- Add dPt/Pt cut when relevant info is in NTuple
-//	static const int mCutCode_dPtOverPt   = 0x0400;
+	// dPt/Pt
+	if( !bestTrk_exists() || (bestTrk_ptError()/bestTrk_pT())>=0.3 )
+		cutCode |= mCutCode_dPtOverPt;
 
 	return cutCode;
 }
