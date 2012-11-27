@@ -212,6 +212,8 @@ namespace tsw{
 		normMuons_outTrk_charge_.push_back(theMuon->outTrk_charge);
 
 		normMuons_bestTrk_exists_   .push_back(theMuon->bestTrk_exists);
+		normMuons_bestTrk_pT_       .push_back(theMuon->bestTrk_pT);
+		normMuons_bestTrk_ptError_  .push_back(theMuon->bestTrk_ptError);
    	normMuons_bestTrk_dxy_bspot_.push_back(theMuon->bestTrk_dxy_bspot);
    	normMuons_bestTrk_dxy_vtx_  .push_back(theMuon->bestTrk_dxy_vtx);
    	normMuons_bestTrk_dz_vtx_   .push_back(theMuon->bestTrk_dz_vtx);

@@ -154,6 +154,8 @@ namespace tsw{
 			std::vector<Int_t>    normMuons_outTrk_charge_;
 
 			std::vector<Bool_t>   normMuons_bestTrk_exists_;
+			std::vector<Double_t> normMuons_bestTrk_pT_;
+			std::vector<Double_t> normMuons_bestTrk_ptError_;
 	   	std::vector<Double_t> normMuons_bestTrk_dxy_bspot_;
 	   	std::vector<Double_t> normMuons_bestTrk_dxy_vtx_;
 	   	std::vector<Double_t> normMuons_bestTrk_dz_vtx_;

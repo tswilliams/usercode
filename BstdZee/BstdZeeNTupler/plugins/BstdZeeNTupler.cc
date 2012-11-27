@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.22 2012/11/12 11:11:13 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.24 2012/11/12 16:33:05 tsw Exp $
 //
 //
 
@@ -2734,11 +2734,16 @@ void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 		else
 			ithMuon.outTrk_exists = false;
 
-		if( imuon->muonBestTrack().get()!=0 ){
+		// Grab the TuneP track developed for high pT ID & use it as the 'best track'
+		reco::TrackRef cktTrack = (muon::tevOptimized(*imuon, 200, 40., 17., 0.25)).first;
+
+		if( cktTrack.get()!=0 ){
 			ithMuon.bestTrk_exists = true;
-			ithMuon.bestTrk_dxy_bspot   = imuon->muonBestTrack()->dxy( h_beamSpot->position() );
-			ithMuon.bestTrk_dxy_vtx     = imuon->muonBestTrack()->dxy( mainPrimaryVertexIt->position() );
-			ithMuon.bestTrk_dz_vtx      = imuon->muonBestTrack()->dz( mainPrimaryVertexIt->position() );
+			ithMuon.bestTrk_pT          = cktTrack->pt();
+			ithMuon.bestTrk_ptError     = cktTrack->ptError();
+			ithMuon.bestTrk_dxy_bspot   = cktTrack->dxy( h_beamSpot->position() );
+			ithMuon.bestTrk_dxy_vtx     = cktTrack->dxy( mainPrimaryVertexIt->position() );
+			ithMuon.bestTrk_dz_vtx      = cktTrack->dz( mainPrimaryVertexIt->position() );
 		}
 		else
 			ithMuon.bestTrk_exists = false;
