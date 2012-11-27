@@ -2,9 +2,9 @@ import FWCore.ParameterSet.Config as cms
 
 #####################################
 # Input flags
-input_isMC = True
+input_isMC = False
 input_is2010SignalMC = False
-input_dyJetsToLLFilter =11 #==0 =>Don't select events, ==11 =>ele, ==13 =>muon, ==15 =>tau
+input_dyJetsToLLFilter = 0 #==0 =>Don't select events, ==11 =>ele, ==13 =>muon, ==15 =>tau
 
 #####################################################
 ## Useful function for local running...
@@ -86,7 +86,7 @@ datafileLocations = map(DataFileLocationAdaptor,datafilesList)
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(options.inputFiles) )
 
 #Defining the output file to store the histograms/NTuples in... 
-process.TFileService = cms.Service("TFileService", fileName=cms.string("BstdZeeNTuple_53X-v2pre2.root"))
+process.TFileService = cms.Service("TFileService", fileName=cms.string("BstdZeeNTuple_53X-v2pre3.root"))
 #process.TFileService = cms.Service("TFileService", fileName=cms.string(options.outputFile))
 
 ###################################################################################################
@@ -368,7 +368,7 @@ process.demo = cms.EDAnalyzer('BstdZeeNTupler',
                                                                             "HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_v[478]",
                                                                             "HLT_Mu15_Photon20_CaloIdL_v[1-9]"),
                               puDists_mcFile       = cms.untracked.string("Summer12DR53XPileUp_true_20121112.root"),
-                              puDists_dataFile     = cms.untracked.string("data12PileUp_true_20121112_r190456-206448.root"),
+                              puDists_dataFile     = cms.untracked.string("data12PileUp_true_20121127_r190456-206940.root"),
                               puDists_mcHistName   = cms.untracked.string("Summer12DR53XPileUpHist_true"),
                               puDists_dataHistName = cms.untracked.string("pileup")
      ) 
@@ -395,7 +395,7 @@ process.demo = cms.EDAnalyzer('BstdZeeNTupler',
 
 ##################################################################################
 # Construct the whole path ...
-process.p = cms.Path( process.gsfElectronsHEEPCorr * process.heepIdNoIso * process.heepIdNoIsoEles * process.innerVetoModEleIsos * process.recalcIsoVarsWithIsoDeps * process.kt6PFJets * process.demo )
+process.p = cms.Path( process.heepIdNoIso * process.heepIdNoIsoEles * process.innerVetoModEleIsos * process.recalcIsoVarsWithIsoDeps * process.kt6PFJets * process.demo )
 
 ## For checking transient event content ....
 #process.Out = cms.OutputModule("PoolOutputModule", fileName = cms.untracked.string (options.outputFile+"_AODPlus.root") )
