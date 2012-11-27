@@ -2628,22 +2628,11 @@ void BstdZeeNTupler::ReadInBstdGsfEles(bool beVerbose, const edm::Handle<reco::G
 //-------- Method for reading in the muon information, and dumping it into tsw::Event class ----------
 void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 	// Declarations ...
-	edm::Handle <reco::TrackToTrackMap> tevMapH1, tevMapH2, tevMapH3;
 	edm::Handle<reco::MuonCollection> MuCollection;
-
-	//edm::Handle<reco::MuonCollection> refitMuonCollnH;
 	std::string MuonTags_ = "muons"; // It is suggested at the start of the "Available information" section of the "WorkBookMuonAnalysis" TWiki page
 												// that the vector<reco::Muon> with label "muons" should be used for the high-pT muons (along with other global muons, as well as the stand-alone and tracker muons).
 	reco::MuonCollection::const_iterator imuon;
-	//edm::View<reco::Muon>::const_iterator imuon;
 
-	//Getting the TrackToTrackMap's that link the refitted tracks to the corresponding global muon
-	/*edmEvent.getByLabel("tevMuons", "default", tevMapH1);
-	const reco::TrackToTrackMap tevMap1 = *(tevMapH1.product());
-	edmEvent.getByLabel("tevMuons", "firstHit", tevMapH2);
-	const reco::TrackToTrackMap tevMap2 = *(tevMapH2.product());
-	edmEvent.getByLabel("tevMuons", "picky", tevMapH3);
-	const reco::TrackToTrackMap tevMap3 = *(tevMapH3.product());*/
 	edmEvent.getByLabel(MuonTags_, MuCollection);
 	const reco::MuonCollection muonC = *(MuCollection.product());
 
@@ -2735,18 +2724,21 @@ void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 			ithMuon.outTrk_exists = false;
 
 		// Grab the TuneP track developed for high pT ID & use it as the 'best track'
-		reco::TrackRef cktTrack = (muon::tevOptimized(*imuon, 200, 40., 17., 0.25)).first;
-
-		if( cktTrack.get()!=0 ){
-			ithMuon.bestTrk_exists = true;
-			ithMuon.bestTrk_pT          = cktTrack->pt();
-			ithMuon.bestTrk_ptError     = cktTrack->ptError();
-			ithMuon.bestTrk_dxy_bspot   = cktTrack->dxy( h_beamSpot->position() );
-			ithMuon.bestTrk_dxy_vtx     = cktTrack->dxy( mainPrimaryVertexIt->position() );
-			ithMuon.bestTrk_dz_vtx      = cktTrack->dz( mainPrimaryVertexIt->position() );
-		}
-		else
+		if(imuon->globalTrack().get()==0 && imuon->innerTrack().get()==0 && imuon->pickyTrack().get()==0 && imuon->tpfmsTrack().get()==0)
 			ithMuon.bestTrk_exists = false;
+		else{
+			reco::TrackRef cktTrack = (muon::tevOptimized(*imuon, 200, 40., 17., 0.25)).first;
+			if( cktTrack.get()!=0 ){
+				ithMuon.bestTrk_exists = true;
+				ithMuon.bestTrk_pT          = cktTrack->pt();
+				ithMuon.bestTrk_ptError     = cktTrack->ptError();
+				ithMuon.bestTrk_dxy_bspot   = cktTrack->dxy( h_beamSpot->position() );
+				ithMuon.bestTrk_dxy_vtx     = cktTrack->dxy( mainPrimaryVertexIt->position() );
+				ithMuon.bestTrk_dz_vtx      = cktTrack->dz( mainPrimaryVertexIt->position() );
+			}
+			else
+				ithMuon.bestTrk_exists = false;
+		}
 
 		//Printing this information to screen (if desired) ...
 		if(beVerbose){
@@ -2789,7 +2781,6 @@ void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 
 		// And finally, adding this information to muon vectors in tsw::Event branch ...
 		event_->AddNormMuon( &ithMuon );
-
 	}
 
 }
