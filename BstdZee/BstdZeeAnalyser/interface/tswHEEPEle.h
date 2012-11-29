@@ -40,6 +40,17 @@ namespace tsw{
 			const bool ApplyHEEPIsoCut_EmHad1(float ) const;
 		public:
 
+			// PUBLIC STRUCTS //
+			enum ModIsoPhantomEleDrRange{
+				PHANTOM_DR_005_010=0,
+				PHANTOM_DR_010_015=1,
+				PHANTOM_DR_015_020=2,
+				PHANTOM_DR_020_025=3,
+				PHANTOM_DR_025_030=4,
+				PHANTOM_DR_030_035=5,
+				PHANTOM_DR_035_040=6
+			};
+
 			/////////////////////////////////////////////////
 			// Methods for reading out all of the HEEP variables ...
 			// Kinematic and geometric variables
@@ -142,9 +153,11 @@ namespace tsw{
 			double isol_inrVetoModEmHadD1(const tsw::Event::InnerVetoSize) const;
 			const bool isolCut_inrVetoModEmHadD1(const tsw::Event::InnerVetoSize) const;
 
-			double isol_inrVetoModTrk_otherEleAreaForSelf()    const { return eleStr_.isol_inrVetoModTrk_otherEleAreaForSelf_; }
-			double isol_inrVetoModEcal_otherEleAreaForSelf()   const { return eleStr_.isol_inrVetoModEcal_otherEleAreaForSelf_; }
-			double isol_inrVetoModHcalD1_otherEleAreaForSelf() const { return eleStr_.isol_inrVetoModHcalD1_otherEleAreaForSelf_; }
+			const tsw::ModEleIsoWithPhantom& modVetoIsoWithPhantomEle(const tsw::HEEPEle::ModIsoPhantomEleDrRange drRange) const { return eleStr_.isol_inrVetoModIsosWithPhantomEle_.at(drRange); }
+
+			double modIsoTk_otherEleVetoForSelf()     const { return eleStr_.isol_inrVetoModTrk_otherEleAreaForSelf_; }    ///< 'Inner veto' mod track iso using 'other ele' inner veto area for this ele as well
+			double modIsoEcal_otherEleVetoForSelf()   const { return eleStr_.isol_inrVetoModEcal_otherEleAreaForSelf_; }   ///< 'Inner veto' mod ECAL iso using 'other ele' inner veto area for this ele as well
+			double modIsoHcalD1_otherEleVetoForSelf() const { return eleStr_.isol_inrVetoModHcalD1_otherEleAreaForSelf_; } ///< 'Inner veto' mod HCAL depth 1 iso using 'other ele' inner veto area for this ele as well
 
 			unsigned int isol_nGenHadronsDr04() const { return eleStr_.isol_nGenHadronsDr04_; }
 			double isol_ptSumGenHadronsDr04()   const { return eleStr_.isol_ptSumGenHadronsDr04_; }

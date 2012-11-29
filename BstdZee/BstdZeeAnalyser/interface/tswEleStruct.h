@@ -237,6 +237,9 @@ namespace tsw {
    		trk(-999.9), ecal(-999.9), hcalD1(-999.9)
    	{  }
    	~ModEleIsoWithPhantom() { }
+
+   	double dR() const { return sqrt(dEta*dEta + dPhi*dPhi); }
+
    	double dEta, dPhi;
    	double trk, ecal, hcalD1;
    };
