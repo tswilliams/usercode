@@ -195,6 +195,14 @@ namespace tsw{
 		Int_t treeVar_eleA_modHeepColThrCutCode_;
 		Int_t treeVar_eleB_modHeepColThrCutCode_;
 
+		Double_t treeVar_eleA_modIsoTk_otherEleVetoForSelf_;
+		Double_t treeVar_eleB_modIsoTk_otherEleVetoForSelf_;
+		Double_t treeVar_eleA_modIsoEcal_otherEleVetoForSelf_;
+		Double_t treeVar_eleB_modIsoEcal_otherEleVetoForSelf_;
+		Double_t treeVar_eleA_modIsoHcalD1_otherEleVetoForSelf_;
+		Double_t treeVar_eleB_modIsoHcalD1_otherEleVetoForSelf_;
+
+
 	public:
 		DiEleTree(const std::string& treeName, const std::string& fileName, bool fullInfoInTree=false) :
 			TreeHandlerBase(treeName, "Tree of Z candidates ("+treeName+")", fileName)
@@ -234,6 +242,14 @@ namespace tsw{
 			mainAnaTree_->Branch("eleB_modHeepStdThr", &treeVar_eleB_modHeepStdThrCutCode_, "eleB_modHeepStdThr/I");
 			mainAnaTree_->Branch("eleA_modHeepColThr", &treeVar_eleA_modHeepColThrCutCode_, "eleA_modHeepColThr/I");
 			mainAnaTree_->Branch("eleB_modHeepColThr", &treeVar_eleB_modHeepColThrCutCode_, "eleB_modHeepColThr/I");
+			if(fullInfoInTree){
+				mainAnaTree_->Branch("eleA_modIsoTk_otherEleVetoForSelf",     &treeVar_eleA_modIsoTk_otherEleVetoForSelf_,     "eleA_modIsoTk_otherEleVetoForSelf/D");
+				mainAnaTree_->Branch("eleB_modIsoTk_otherEleVetoForSelf",     &treeVar_eleB_modIsoTk_otherEleVetoForSelf_,     "eleB_modIsoTk_otherEleVetoForSelf/D");
+				mainAnaTree_->Branch("eleA_modIsoEcal_otherEleVetoForSelf",   &treeVar_eleA_modIsoEcal_otherEleVetoForSelf_,   "eleA_modIsoEcal_otherEleVetoForSelf/D");
+				mainAnaTree_->Branch("eleB_modIsoEcal_otherEleVetoForSelf",   &treeVar_eleB_modIsoEcal_otherEleVetoForSelf_,   "eleB_modIsoEcal_otherEleVetoForSelf/D");
+				mainAnaTree_->Branch("eleA_modIsoHcalD1_otherEleVetoForSelf", &treeVar_eleA_modIsoHcalD1_otherEleVetoForSelf_, "eleA_modIsoHcalD1_otherEleVetoForSelf/D");
+				mainAnaTree_->Branch("eleB_modIsoHcalD1_otherEleVetoForSelf", &treeVar_eleB_modIsoHcalD1_otherEleVetoForSelf_, "eleB_modIsoHcalD1_otherEleVetoForSelf/D");
+			}
 		}
 		~DiEleTree(){}
 
@@ -275,6 +291,13 @@ namespace tsw{
 
 			treeVar_eleA_modHeepColThrCutCode_ = diEle.eleA().heepIdModIsoCutCode(evtHelper);
 			treeVar_eleB_modHeepColThrCutCode_ = diEle.eleB().heepIdModIsoCutCode(evtHelper);
+
+			treeVar_eleA_modIsoTk_otherEleVetoForSelf_     = diEle.eleA().modIsoTk_otherEleVetoForSelf();
+			treeVar_eleB_modIsoTk_otherEleVetoForSelf_     = diEle.eleB().modIsoTk_otherEleVetoForSelf();
+			treeVar_eleA_modIsoEcal_otherEleVetoForSelf_   = diEle.eleA().modIsoEcal_otherEleVetoForSelf();
+			treeVar_eleB_modIsoEcal_otherEleVetoForSelf_   = diEle.eleB().modIsoEcal_otherEleVetoForSelf();
+			treeVar_eleA_modIsoHcalD1_otherEleVetoForSelf_ = diEle.eleA().modIsoHcalD1_otherEleVetoForSelf();
+			treeVar_eleB_modIsoHcalD1_otherEleVetoForSelf_ = diEle.eleB().modIsoHcalD1_otherEleVetoForSelf();
 
 			// And finally fill the tree ...
 			mainAnaTree_->Fill();
@@ -640,6 +663,7 @@ namespace tsw{
 		eleVarsStruct.mEmH1RhoCorrn = ele.isol_rhoCorrnEmH1(eventHelper);
 	}
 
+
 	///////////////////////////////////////////////////////////////////////////////
 	// TagProbeTree: Used to generate the trees required for tag & probe studies
 	//               [1 tag-probe pair tree & 1 gsf-gsf pair tree (same seln) for QCD background estimations]
@@ -670,6 +694,12 @@ namespace tsw{
 
 	private:
 		// PRIVATE STRUCTS
+
+		struct ModIsoVarsWithPhantom{
+			Double_t trk, emHad1;
+			Double_t dEta, dPhi, dR;
+		};
+
 		struct TreeBranchVars{
 			// CTOR
 			TreeBranchVars() :
@@ -701,11 +731,21 @@ namespace tsw{
 			Int_t prb_modHeepColThrCutCode_;
 			Int_t prb_fakePreCutCode_;
 			Int_t prb_charge_;
+
+			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr005To010;
+			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr010To015;
+			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr015To020;
+			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr020To025;
+			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr025To030;
+			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr030To035;
+			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr035To040;
 		};
 
 		// PRIVATE METHODS
 		static void setupBranchLinks(TTree* treePtr, TreeBranchVars& treeBranchVars);
+		static void setupBranchLinks(TTree* treePtr, ModIsoVarsWithPhantom& phantomModIsoStruct, const std::string& suffix);
 		static void fillTree(TTree* treePtr, TreeBranchVars& treeVars, const tsw::HEEPEle& tagEle, const tsw::HEEPEle& probeEle, const tsw::EventHelper& evtHelper, bool trigDecision);
+		static void setBranchValues(ModIsoVarsWithPhantom& withPhantomStruct, const tsw::HEEPEle& ele, const tsw::HEEPEle::ModIsoPhantomEleDrRange drRange);
 
 		// PRIVATE MEMBERS
 		TreeBranchVars tpTreeBranchVars_;
@@ -747,6 +787,23 @@ namespace tsw{
 		treePtr->Branch("probe_modHeepColThr", &(branchVars.prb_modHeepColThrCutCode_), "probe_modHeepColThr/I");
 		treePtr->Branch("probe_fakePreCutCode", &(branchVars.prb_fakePreCutCode_), "probe_fakePreCutCode/I");
 		treePtr->Branch("probe_charge", &(branchVars.prb_charge_), "probe_charge/I");
+
+		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr005To010, "005To010");
+		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr010To015, "010To015");
+		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr015To020, "015To020");
+		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr020To025, "020To025");
+		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr025To030, "025To030");
+		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr030To035, "030To035");
+		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr035To040, "035To040");
+	}
+
+	void TagProbeTree::setupBranchLinks(TTree* treePtr, ModIsoVarsWithPhantom& phantomModIsoStruct, const std::string& suffix)
+	{
+		treePtr->Branch(("probe_modTrkIsoPhantom_"+suffix).c_str(),    &(phantomModIsoStruct.trk),    ("probe_modTrkIsoPhantom_"+suffix+"/D").c_str() );
+		treePtr->Branch(("probe_modEmHad1IsoPhantom_"+suffix).c_str(), &(phantomModIsoStruct.emHad1), ("probe_modEmHad1IsoPhantom_"+suffix+"/D").c_str() );
+		treePtr->Branch(("probe_modIsoPhantomDEta_"+suffix).c_str(), &(phantomModIsoStruct.dEta), ("probe_modIsoPhantomDEta_"+suffix+"/D").c_str() );
+		treePtr->Branch(("probe_modIsoPhantomDPhi_"+suffix).c_str(), &(phantomModIsoStruct.dPhi), ("probe_modIsoPhantomDPhi_"+suffix+"/D").c_str() );
+		treePtr->Branch(("probe_modIsoPhantomDR_"+suffix).c_str(),   &(phantomModIsoStruct.dR),   ("probe_modIsoPhantomDR_"+suffix+"/D").c_str() );
 	}
 
 	void TagProbeTree::fillTree(TTree* treePtr, TreeBranchVars& treeVars, const tsw::HEEPEle& tagEle, const tsw::HEEPEle& probeEle, const tsw::EventHelper& evtHelper, bool trigDecision)
@@ -783,8 +840,25 @@ namespace tsw{
 		treeVars.prb_fakePreCutCode_ = probeEle.fakeRatePreSelnCutCode();
 		treeVars.prb_charge_ = probeEle.charge();
 
+		setBranchValues(treeVars.prbInrVetoModIsoPhantomDr005To010 , probeEle, tsw::HEEPEle::PHANTOM_DR_005_010 );
+		setBranchValues(treeVars.prbInrVetoModIsoPhantomDr010To015 , probeEle, tsw::HEEPEle::PHANTOM_DR_010_015 );
+		setBranchValues(treeVars.prbInrVetoModIsoPhantomDr015To020 , probeEle, tsw::HEEPEle::PHANTOM_DR_015_020 );
+		setBranchValues(treeVars.prbInrVetoModIsoPhantomDr020To025 , probeEle, tsw::HEEPEle::PHANTOM_DR_020_025 );
+		setBranchValues(treeVars.prbInrVetoModIsoPhantomDr025To030 , probeEle, tsw::HEEPEle::PHANTOM_DR_025_030 );
+		setBranchValues(treeVars.prbInrVetoModIsoPhantomDr030To035 , probeEle, tsw::HEEPEle::PHANTOM_DR_030_035 );
+		setBranchValues(treeVars.prbInrVetoModIsoPhantomDr035To040 , probeEle, tsw::HEEPEle::PHANTOM_DR_035_040 );
+
 		// And finally fill the tree ...
 		treePtr->Fill();
+	}
+
+	void TagProbeTree::setBranchValues(ModIsoVarsWithPhantom& withPhantomStruct, const tsw::HEEPEle& ele, const tsw::HEEPEle::ModIsoPhantomEleDrRange drRange)
+	{
+		withPhantomStruct.trk    = ele.modVetoIsoWithPhantomEle(drRange).trk;
+		withPhantomStruct.emHad1 = ele.modVetoIsoWithPhantomEle(drRange).ecal + ele.modVetoIsoWithPhantomEle(drRange).hcalD1;
+		withPhantomStruct.dEta   = ele.modVetoIsoWithPhantomEle(drRange).dEta;
+		withPhantomStruct.dPhi   = ele.modVetoIsoWithPhantomEle(drRange).dPhi;
+		withPhantomStruct.dR     = ele.modVetoIsoWithPhantomEle(drRange).dR();
 	}
 
 
@@ -1205,7 +1279,7 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	dummyEvent_(),
 	event_(0),
 	//
-	zPrimeDiEleTree_("zPrimeDiEleTree", outputFileName_+"_zPrimeDiEleTree.root"),
+	zPrimeDiEleTree_("zPrimeDiEleTree", outputFileName_+"_zPrimeDiEleTree.root", true),
 	noIsoZCandDiEleTree_("noIsoZBosonTree", outputFileName_ + "_noIsoZCandTree.root"),
 	modIsoZCandDiEleTree_("modIsoZBosonTree", outputFileName_ + "_modIsoZCandTree.root"),
 	abcdDiGsfFrPreTree_("abcdDiGsfFrPreTree", outputFileName_ + "_abcdDiGsfTree.root", true),
