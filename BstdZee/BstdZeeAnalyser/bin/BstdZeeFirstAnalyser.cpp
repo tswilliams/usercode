@@ -1170,6 +1170,7 @@ class BstdZeeFirstAnalyser{
 		tsw::MuonCollection normMuons_;
 
 //		tsw::ABCDMethodTree frPreDiEleTree_;
+		tsw::DiEleTree zPrimeDiEleTree_;
 		tsw::DiEleTree noIsoZCandDiEleTree_;
 		tsw::DiEleTree modIsoZCandDiEleTree_;
 
@@ -1204,6 +1205,7 @@ BstdZeeFirstAnalyser::BstdZeeFirstAnalyser(int runMode, int numEvts, bool isMC, 
 	dummyEvent_(),
 	event_(0),
 	//
+	zPrimeDiEleTree_("zPrimeDiEleTree", outputFileName_+"_zPrimeDiEleTree.root"),
 	noIsoZCandDiEleTree_("noIsoZBosonTree", outputFileName_ + "_noIsoZCandTree.root"),
 	modIsoZCandDiEleTree_("modIsoZBosonTree", outputFileName_ + "_modIsoZCandTree.root"),
 	abcdDiGsfFrPreTree_("abcdDiGsfFrPreTree", outputFileName_ + "_abcdDiGsfTree.root", true),
@@ -1651,6 +1653,8 @@ void BstdZeeFirstAnalyser::FinishOffAnalysis()
 {
 
 	// Set the event counters for the tree handlers, and write trees to file ...
+	zPrimeDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
+	zPrimeDiEleTree_.saveToFile();
 	noIsoZCandDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
 	noIsoZCandDiEleTree_.saveToFile();
 	modIsoZCandDiEleTree_.setEventCounter( this->GetNumEvtsRunOver() );
@@ -1770,6 +1774,14 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	//		//	bstdEles_reconValidationHistos_.FillHighestEtEleHistos( bstdEles_.at(idx_highestEtEle) );
 	//		bstdEles_HEEPCuts_reconValHistos_.FillHistos(bstdEles_, bstdEles_HEEPCutsFlags, evtWeight);
 	//	} // End of if(readInBstdEles_)
+
+	// ------------------------
+	// HeepStdIso di-electrons for code sync with Z' ...
+	if( tsw::NumPassingCuts(normEles_HEEPCutsFlags)>1 ){
+		tsw::HEEPDiEle normDiEle_HeepStdIso(normEles_, normEles_HEEPCutsFlags);
+		zPrimeDiEleTree_.fillTree(normDiEle_HeepStdIso, eventHelper_, trg_PathA_decision_);
+	}
+
 
 	// ------------------------
 	// EB HEEPNoIso di-electrons...
