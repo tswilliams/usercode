@@ -176,9 +176,9 @@ namespace tsw{
 			int heepIdNoIsoCutCode() const { return heepIdNoIsoCutCode_v41(); }
 			bool heepIdNoIsoCut() const { return (heepIdNoIsoCutCode()==0); }
 
-			int heepIdModIsoCutCode_v41_v00(const tsw::EventHelper& evtHelper) const;
-			int heepIdModIsoCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoCutCode_v41_v00(evtHelper);}
-			bool heepIdModIsoCut(const tsw::EventHelper& evtHelper) const { return (heepIdModIsoCutCode(evtHelper)==0); }
+			int heepIdModIsoColThrCutCode_v41_v00(const tsw::EventHelper& evtHelper) const;
+			int heepIdModIsoColThrCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoColThrCutCode_v41_v00(evtHelper);}
+			bool heepIdModIsoColThrCut(const tsw::EventHelper& evtHelper) const { return (heepIdModIsoColThrCutCode(evtHelper)==0); }
 
 			int heepIdModIsoStdThrCutCode_v41(const tsw::EventHelper& evtHelper) const;
 			int heepIdModIsoStdThrCutCode(const tsw::EventHelper& evtHelper) const { return heepIdModIsoStdThrCutCode_v41(evtHelper); }
@@ -190,7 +190,8 @@ namespace tsw{
 
 			/// Fake rate pre-selection cut code method
 			int fakeRatePreSelnCutCode_ichep2012() const;
-			int fakeRatePreSelnCutCode() const { return fakeRatePreSelnCutCode_ichep2012(); }
+			int fakeRatePreSelnCutCode_heepV41() const;
+			int fakeRatePreSelnCutCode() const { return fakeRatePreSelnCutCode_heepV41(); }
 			bool fakeRatePreSelnCut() const { return (fakeRatePreSelnCutCode()==0); }
 
 
@@ -288,6 +289,7 @@ namespace tsw{
 			static const int cutCode_frPre_sieie_    = 0x0008;
 			static const int cutCode_frPre_hOverE_   = 0x0010;
 			static const int cutCode_frPre_missHits_ = 0x0020;
+			static const int cutCode_frPre_dxy_      = 0x0040;
 
 	};
 
@@ -588,14 +590,14 @@ int tsw::HEEPEle::heepIdNoIsoCutCode_v41() const
 	// Missing hits cut
 	if( numMissInnerHits()>1 )
 		cutCode |= cutCode_missHits_;
-	if( !(abs(dxy())<thr_dxy) )
+	if( !(fabs(dxy())<thr_dxy) )
 		cutCode |= cutCode_dxy_;
 
 	return cutCode;
 }
 
 
-int tsw::HEEPEle::heepIdModIsoCutCode_v41_v00(const tsw::EventHelper& evtHelper) const
+int tsw::HEEPEle::heepIdModIsoColThrCutCode_v41_v00(const tsw::EventHelper& evtHelper) const
 {
 	const bool isInEB = (fabs(scEta()) < 1.442);
 
@@ -679,6 +681,42 @@ int tsw::HEEPEle::fakeRatePreSelnCutCode_ichep2012() const
 
 	if( numMissInnerHits()!=0 )
 		cutCode |= cutCode_frPre_missHits_;
+
+	return cutCode;
+}
+
+
+int tsw::HEEPEle::fakeRatePreSelnCutCode_heepV41() const
+{
+	const bool isInEB = (fabs(scEta()) < 1.442);
+	const bool isInEE = ( fabs(scEta())>1.56 && fabs(scEta())<2.5 );
+	const float thr_Et  = isInEB ? 35.0 : 40.0 ;
+	const float thr_sieie  = isInEB ? 0.013 : 0.034 ;
+	const float thr_hOverE = isInEB ? 0.15 : 0.10 ;
+	const float thr_dxy    = isInEB ? 0.02 : 0.05 ;
+
+	int cutCode = 0;
+
+	// Fiducial cuts
+	if( !(et()>thr_Et) )
+		cutCode |= cutCode_frPre_Et_;
+	if( !(isInEB || isInEE) )
+		cutCode |= cutCode_frPre_eta_;
+
+	if( !(isEcalDriven()) )
+		cutCode |= cutCode_frPre_ecalDrvn_;
+
+	if( !(sigmaIEtaIEta()<thr_sieie) )
+		cutCode |= cutCode_frPre_sieie_;
+
+	if( !(hOverE()<thr_hOverE) )
+		cutCode |= cutCode_frPre_hOverE_;
+
+	if( numMissInnerHits()>1 )
+		cutCode |= cutCode_frPre_missHits_;
+
+	if( !(fabs(dxy())<thr_dxy) )
+		cutCode |= cutCode_frPre_dxy_;
 
 	return cutCode;
 }
