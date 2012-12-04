@@ -289,8 +289,8 @@ namespace tsw{
 			treeVar_eleA_modHeepStdThrCutCode_ = diEle.eleA().heepIdModIsoStdThrCutCode(evtHelper);
 			treeVar_eleB_modHeepStdThrCutCode_ = diEle.eleB().heepIdModIsoStdThrCutCode(evtHelper);
 
-			treeVar_eleA_modHeepColThrCutCode_ = diEle.eleA().heepIdModIsoCutCode(evtHelper);
-			treeVar_eleB_modHeepColThrCutCode_ = diEle.eleB().heepIdModIsoCutCode(evtHelper);
+			treeVar_eleA_modHeepColThrCutCode_ = diEle.eleA().heepIdModIsoColThrCutCode(evtHelper);
+			treeVar_eleB_modHeepColThrCutCode_ = diEle.eleB().heepIdModIsoColThrCutCode(evtHelper);
 
 			treeVar_eleA_modIsoTk_otherEleVetoForSelf_     = diEle.eleA().modIsoTk_otherEleVetoForSelf();
 			treeVar_eleB_modIsoTk_otherEleVetoForSelf_     = diEle.eleB().modIsoTk_otherEleVetoForSelf();
@@ -628,7 +628,7 @@ namespace tsw{
 	{
 		eleVarsStruct.mStdHeepCutCode       = ele.heepIdStdIsoCutCode(eventHelper);
 		eleVarsStruct.mModHeepStdThrCutCode = ele.heepIdModIsoStdThrCutCode(eventHelper);
-		eleVarsStruct.mModHeepColThrCutCode = ele.heepIdModIsoCutCode(eventHelper);
+		eleVarsStruct.mModHeepColThrCutCode = ele.heepIdModIsoColThrCutCode(eventHelper);
 
 		eleVarsStruct.mStdTrkIso     = ele.isolPtTrks();
 		eleVarsStruct.mModTrkIso     = diEle_modTrkIso;
@@ -731,6 +731,7 @@ namespace tsw{
 			Int_t prb_modHeepColThrCutCode_;
 			Int_t prb_fakePreCutCode_;
 			Int_t prb_charge_;
+			Double_t prb_calEaCorr_;
 
 			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr005To010;
 			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr010To015;
@@ -787,6 +788,7 @@ namespace tsw{
 		treePtr->Branch("probe_modHeepColThr", &(branchVars.prb_modHeepColThrCutCode_), "probe_modHeepColThr/I");
 		treePtr->Branch("probe_fakePreCutCode", &(branchVars.prb_fakePreCutCode_), "probe_fakePreCutCode/I");
 		treePtr->Branch("probe_charge", &(branchVars.prb_charge_), "probe_charge/I");
+		treePtr->Branch("probe_calEaCorr", &(branchVars.prb_calEaCorr_), "probe_calEaCorr/D");
 
 		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr005To010, "005To010");
 		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr010To015, "010To015");
@@ -828,15 +830,16 @@ namespace tsw{
 		treeVars.tag_scEta_ = tagEle.scEta();
 		treeVars.tag_stdHeepCutCode_ = tagEle.heepIdStdIsoCutCode(evtHelper);
 		treeVars.tag_modHeepStdThrCutCode_ = tagEle.heepIdModIsoStdThrCutCode(evtHelper);
-		treeVars.tag_modHeepColThrCutCode_ = tagEle.heepIdModIsoCutCode(evtHelper);
+		treeVars.tag_modHeepColThrCutCode_ = tagEle.heepIdModIsoColThrCutCode(evtHelper);
 		treeVars.tag_fakePreCutCode_ = tagEle.fakeRatePreSelnCutCode();
 		treeVars.tag_charge_ = tagEle.charge();
 
-		treeVars.prb_p4_    = probeEle.p4();
-		treeVars.prb_scEta_ = probeEle.scEta();
+		treeVars.prb_p4_        = probeEle.p4();
+		treeVars.prb_scEta_     = probeEle.scEta();
+		treeVars.prb_calEaCorr_ = probeEle.isol_rhoCorrnEmH1(evtHelper);
 		treeVars.prb_stdHeepCutCode_ = probeEle.heepIdStdIsoCutCode(evtHelper);
 		treeVars.prb_modHeepStdThrCutCode_ = probeEle.heepIdModIsoStdThrCutCode(evtHelper);
-		treeVars.prb_modHeepColThrCutCode_ = probeEle.heepIdModIsoCutCode(evtHelper);
+		treeVars.prb_modHeepColThrCutCode_ = probeEle.heepIdModIsoColThrCutCode(evtHelper);
 		treeVars.prb_fakePreCutCode_ = probeEle.fakeRatePreSelnCutCode();
 		treeVars.prb_charge_ = probeEle.charge();
 
@@ -1806,7 +1809,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 	std::vector<bool> normEles_HEEPCutsFlags;
 	std::vector<bool> normEles_HEEPCutsNoIsoFlags;
 	std::vector<bool> normEles_EB_HEEPCutsNoIsoFlags;
-	std::vector<bool> normEles_EB_heepIdModIsoFlags;
+	std::vector<bool> normEles_EB_heepIdModIsoColThrFlags;
 	std::vector<bool> normEles_EB_isFidEcalDrAndFRPreFlags;
 
 	std::vector<bool> bstdEles_sCutsFlags;
@@ -1820,7 +1823,7 @@ void BstdZeeFirstAnalyser::FillHistograms()
 		normEles_HEEPCutsNoIsoFlags.push_back( eleIt->heepIdNoIsoCut()  );
 		normEles_EB_HEEPCutsNoIsoFlags.push_back( eleIt->heepIdNoIsoCut() && eleIt->isEB() );
 
-		normEles_EB_heepIdModIsoFlags.push_back( eleIt->heepIdModIsoCut(eventHelper_) && eleIt->isEB() );
+		normEles_EB_heepIdModIsoColThrFlags.push_back( eleIt->heepIdModIsoColThrCut(eventHelper_) && eleIt->isEB() );
 
 		normEles_EB_isFidEcalDrAndFRPreFlags.push_back( eleIt->fakeRatePreSelnCut() && eleIt->isHEEPEB() );
 	}
@@ -1897,8 +1900,8 @@ void BstdZeeFirstAnalyser::FillHistograms()
 
 	// ------------------------
 	// EB HEEPModIso di-electrons...
-	if(tsw::NumPassingCuts(normEles_EB_heepIdModIsoFlags)>1){
-		tsw::HEEPDiEle heepIdModIsoEbDiEle( normEles_, normEles_EB_heepIdModIsoFlags);
+	if(tsw::NumPassingCuts(normEles_EB_heepIdModIsoColThrFlags)>1){
+		tsw::HEEPDiEle heepIdModIsoEbDiEle( normEles_, normEles_EB_heepIdModIsoColThrFlags);
 
 		if( heepIdModIsoEbDiEle.isInZMassRange() )
 			modIsoZCandDiEleTree_.fillTree(heepIdModIsoEbDiEle, eventHelper_, trg_PathA_decision_);
