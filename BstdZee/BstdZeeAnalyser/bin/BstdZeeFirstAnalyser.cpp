@@ -382,26 +382,26 @@ namespace tsw{
 
 		void fillTree(const tsw::HEEPDiEle& diEle, const TLorentzVector& mcZboson_ele1, const TLorentzVector& mcZboson_ele2, const tsw::EventHelper& eventHelper)
 		{
-			std::cout << std::endl << " *** Entering tsw::EffiCalcTree::fillTree ***" << std::endl;
-			std::cout << "Event (run " << eventHelper.runNum() << ", lumiSec " << eventHelper.lumiSec() << ", event number " << eventHelper.eventNum() << ")" << std::endl
-						 << " * Di-ele:" << std::endl
-						 << "      pT(ee) = " << diEle.pT() << " GeV  , dR_ee = " << diEle.deltaR() << std::endl;
-			std::cout << " * Leading ele:" << std::endl
-						 << "      Et = " << diEle.eleA().et() << "GeV,  eta = " << diEle.eleA().eta() << ",  phi = " << diEle.eleA().phi() << std::endl
-						 << "      Mod ECAL iso = " << diEle.eleA().isol_inrVetoModEm(tsw::Event::mediumVeto) << "GeV ,  mod HCAL iso = " << diEle.eleA().isol_inrVetoModHadD1(tsw::Event::mediumVeto) << "GeV" << std::endl
-						 << "      Mod track iso = " << diEle.eleA().isol_inrVetoModTrk(tsw::Event::xSmallVeto) << "GeV" << std::endl;
-			std::cout << " * Sub-leading ele:" << std::endl
-						 << "      Et = " << diEle.eleB().et() << "GeV,  eta = " << diEle.eleB().eta() << ",  phi = " << diEle.eleB().phi() << std::endl
-						 << "      Mod ECAL iso = " << diEle.eleB().isol_inrVetoModEm(tsw::Event::mediumVeto) << "GeV ,  mod HCAL iso = " << diEle.eleB().isol_inrVetoModHadD1(tsw::Event::mediumVeto) << "GeV" << std::endl
-						 << "      Mod track iso = " << diEle.eleB().isol_inrVetoModTrk(tsw::Event::xSmallVeto) << "GeV" << std::endl;
-			if( diEle.eleA().heepIdModIsoStdThrCut(eventHelper) && diEle.eleB().heepIdModIsoStdThrCut(eventHelper))
-				std::cout << " Both electrons pass HEEP v4.1 ID & mod iso cuts" << std::endl;
-			else{
-				if( !diEle.eleA().heepIdModIsoStdThrCut(eventHelper) )
-					std::cout << " Leading ele failed selection" << std::endl;
-				if( !diEle.eleB().heepIdModIsoStdThrCut(eventHelper) )
-					std::cout << " Sub-leading ele failed selection" << std::endl;
-			}
+//			std::cout << std::endl << " *** Entering tsw::EffiCalcTree::fillTree ***" << std::endl;
+//			std::cout << "Event (run " << eventHelper.runNum() << ", lumiSec " << eventHelper.lumiSec() << ", event number " << eventHelper.eventNum() << ")" << std::endl
+//						 << " * Di-ele:" << std::endl
+//						 << "      pT(ee) = " << diEle.pT() << " GeV  , dR_ee = " << diEle.deltaR() << std::endl;
+//			std::cout << " * Leading ele:" << std::endl
+//						 << "      Et = " << diEle.eleA().et() << "GeV,  eta = " << diEle.eleA().eta() << ",  phi = " << diEle.eleA().phi() << std::endl
+//						 << "      Mod ECAL iso = " << diEle.eleA().isol_inrVetoModEm(tsw::Event::mediumVeto) << "GeV ,  mod HCAL iso = " << diEle.eleA().isol_inrVetoModHadD1(tsw::Event::mediumVeto) << "GeV" << std::endl
+//						 << "      Mod track iso = " << diEle.eleA().isol_inrVetoModTrk(tsw::Event::xSmallVeto) << "GeV" << std::endl;
+//			std::cout << " * Sub-leading ele:" << std::endl
+//						 << "      Et = " << diEle.eleB().et() << "GeV,  eta = " << diEle.eleB().eta() << ",  phi = " << diEle.eleB().phi() << std::endl
+//						 << "      Mod ECAL iso = " << diEle.eleB().isol_inrVetoModEm(tsw::Event::mediumVeto) << "GeV ,  mod HCAL iso = " << diEle.eleB().isol_inrVetoModHadD1(tsw::Event::mediumVeto) << "GeV" << std::endl
+//						 << "      Mod track iso = " << diEle.eleB().isol_inrVetoModTrk(tsw::Event::xSmallVeto) << "GeV" << std::endl;
+//			if( diEle.eleA().heepIdModIsoStdThrCut(eventHelper) && diEle.eleB().heepIdModIsoStdThrCut(eventHelper))
+//				std::cout << " Both electrons pass HEEP v4.1 ID & mod iso cuts" << std::endl;
+//			else{
+//				if( !diEle.eleA().heepIdModIsoStdThrCut(eventHelper) )
+//					std::cout << " Leading ele failed selection" << std::endl;
+//				if( !diEle.eleB().heepIdModIsoStdThrCut(eventHelper) )
+//					std::cout << " Sub-leading ele failed selection" << std::endl;
+//			}
 			// Set branches with common values between two cases (Z boson reco'd / not )
 			fillTree_common(mcZboson_ele1, mcZboson_ele2, eventHelper);
 
