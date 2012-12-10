@@ -14,7 +14,7 @@ sjlkd
 //
 // Original Author:  Thomas Williams
 //         Created:  Tue Apr 19 16:40:57 BST 2011
-// $Id: BstdZeeNTupler.cc,v 1.24 2012/11/12 16:33:05 tsw Exp $
+// $Id: BstdZeeNTupler.cc,v 1.26 2012/11/27 15:10:29 tsw Exp $
 //
 //
 
@@ -2727,7 +2727,7 @@ void BstdZeeNTupler::ReadInMuons(bool beVerbose, const edm::Event& edmEvent){
 		if(imuon->globalTrack().get()==0 && imuon->innerTrack().get()==0 && imuon->pickyTrack().get()==0 && imuon->tpfmsTrack().get()==0)
 			ithMuon.bestTrk_exists = false;
 		else{
-			reco::TrackRef cktTrack = (muon::tevOptimized(*imuon, 200, 40., 17., 0.25)).first;
+			reco::TrackRef cktTrack = (muon::tevOptimized(*imuon, 200, 17., 40., 0.25)).first;
 			if( cktTrack.get()!=0 ){
 				ithMuon.bestTrk_exists = true;
 				ithMuon.bestTrk_pT          = cktTrack->pt();
