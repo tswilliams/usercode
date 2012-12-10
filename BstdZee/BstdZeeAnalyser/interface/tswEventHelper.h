@@ -199,6 +199,8 @@ void tsw::EventHelper::SetEleStructValues(const unsigned int eleIdx, tsw::EleStr
 			ithMuStruct.outTrk_charge = theEvent_->normMuons_outTrk_charge_.at(muIdx);
 
 			ithMuStruct.bestTrk_exists    = theEvent_->normMuons_bestTrk_exists_.at(muIdx);
+			ithMuStruct.bestTrk_pT        = theEvent_->normMuons_bestTrk_pT_.at(muIdx);
+			ithMuStruct.bestTrk_ptError   = theEvent_->normMuons_bestTrk_ptError_.at(muIdx);
 			ithMuStruct.bestTrk_dxy_bspot = theEvent_->normMuons_bestTrk_dxy_bspot_.at(muIdx);
 			ithMuStruct.bestTrk_dxy_vtx   = theEvent_->normMuons_bestTrk_dxy_vtx_.at(muIdx);
 			ithMuStruct.bestTrk_dz_vtx    = theEvent_->normMuons_bestTrk_dz_vtx_.at(muIdx);
