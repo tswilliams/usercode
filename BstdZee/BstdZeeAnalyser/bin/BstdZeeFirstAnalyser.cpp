@@ -731,6 +731,8 @@ namespace tsw{
 			Int_t prb_modHeepColThrCutCode_;
 			Int_t prb_fakePreCutCode_;
 			Int_t prb_charge_;
+			Double_t prb_stdTrkIso_;
+			Double_t prb_stdEmHad1Iso_;
 			Double_t prb_calEaCorr_;
 
 			ModIsoVarsWithPhantom prbInrVetoModIsoPhantomDr005To010;
@@ -788,6 +790,8 @@ namespace tsw{
 		treePtr->Branch("probe_modHeepColThr", &(branchVars.prb_modHeepColThrCutCode_), "probe_modHeepColThr/I");
 		treePtr->Branch("probe_fakePreCutCode", &(branchVars.prb_fakePreCutCode_), "probe_fakePreCutCode/I");
 		treePtr->Branch("probe_charge", &(branchVars.prb_charge_), "probe_charge/I");
+		treePtr->Branch("probe_stdTrkIso", &(branchVars.prb_stdTrkIso_), "probe_stdTrkIso/D");
+		treePtr->Branch("probe_stdEmHad1Iso", &(branchVars.prb_stdEmHad1Iso_), "probe_stdEmHad1Iso/D");
 		treePtr->Branch("probe_calEaCorr", &(branchVars.prb_calEaCorr_), "probe_calEaCorr/D");
 
 		setupBranchLinks(treePtr, branchVars.prbInrVetoModIsoPhantomDr005To010, "005To010");
@@ -836,12 +840,14 @@ namespace tsw{
 
 		treeVars.prb_p4_        = probeEle.p4();
 		treeVars.prb_scEta_     = probeEle.scEta();
-		treeVars.prb_calEaCorr_ = probeEle.isol_rhoCorrnEmH1(evtHelper);
 		treeVars.prb_stdHeepCutCode_ = probeEle.heepIdStdIsoCutCode(evtHelper);
 		treeVars.prb_modHeepStdThrCutCode_ = probeEle.heepIdModIsoStdThrCutCode(evtHelper);
 		treeVars.prb_modHeepColThrCutCode_ = probeEle.heepIdModIsoColThrCutCode(evtHelper);
 		treeVars.prb_fakePreCutCode_ = probeEle.fakeRatePreSelnCutCode();
 		treeVars.prb_charge_ = probeEle.charge();
+		treeVars.prb_stdTrkIso_     = probeEle.isolPtTrks();
+		treeVars.prb_stdEmHad1Iso_  = probeEle.isolEmHadDepth1();
+		treeVars.prb_calEaCorr_     = probeEle.isol_rhoCorrnEmH1(evtHelper);
 
 		setBranchValues(treeVars.prbInrVetoModIsoPhantomDr005To010 , probeEle, tsw::HEEPEle::PHANTOM_DR_005_010 );
 		setBranchValues(treeVars.prbInrVetoModIsoPhantomDr010To015 , probeEle, tsw::HEEPEle::PHANTOM_DR_010_015 );
@@ -1889,13 +1895,15 @@ void BstdZeeFirstAnalyser::FillHistograms()
 		const TLorentzVector& mcZ_eleA_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterA_p4_ : mcEles_HighestEt_p4_);
 		const TLorentzVector& mcZ_eleB_p4 = (mcZ_numDaughters_>1 ? mcZ_daughterB_p4_ : mcEles_2ndHighestEt_p4_);
 
-		if( tsw::HEEPDiEle* mcMatchedDiEle = getMcMatchedDiEle(mcZ_eleA_p4, mcZ_eleB_p4, normEles_) )
-		{
-			zCandEffiTree_.fillTree(*mcMatchedDiEle, mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
-			delete mcMatchedDiEle;
+		if(mcZ_eleA_p4.Pt()>0.00001 && mcZ_eleB_p4.Pt()>0.00001){
+			if( tsw::HEEPDiEle* mcMatchedDiEle = getMcMatchedDiEle(mcZ_eleA_p4, mcZ_eleB_p4, normEles_) )
+			{
+				zCandEffiTree_.fillTree(*mcMatchedDiEle, mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
+				delete mcMatchedDiEle;
+			}
+			else
+				zCandEffiTree_.fillTree_NotReconstructed(mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
 		}
-		else
-			zCandEffiTree_.fillTree_NotReconstructed(mcZ_eleA_p4, mcZ_eleB_p4, eventHelper_);
 	}
 
 	// ------------------------
