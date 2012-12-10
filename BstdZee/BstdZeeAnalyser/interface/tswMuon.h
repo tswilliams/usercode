@@ -17,8 +17,11 @@ namespace tsw{
 			Muon(tsw::MuStruct struct_theMuon) :
 				muStr_(struct_theMuon),
 				stdP4_( ConvertToTLorentzVector( &(muStr_.p4) ) ),
-				corrP4_(bestTrk_exists() ? bestTrk_pT()/stdP4_.Pt()*stdP4_ : stdP4_)
-			{}
+				corrP4_( ConvertToTLorentzVector( &(muStr_.p4) ) )
+			{
+				if( bestTrk_exists() )
+					corrP4_ = (bestTrk_pT()/stdP4_.Pt())*corrP4_;
+			}
 			~Muon(){}
 
 			// Methods for access to the cut variables ...
