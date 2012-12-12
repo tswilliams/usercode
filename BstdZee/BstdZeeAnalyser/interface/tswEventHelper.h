@@ -28,7 +28,7 @@ namespace tsw{
 				return (xsecWeight()*genWeight()*puWeight());  }
 
 			float genWeight() const { return theEvent_->mc_genWeight_;	}
-			TLorentzVector GetLHEZbosonP4(){
+			TLorentzVector GetLHEZbosonP4() const {
 				TLorentzVector p4_Z = ConvertToTLorentzVector( &(theEvent_->mcLHE_ZbosonP4_) );
 				return p4_Z; }
 
