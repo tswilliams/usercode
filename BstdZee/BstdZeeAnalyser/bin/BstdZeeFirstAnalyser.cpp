@@ -98,11 +98,16 @@ namespace tsw{
 			totNumEvtsAnalyzed_ = nEvtsTotal;  numEvtsPass_ = mainAnaTree_->GetEntries(); }
 		void saveToFile();
 
+		std::string fileName() const { return fileName_; }
+
 	protected:
 		TTree* addTree(const std::string& treeName, const std::string& treeDescription ); ///< Returns TTree with specified name/description on heap and registers it for saving to file
 
+		static bool isMadgraphDrellYan(const std::string& fileName) { return (fileName.find("DY")!=std::string::npos && (fileName.find("MG")!=std::string::npos || fileName.find("MADGRAPH")!=std::string::npos) ); }
+
 	private:
 		// PRIVATE MEMBERS
+		std::string fileName_;
 		TFile* outputFile_;
 		TTree* eventCountTree_;
 
@@ -116,6 +121,7 @@ namespace tsw{
 	};
 
 	TreeHandlerBase::TreeHandlerBase(const std::string& mainTreeName, const std::string& mainTreeDescription, const std::string& fileName) :
+		fileName_( fileName ),
 		outputFile_( new TFile(fileName.c_str(), "RECREATE") ),
 		eventCountTree_( new TTree("eventCountTree", "Tree containing orig event counts per file.") ),
 		numEvtsPass_(0), totNumEvtsAnalyzed_(0),
@@ -174,6 +180,8 @@ namespace tsw{
 		Bool_t treeVar_trgDecision_;
 		UInt_t treeVar_nVtx_;
 
+		TLorentzVector* treeVar_lheZp4Ptr_; TLorentzVector treeVar_lheZp4_;
+
 		TLorentzVector* treeVar_Zp4Ptr_; TLorentzVector treeVar_Zp4_;
 		Double_t treeVar_ZpT_;
 		Double_t treeVar_Zmass_;
@@ -205,7 +213,8 @@ namespace tsw{
 
 	public:
 		DiEleTree(const std::string& treeName, const std::string& fileName, bool fullInfoInTree=false) :
-			TreeHandlerBase(treeName, "Tree of Z candidates ("+treeName+")", fileName)
+			TreeHandlerBase(treeName, "Tree of Z candidates ("+treeName+")", fileName),
+			treeVar_lheZp4Ptr_( &treeVar_lheZp4_ )
 		{
 			// Setting up the event / di-ele branches ...
 			mainAnaTree_->Branch("weight",     &treeVar_weight_,     "weight/D");
@@ -219,6 +228,9 @@ namespace tsw{
 
 			mainAnaTree_->Branch("trgDecision", &treeVar_trgDecision_, "trgDecision/O");
 			mainAnaTree_->Branch("nVtx", &treeVar_nVtx_, "nVtx/i");
+
+			if(isMadgraphDrellYan(fileName))
+				mainAnaTree_->Branch("lheZp4", &treeVar_lheZp4Ptr_);
 
 			treeVar_Zp4Ptr_ = &treeVar_Zp4_; mainAnaTree_->Branch("Zp4",   &treeVar_Zp4Ptr_);
 			mainAnaTree_->Branch("ZpT",   &treeVar_ZpT_,     "ZpT/D");
@@ -266,6 +278,8 @@ namespace tsw{
 
 			treeVar_trgDecision_ = trigDecision;
 			treeVar_nVtx_  = evtHelper.GetRecoVtx_nGoodVtxs();
+
+			treeVar_lheZp4_ = evtHelper.GetLHEZbosonP4();
 
 			treeVar_Zp4_   = diEle.p4();
 			treeVar_ZpT_   = diEle.pT();
@@ -321,6 +335,8 @@ namespace tsw{
 		Double_t treeVar_puWeight_;
 		float treeVar_mc_numVtx_;
 
+		TLorentzVector* treeVar_lheZp4Ptr_; TLorentzVector treeVar_lheZp4_;
+
 		TLorentzVector* treeVar_mcZ_ele1_p4Ptr_; TLorentzVector treeVar_mcZ_ele1_p4_;
 		TLorentzVector* treeVar_mcZ_ele2_p4Ptr_; TLorentzVector treeVar_mcZ_ele2_p4_;
 		UInt_t treeVar_detRegion_;
@@ -342,6 +358,7 @@ namespace tsw{
 	public:
 		EffiCalcTree(const std::string& fileName) :
 			TreeHandlerBase("zBosonEffiTree", "Tree of Z candidate information for signal MC effi calc'ns", fileName),
+			treeVar_lheZp4Ptr_( &treeVar_lheZp4_ ),
 			treeVar_mcZ_ele1_p4Ptr_( &treeVar_mcZ_ele1_p4_ ),
 			treeVar_mcZ_ele2_p4Ptr_( &treeVar_mcZ_ele2_p4_ ),
 			treeVar_Zp4Ptr_( &treeVar_Zp4_ ),
@@ -355,6 +372,9 @@ namespace tsw{
 			mainAnaTree_->Branch("run", &treeVar_runNum_, "run/i");
 			mainAnaTree_->Branch("lumi", &treeVar_lumiSec_, "lumi/i");
 			mainAnaTree_->Branch("evtNum", &treeVar_evtNum_, "evtNum/i");
+
+			if(isMadgraphDrellYan(fileName))
+				mainAnaTree_->Branch("lheZp4", &treeVar_lheZp4_);
 
 			mainAnaTree_->Branch("mcZ_ele1_p4", &treeVar_mcZ_ele1_p4Ptr_);
 			mainAnaTree_->Branch("mcZ_ele2_p4", &treeVar_mcZ_ele2_p4Ptr_);
@@ -523,6 +543,8 @@ namespace tsw{
 			treeVar_runNum_     = eventHelper.runNum();
 			treeVar_lumiSec_    = eventHelper.lumiSec();
 			treeVar_evtNum_     = eventHelper.eventNum();
+
+			treeVar_lheZp4_ = eventHelper.GetLHEZbosonP4();
 
 			treeVar_mcZ_ele1_p4_ = mcZboson_ele1;
 			treeVar_mcZ_ele2_p4_ = mcZboson_ele2;
@@ -703,6 +725,7 @@ namespace tsw{
 		struct TreeBranchVars{
 			// CTOR
 			TreeBranchVars() :
+				lheZp4Ptr_(&lheZp4_),
 				pair_p4Ptr_(&pair_p4_),  tag_p4Ptr_(&tag_p4_),  prb_p4Ptr_(&prb_p4_)
 			{}
 			// PUBLIC MEMBERS
@@ -712,6 +735,8 @@ namespace tsw{
 
 			Bool_t trgDecision_;
 			UInt_t nVtx_;
+
+			TLorentzVector* lheZp4Ptr_; TLorentzVector lheZp4_;
 
 			TLorentzVector* pair_p4Ptr_; TLorentzVector pair_p4_;
 			Double_t pair_dEta_, pair_dPhi_, pair_dR_;
@@ -745,7 +770,7 @@ namespace tsw{
 		};
 
 		// PRIVATE METHODS
-		static void setupBranchLinks(TTree* treePtr, TreeBranchVars& treeBranchVars);
+		void setupBranchLinks(TTree* treePtr, TreeBranchVars& treeBranchVars);
 		static void setupBranchLinks(TTree* treePtr, ModIsoVarsWithPhantom& phantomModIsoStruct, const std::string& suffix);
 		static void fillTree(TTree* treePtr, TreeBranchVars& treeVars, const tsw::HEEPEle& tagEle, const tsw::HEEPEle& probeEle, const tsw::EventHelper& evtHelper, bool trigDecision);
 		static void setBranchValues(ModIsoVarsWithPhantom& withPhantomStruct, const tsw::HEEPEle& ele, const tsw::HEEPEle::ModIsoPhantomEleDrRange drRange);
@@ -769,6 +794,9 @@ namespace tsw{
 
 		treePtr->Branch("trgDecision", &(branchVars.trgDecision_), "trgDecision/O");
 		treePtr->Branch("nVtx", &(branchVars.nVtx_), "nVtx/i");
+
+		if( isMadgraphDrellYan( fileName() ) )
+			treePtr->Branch("lheZp4", &(branchVars.lheZp4Ptr_) );
 
 		treePtr->Branch("pair_p4",   &(branchVars.pair_p4Ptr_) );
 		treePtr->Branch("pair_dEta", &(branchVars.pair_dEta_), "pair_dEta/D");
@@ -824,6 +852,8 @@ namespace tsw{
 
 		treeVars.trgDecision_ = trigDecision;
 		treeVars.nVtx_  = evtHelper.GetRecoVtx_nGoodVtxs();
+
+		treeVars.lheZp4_ = evtHelper.GetLHEZbosonP4();
 
 		treeVars.pair_p4_ = ( tagEle.p4() + probeEle.p4() );
 		treeVars.pair_dEta_ = probeEle.eta() - tagEle.eta();
@@ -891,6 +921,8 @@ namespace tsw{
 		Bool_t evt_trgDecision_;
 		UInt_t evt_nVtx_;
 
+		TLorentzVector* lheZp4ptr_; TLorentzVector lheZp4_;
+
 		// Ele-mu pair info
 		TLorentzVector* eleMu_p4ptr_;
 		TLorentzVector eleMu_p4_;
@@ -924,6 +956,7 @@ namespace tsw{
 
 	EleMuTree::EleMuTree(const std::string& treeName, const std::string& fileName) :
 		TreeHandlerBase(treeName, "Tree of ele-mu pairs ("+treeName+")", fileName),
+		lheZp4ptr_( &lheZp4_ ),
 		eleMu_p4ptr_( &eleMu_p4_ ),
 		ele_p4ptr_( &ele_p4_ ),  muon_p4ptr_( &muon_p4_ )
 	{
@@ -939,6 +972,9 @@ namespace tsw{
 
 		mainAnaTree_->Branch("trgDecision", &evt_trgDecision_, "trgDecision/O");
 		mainAnaTree_->Branch("nVtx", &evt_nVtx_, "nVtx/i");
+
+		if(isMadgraphDrellYan(fileName))
+			mainAnaTree_->Branch("lheZp4", &lheZp4ptr_);
 
 		mainAnaTree_->Branch("eleMu_p4", &eleMu_p4ptr_);
 		mainAnaTree_->Branch("eleMu_dR", &eleMu_dR_, "eleMu_dR/D");
@@ -967,6 +1003,8 @@ namespace tsw{
 
 		evt_trgDecision_ = trigDecision;
 		evt_nVtx_ = evtHelper.GetRecoVtx_nGoodVtxs();
+
+		lheZp4_ = evtHelper.GetLHEZbosonP4();
 
 		eleMu_p4_   = eleMu.p4();
 		eleMu_dR_   = eleMu.deltaR();
