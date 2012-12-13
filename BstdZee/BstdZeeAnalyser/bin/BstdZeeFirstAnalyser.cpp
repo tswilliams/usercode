@@ -214,7 +214,10 @@ namespace tsw{
 	public:
 		DiEleTree(const std::string& treeName, const std::string& fileName, bool fullInfoInTree=false) :
 			TreeHandlerBase(treeName, "Tree of Z candidates ("+treeName+")", fileName),
-			treeVar_lheZp4Ptr_( &treeVar_lheZp4_ )
+			treeVar_lheZp4Ptr_( &treeVar_lheZp4_ ),
+			treeVar_Zp4Ptr_( &treeVar_Zp4_ ),
+			treeVar_eleA_p4Ptr_( &treeVar_eleA_p4_ ),
+			treeVar_eleB_p4Ptr_( &treeVar_eleB_p4_ )
 		{
 			// Setting up the event / di-ele branches ...
 			mainAnaTree_->Branch("weight",     &treeVar_weight_,     "weight/D");
@@ -232,15 +235,15 @@ namespace tsw{
 			if(isMadgraphDrellYan(fileName))
 				mainAnaTree_->Branch("lheZp4", &treeVar_lheZp4Ptr_);
 
-			treeVar_Zp4Ptr_ = &treeVar_Zp4_; mainAnaTree_->Branch("Zp4",   &treeVar_Zp4Ptr_);
+			mainAnaTree_->Branch("Zp4",   &treeVar_Zp4Ptr_);
 			mainAnaTree_->Branch("ZpT",   &treeVar_ZpT_,     "ZpT/D");
 			mainAnaTree_->Branch("Zmass", &treeVar_Zmass_,   "Zmass/D");
 			mainAnaTree_->Branch("dR",    &treeVar_dR_,      "dR/D");
 			mainAnaTree_->Branch("dEta",  &treeVar_dEta_,    "dEta/D");
 			mainAnaTree_->Branch("dPhi",  &treeVar_dPhi_,    "dPhi/D");
 
-			treeVar_eleA_p4Ptr_ = &treeVar_eleA_p4_;  mainAnaTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);
-			treeVar_eleB_p4Ptr_ = &treeVar_eleB_p4_;  mainAnaTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);
+			mainAnaTree_->Branch("eleA_p4", &treeVar_eleA_p4Ptr_);
+			mainAnaTree_->Branch("eleB_p4", &treeVar_eleB_p4Ptr_);
 
 			if(fullInfoInTree){
 				mainAnaTree_->Branch("eleA_charge", &treeVar_eleA_charge_, "eleA_charge/I");
