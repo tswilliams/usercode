@@ -20,9 +20,9 @@ namespace tsw{
 		private:
 			EleStruct eleStr_;
 		public:
-			HEEPEle();
+			HEEPEle() {}
 			HEEPEle(tsw::EleStruct eleStruct);
-			~HEEPEle();
+			~HEEPEle() {}
 
 			void PrintOutVariables();
 
@@ -293,18 +293,15 @@ namespace tsw{
 
 	};
 
-	HEEPEle::HEEPEle(tsw::EleStruct eleStruct){
-		eleStr_ = eleStruct;
+	HEEPEle::HEEPEle(tsw::EleStruct eleStruct) :
+		eleStr_(eleStruct)
+	{
 		if( (eleStr_.SC_recHits_Et_.size()!=eleStr_.SC_recHits_eta_.size()) || (eleStr_.SC_recHits_Et_.size()!=eleStr_.SC_recHits_phi_.size()) || (eleStr_.SC_recHits_Et_.size()!=eleStr_.SC_recHits_isFromEB_.size()) )
 			std::cout << std::endl << "   *** WARNING (in tsw::HEEPEle CTOR): The SC_recHits_* vectors in the electron struct are NOT the same size!!! ***" << std::endl << std::endl;
-	}
-	HEEPEle::HEEPEle(){
-		EleStruct eleStruct;
-		SetDefaultValuesInEleStruct(eleStruct);
-		eleStr_ = eleStruct;
-	}
-	HEEPEle::~HEEPEle(){
-		//Placeholder ...
+		std::cout << " + Ele w/ pt=" << et() << " , eta=" << eta() << " , phi=" << phi() << std::endl;
+		std::cout << "    - Has " << eleStr_.isol_inrVetoModIsosWithPhantomEle_.size() << " sets of masked off isolation values" << std::endl;
+		std::cout << "    - First set: dEta=" <<  eleStr_.isol_inrVetoModIsosWithPhantomEle_.at(0).dEta << " , dPhi = " << eleStr_.isol_inrVetoModIsosWithPhantomEle_.at(0).dPhi << std::endl;
+		std::cout << "                 ECAL = " << eleStr_.isol_inrVetoModIsosWithPhantomEle_.at(0).ecal << " , hcalD1 = " << eleStr_.isol_inrVetoModIsosWithPhantomEle_.at(0).hcalD1 << std::endl;
 	}
 
 	void HEEPEle::PrintOutVariables(){
