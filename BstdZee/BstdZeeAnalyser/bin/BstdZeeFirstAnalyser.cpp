@@ -1514,19 +1514,15 @@ void BstdZeeFirstAnalyser::AnalyseEvent(const Double_t weightFromXsec)
 	timer_DoAnalysis_DoEMuMethod_.Stop();
 }
 
-void BstdZeeFirstAnalyser::SetupEleClassVectors(){
-	tsw::EleStruct ithEleStruct;
-	SetDefaultValuesInEleStruct(ithEleStruct);
-	tsw::HEEPEle ithHEEPEle;
-
+void BstdZeeFirstAnalyser::SetupEleClassVectors()
+{
 	if(vFlg_>0){std::cout << " Resetting the Ele class vectors ..." << std::endl;}
 	normEles_.clear();
 	if(vFlg_>0){std::cout << " ... and setting up the new Ele class vectors for this event..." << std::endl;}
 
 	for(unsigned int iEle = 0; iEle < normGsfEles_number_; iEle++){
 		if(vFlg_>0){std::cout << "   iEle=" << iEle << std::endl;}
-		SetDefaultValuesInEleStruct(ithEleStruct);
-		ithHEEPEle = tsw::HEEPEle(ithEleStruct);
+		tsw::EleStruct ithEleStruct;
 
 		//kinematic and geometric methods
 		ithEleStruct.et_         = normHEEPEles_et_->at(iEle);
@@ -1651,7 +1647,7 @@ void BstdZeeFirstAnalyser::SetupEleClassVectors(){
 
 		ithEleStruct.numMissInnerHits_ = normHEEPEles_numMissInnerHits_->at(iEle);
 
-		ithHEEPEle = tsw::HEEPEle(ithEleStruct);
+		tsw::HEEPEle ithHEEPEle = tsw::HEEPEle(ithEleStruct);
 		normEles_.push_back(ithHEEPEle);
 	}
 
