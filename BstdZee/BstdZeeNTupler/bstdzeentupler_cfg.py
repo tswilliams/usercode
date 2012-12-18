@@ -45,7 +45,7 @@ if os.path.isdir(options.inputFiles[0]) or os.path.isdir('/pnfs/pp.rl.ac.uk/data
 
    # Pre-pend the directory to the file names 
    for i in range(len(options.inputFiles)):
-      options.inputFiles[i] = dirLocation+"/"+options.inputFiles[i]      
+      options.inputFiles[i] = DataFileLocationAdaptor( dirLocation+"/"+options.inputFiles[i] )
 else:
    for i in range(len(options.inputFiles)):
       options.inputFiles[i] = DataFileLocationAdaptor(options.inputFiles[i])
@@ -58,8 +58,7 @@ process = cms.Process("NTupler")
 ## Loading Geometry modules for creation of transient geometry information used in determining eta and phi values of recHits ...
 process.load("Configuration.StandardSequences.GeometryDB_cff")
 process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
-#process.GlobalTag.globaltag = 'START42_V13::All'
-process.GlobalTag.globaltag = 'START52_V9::All'
+process.GlobalTag.globaltag = 'START53_V7A::All'
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 ## Lines from P. Lenzi related to reading LHE info
@@ -83,11 +82,11 @@ datafilesList = f_DatafileList.readlines()
 f_DatafileList.close()
 datafileLocations = map(DataFileLocationAdaptor,datafilesList)
 
-process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(options.inputFiles) )
+process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(options.inputFiles) )  #, eventsToProcess = cms.untracked.VEventRange("1:49:14420") )
 
 #Defining the output file to store the histograms/NTuples in... 
-process.TFileService = cms.Service("TFileService", fileName=cms.string("BstdZeeNTuple_53X-v2pre3.root"))
-#process.TFileService = cms.Service("TFileService", fileName=cms.string(options.outputFile))
+#process.TFileService = cms.Service("TFileService", fileName=cms.string("BstdZeeNTuple_53X-v2pre3.root"))
+process.TFileService = cms.Service("TFileService", fileName=cms.string(options.outputFile))
 
 ###################################################################################################
 ## Code for modified isolation values ...
