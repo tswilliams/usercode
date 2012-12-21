@@ -1,8 +1,0 @@
-<use name="CommonTools/Utils"/>
-<use name="FWCore/Framework"/>
-<use name="FWCore/PluginManager"/>
-<use name="FWCore/ParameterSet"/>
-
-<export>
-   <lib name="TSWilliamsBstdZeeTools"/>
-</export>
