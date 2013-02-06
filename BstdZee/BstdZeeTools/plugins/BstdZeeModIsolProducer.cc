@@ -13,7 +13,7 @@
 //
 // Original Author:  Thomas Williams
 //         Created:  Mon Mar  5 18:12:27 GMT 2012
-// $Id: BstdZeeModIsolProducer.cc,v 1.5 2012/10/07 23:55:33 tsw Exp $
+// $Id: BstdZeeModIsolProducer.cc,v 1.6 2012/11/12 11:19:59 tsw Exp $
 //
 //
 
@@ -147,13 +147,7 @@ void BstdZeeModIsolProducer::produce(edm::Event& iEvent, const edm::EventSetup& 
 
 	std::vector<double> dEtaPhantomEleVec(inputEleHandle->size(), phantomVetoEleDEta_);
 	std::vector<double> dPhiPhantomEleVec(inputEleHandle->size(), phantomVetoEleDPhi_);
-
-//	// Run over the input electrons, calculating the new isolation values for each one
-//	for( reco::GsfElectronCollection::const_iterator gsfEle = inputEleHandle->begin();
-//			gsfEle!=inputEleHandle->end(); gsfEle++) {
-	edm::Handle<EcalRecHitCollection> recHitsHandleEB;
-	iEvent.getByLabel(ecalParams_EB_.recHitsTag, recHitsHandleEB);
-	ecalBarHits_ = recHitsHandleEB.product();
+ 
 
 	std::vector<double> trackIsolVec  = getTrackIsol(*inputEleHandle, *vetoEleHandle, iEvent);
 	std::vector<double> ecalIsolVec   = getEcalIsol(*inputEleHandle, *vetoEleHandle, iEvent, iSetup);
@@ -319,11 +313,13 @@ std::vector<double> BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectronC
 
 	// Grab the ECAL severity level algo
 	edm::ESHandle<EcalSeverityLevelAlgo> sevLevelAlgo;
-   iSetup.get<EcalSeverityLevelAlgoRcd>().get(sevLevelAlgo);
+	iSetup.get<EcalSeverityLevelAlgoRcd>().get(sevLevelAlgo);
 
 	std::vector<double> isolValues;
+
 	for( reco::GsfElectronCollection::const_iterator eleIt = inputEles.begin(); eleIt!=inputEles.end(); eleIt++)
-		isolValues.push_back( getEcalIsol(*eleIt, vetoEles, recHitsMetaEB, theCaloGeom, ecalParams_EB_, sevLevelAlgo.product()) + getEcalIsol(*eleIt, vetoEles, recHitsMetaEE, theCaloGeom, ecalParams_EE_, sevLevelAlgo.product()) );
+		isolValues.push_back(  getEcalIsol(*eleIt, vetoEles, *recHitsHandleEB, recHitsMetaEB, theCaloGeom, ecalParams_EB_, sevLevelAlgo.product()) 
+		                     + getEcalIsol(*eleIt, vetoEles, *recHitsHandleEE, recHitsMetaEE, theCaloGeom, ecalParams_EE_, sevLevelAlgo.product()) );
 
 	delete recHitsMetaEB;
 	delete recHitsMetaEE;
@@ -332,7 +328,7 @@ std::vector<double> BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectronC
 }
 
 
-double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const EcalRecHitMetaCollection* recHitsMeta, const edm::ESHandle<CaloGeometry>& theCaloGeom, const BstdZeeModIsolProducer::ECALParams& params, const EcalSeverityLevelAlgo* sevLevelAlgo)
+double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const EcalRecHitCollection& recHitColln, const EcalRecHitMetaCollection* recHitsMeta, const edm::ESHandle<CaloGeometry>& theCaloGeom, const BstdZeeModIsolProducer::ECALParams& params, const EcalSeverityLevelAlgo* sevLevelAlgo)
 {
 	const CaloSubdetectorGeometry* subdetGeoms[2];
 	subdetGeoms[0] = theCaloGeom->getSubdetectorGeometry(DetId::Ecal,EcalBarrel);
@@ -349,7 +345,7 @@ double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, cons
 		double etaclus = pclu.eta();
 		double phiclus = pclu.phi();
 		double r2 = params.intRadius*params.intRadius;
-
+		
 		std::vector< std::pair<DetId, float> >::const_iterator rhIt;
 
 		for(int subdetnr=0; subdetnr<=1 ; subdetnr++){  // look in barrel and endcap
@@ -434,7 +430,7 @@ double BstdZeeModIsolProducer::getEcalIsol(const reco::GsfElectron& theEle, cons
 						continue;
 
 					// RecHit severity level / 'reco' flag checks
-					int severityFlag = ecalBarHits_ == 0 ? -1 : sevLevelAlgo->severityLevel(((EcalRecHit*)(&*j))->detid(), *ecalBarHits_);
+					int severityFlag = sevLevelAlgo->severityLevel(((EcalRecHit*)(&*j))->detid(), recHitColln);
 					std::vector<int>::const_iterator sit = std::find(params.recHitSeveritiesExcl_.begin(), 
 											 params.recHitSeveritiesExcl_.end(), severityFlag);
 					if( sit != params.recHitSeveritiesExcl_.end() )

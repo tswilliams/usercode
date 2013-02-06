@@ -66,7 +66,7 @@ class BstdZeeModIsolProducer : public edm::EDProducer {
       std::vector<double> getTrackIsol(const reco::GsfElectronCollection& inputEles, const reco::GsfElectronCollection& vetoEles, const edm::Event& iEvent);
       double getTrackIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const reco::TrackCollection* trackCollection, const reco::TrackBase::Point beamPoint);
       std::vector<double> getEcalIsol(const reco::GsfElectronCollection& inputEles, const reco::GsfElectronCollection& vetoEles, const edm::Event& iEvent, const edm::EventSetup& iSetup);
-      double getEcalIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const EcalRecHitMetaCollection* recHitsMeta, const edm::ESHandle<CaloGeometry>& theCaloGeom, const ECALParams& params, const EcalSeverityLevelAlgo* sevLevelAlgo);
+      double getEcalIsol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const EcalRecHitCollection& recHitColln, const EcalRecHitMetaCollection* recHitsMeta, const edm::ESHandle<CaloGeometry>& theCaloGeom, const ECALParams& params, const EcalSeverityLevelAlgo* sevLevelAlgo);
       std::vector<double> getHcalDepth1Isol(const reco::GsfElectronCollection& inputEles, const reco::GsfElectronCollection& vetoEles, const edm::Event& iEvent);
       double getHcalDepth1Isol(const reco::GsfElectron& theEle, const reco::GsfElectronCollection& vetoEles, const CaloTowerCollection* towercollection);
 
@@ -94,7 +94,6 @@ class BstdZeeModIsolProducer : public edm::EDProducer {
 
       const ECALParams ecalParams_EB_;
       const ECALParams ecalParams_EE_;
-      const EcalRecHitCollection* ecalBarHits_;
       const bool ecal_vetoClustered_;
       const bool ecal_useNumCrystals_;
 
