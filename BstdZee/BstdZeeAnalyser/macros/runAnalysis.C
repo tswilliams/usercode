@@ -3,40 +3,57 @@
 	tsw::Samples2012 noIsoAnaTuples("noIsoZCandTree");
 	tsw::Samples2012 emuAnaTuples("eleMuTree");
 
+	/*tsw::DistPlotter dyEeJetsPlotter(true);
+	dyEeJetsPlotter.setTree("noIsoZBosonTree");
+	dyEeJetsPlotter.setSelection("(Zmass<105 && Zmass>75) && (abs(dPhi)>=0.3 || abs(dEta)>=0.07)");
+	dyEeJetsPlotter.setWeight("genWeight");
+	dyEeJetsPlotter.add( noIsoAnaTuples.dyEE_mg_single() );
+	dyEeJetsPlotter.add( noIsoAnaTuples.dyEE_mg_pt100() );
+	dyEeJetsPlotter.add( tsw::AxisDefn("lheZp4.Pt()", 50, 0.0, 500.0, "LHE p_{T,ee} [GeV]") );
+	dyEeJetsPlotter.run();*/
+
+
 	//-> 1) Data vs MC plots
-	tsw::DistPlotter mcComparison;
-	mcComparison.setTree("modIsoZBosonTree");
-	mcComparison.setSelection("(Zmass<105 && Zmass>75) && (abs(dPhi)>=0.3 || abs(dEta)>=0.07) && (eleA_modHeepStdThr==0 && eleB_modHeepStdThr==0)");
-	mcComparison.setWeight("genWeight*puWeight");
-	mcComparison.rescaleMC();
-//	mcComparison.descriptiveText("#sqrt{s} = 8 TeV, #int L dt = 12 fb^{-1} approx, Runs 12A-D; HEEPModIsoStdThr, #phi-road veto, 75-105, PU reweighted");
-//	mcComparison.outFilePrefix("results/20121121/DataVsMc_ee/ZCand_ModIso75to105_phiRdVeto_PUweight_8TeV_12fb");
+	tsw::DistPlotter dataPlots_main;
+	dataPlots_main.setTree("modIsoZBosonTree");
+        dataPlots_main.setSelection("(Zmass<105 && Zmass>75) && (abs(dPhi)>=0.3 || abs(dEta)>=0.07) && (eleA_modHeepStdThr==0 && eleB_modHeepStdThr==0)");
+	dataPlots_main.setWeight("genWeight*puWeight");
+	dataPlots_main.rescaleMC();
+  	dataPlots_main.descriptiveText("#phi-road veto, 75-105, PU reweighted");
 
-	mcComparison.add( modIsoAnaTuples.wJets() );
-	mcComparison.add( modIsoAnaTuples.dyTauTau_powheg() );
-	mcComparison.add( modIsoAnaTuples.topBkgds() );
-	mcComparison.add( modIsoAnaTuples.vzBkgds()  );
-	mcComparison.add( modIsoAnaTuples.dyEE_mg_merged() );
+	dataPlots_main.add( modIsoAnaTuples.wJets() );
+	dataPlots_main.add( modIsoAnaTuples.dyTauTau_mg() );
+	dataPlots_main.add( modIsoAnaTuples.topBkgds() );
+	dataPlots_main.add( modIsoAnaTuples.vzBkgds()  );
+	dataPlots_main.add( modIsoAnaTuples.dyEE_mg_single() );
 
-	mcComparison.add_signal( modIsoAnaTuples.qStarGI_M500() );
-	mcComparison.add_signal( modIsoAnaTuples.qStarGI_M1500() );
+	dataPlots_main.add_signal( modIsoAnaTuples.qStarGI_M500() );
+	dataPlots_main.add_signal( modIsoAnaTuples.qStarGI_M1500() );
 
-	mcComparison.data( modIsoAnaTuples.data2012() );
+	dataPlots_main.data( modIsoAnaTuples.data2012() );
+	
+	tsw::DistPlotter dataPlots_wideMass(dataPlots_main);
 
-	mcComparison.add( tsw::AxisDefn("ZpT", 50, 0.0, 1000.0, "p_{T,ee} [GeV]"), true, true );
-//	mcComparison.add( tsw::AxisDefn("Zp4.P()", 70, 0.0, 1400.0, "Z momentum [GeV]"), true, true);
-//	mcComparison.add( tsw::AxisDefn("Zmass", 55, 65.0, 120.0, "M_{ee} [GeV]"));
-//	mcComparison.add( tsw::AxisDefn("Zp4.Eta()", 40, -4.0, +4.0, "Z boson #eta"));
-//	mcComparison.add( tsw::AxisDefn("Zp4.Phi()", 20, -3.14, +3.14, "Z boson #phi"));
-//	mcComparison.add( tsw::AxisDefn("eleA_p4.Pt()", 45, 0.0, 900.0, "Leading ele p_{T} [GeV]"));
-//	mcComparison.add( tsw::AxisDefn("eleB_p4.Pt()", 45, 0.0, 450.0, "Sub-leading ele p_{T} [GeV]"), true, true);
-//	mcComparison.add( tsw::AxisDefn("nVtx", 40, -0.5, 39.5, "N_{vtx}"), false, true);
+	dataPlots_main.add( tsw::AxisDefn("ZpT", 50, 0.0, 1000.0, "p_{T,ee} [GeV]"), true, true );
+  	dataPlots_main.add( tsw::AxisDefn("Zp4.P()", 70, 0.0, 1400.0, "Z momentum [GeV]"), true, true);
+  	dataPlots_main.add( tsw::AxisDefn("Zmass", 55, 65.0, 120.0, "M_{ee} [GeV]"));
+	dataPlots_main.add( tsw::AxisDefn("Zp4.Eta()", 40, -4.0, +4.0, "Z boson #eta"));
+	dataPlots_main.add( tsw::AxisDefn("Zp4.Phi()", 20, -3.14, +3.14, "Z boson #phi"));
+	dataPlots_main.add( tsw::AxisDefn("eleA_p4.Pt()", 45, 0.0, 900.0, "Leading ele p_{T} [GeV]"));
+	dataPlots_main.add( tsw::AxisDefn("eleB_p4.Pt()", 45, 0.0, 450.0, "Sub-leading ele p_{T} [GeV]"), true, true);
+  	dataPlots_main.add( tsw::AxisDefn("nVtx", 40, -0.5, 39.5, "N_{vtx}"), false, true);
 //
-//	mcComparison.add( tsw::AxisDefn("dR", 30, 0.0, 6.0, "#DeltaR_{ee}"));
-//	mcComparison.add( tsw::AxisDefn("dEta", 32, -3.2, +3.2, "#Delta#eta_{ee}"));
-//	mcComparison.add( tsw::AxisDefn("dPhi", 20, -3.14, +3.14, "#Delta#phi_{ee}"));
+  	dataPlots_main.add( tsw::AxisDefn("dR", 60, 0.0, 6.0, "#DeltaR_{ee}"), false, true);
+  	dataPlots_main.add( tsw::AxisDefn("dEta", 64, -3.2, +3.2, "#Delta#eta_{ee}"));
+  	dataPlots_main.add( tsw::AxisDefn("dPhi", 40, -3.14, +3.14, "#Delta#phi_{ee}"));
 
-	mcComparison.run( );
+	dataPlots_main.outFilePrefix("results/20130212/DataVsMc_ee/ZCand_ModIso75To105_phiRd_PUweight_8TeV_all2012");
+	dataPlots_main.run( );
+
+	/*dataPlots_wideMass.setSelection("(abs(dPhi)>=0.3 || abs(dEta)>=0.07) && (eleA_modHeepStdThr==0 && eleB_modHeepStdThr==0)");
+	dataPlots_wideMass.outFilePrefix();
+	dataPlots_wideMass.add( tsw::AxisDefn("Zmass", 60.0, 120.0, "M_{ee} [GeV]") );
+	dataPlots_wideMass.run();*/
 
 
 
@@ -66,8 +83,5 @@
 //	accPlotter.add( tsw::EffiDefn(tsw::AndOfCuts(effiSeln_recoAndAccept, effiSeln_heepId), tsw::AndOfCuts(effiSeln_modCaloIso_normThr, effiSeln_modTrkIso_normThr), "ModIso, norm", tsw::Red) );
 //	accPlotter.add( tsw::EffiDefn(tsw::AndOfCuts(effiSeln_recoAndAccept, effiSeln_heepId), tsw::AndOfCuts(effiSeln_modCaloIso_loose  , effiSeln_modTrkIso_loose  ), "ModIso, loose", tsw::Green) );
 //	accPlotter.run();
-
-
-
 
 }
