@@ -5,17 +5,17 @@
 
 	// EMU CONTROL REGION //
 
-	tsw::EMuControlPlotMaker emuPlotter("eleMuTree");
+	/*tsw::EMuControlPlotMaker emuPlotter("eleMuTree");
 	emuPlotter.selection("(eleMu_p4.M()<105 && eleMu_p4.M()>75)");
 	emuPlotter.mcWeight("genWeight*puWeight");
 	emuPlotter.chargeBranches("ele_charge", "muon_charge");
-//	emuPlotter.outFilePrefix("results/20121121/DataVsMc_emu/emu_heepV41_interimMuId_approx13fb");
+	emuPlotter.outFilePrefix("results/20130106/DataVsMc_emu/emu_heepV41_hiPtMuId_8TeV_all2012");
 //	emuPlotter.descriptiveText("#sqrt{s} = 8 TeV, #int L dt = 12 fb^{-1} approx, Runs 12A-D; HEEPModIso & MuHighPt, 75-105, PU reweighted");
 
-//	tsw::MCSample wJets_emu( emuAnaTuples.wJets() );
-//	wJets_emu.mBaseSeln = tsw::AndOfCuts( wJets_emu.mBaseSeln, "eleMu_p4.Pt()<220.");
-//	emuPlotter.add( wJets_emu );
-//	emuPlotter.add( emuAnaTuples.dyTauTau_powheg() );
+	tsw::MCSample wJets_emu( emuAnaTuples.wJets() );
+	wJets_emu.mBaseSeln = tsw::AndOfCuts( wJets_emu.mBaseSeln, "eleMu_p4.Pt()<220.");
+  	emuPlotter.add( wJets_emu );
+	emuPlotter.add( emuAnaTuples.dyTauTau_powheg() );
 	emuPlotter.add( emuAnaTuples.vzBkgds()  );
 	emuPlotter.add( emuAnaTuples.topBkgds() );
 
@@ -24,14 +24,14 @@
 	emuPlotter.drawPlots( tsw::AxisDefn("eleMu_p4.Pt()", 33, 40.0, 700.0, "p_{T,e#mu} [GeV]") );
 	emuPlotter.includeRatioPlots(false);
 	emuPlotter.drawPlots( tsw::AxisDefn("eleMu_p4.M()", 25, 71.0, 121.0, "Mass, M_{e#mu} [GeV]") );
-//	emuPlotter.add( tsw::AxisDefn("ele_p4.Pt()", 24, 20.0, 500.0, "Electron p_{T} [GeV]") );
-//	emuPlotter.add( tsw::AxisDefn("muon_p4.Pt()", 24, 20.0, 500.0, "Muon p_{T} [GeV]") );
-//	emuPlotter.run();
+	emuPlotter.add( tsw::AxisDefn("ele_p4.Pt()", 24, 20.0, 500.0, "Electron p_{T} [GeV]") );
+	emuPlotter.add( tsw::AxisDefn("muon_p4.Pt()", 24, 20.0, 500.0, "Muon p_{T} [GeV]") );
+	emuPlotter.run();*/
 
 
 	// QCD -- SIDEBAND-BASED //
 
-	/*tsw::SidebandJetsEstimator sidebandEstimator("modIsoZBosonTree", "1", "1");
+	tsw::SidebandJetsEstimator sidebandEstimator("modIsoZBosonTree", "1", "1");
 	sidebandEstimator.ptBranch("ZpT");
 	sidebandEstimator.massBranch("Zmass");
 //	sidebandEstimator.smearedMassBranch4mc("(tsw::GausianMultSmear(Zmass, 0.9935, 0.0082))");
@@ -45,7 +45,7 @@
 
 	sidebandEstimator.outputFileDir( "" );
 	sidebandEstimator.outputFileTag( "results/20121121/Jets_sideband/ZCandSideband_8TeV_12fb" );
-	sidebandEstimator.run();*/
+	sidebandEstimator.run();
 
 
 	// QCD -- ABCD METHOD //
