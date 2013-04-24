@@ -1,9 +1,14 @@
 {
 	tsw::Samples2012 anaTuples("zEffiTree");
-	std::string outFileDir = "results/20130416/ModIsoMcEffi/";
+	std::string outFileDir = "results/dummy/ModIsoMcEffi/";
 
 	//-> 0) Standard cuts applied to EffiCalcTree ...
- 	std::string seln_accept                 = "( (eleA_p4.Pt()>35.0 && abs(eleA_p4.Eta())<1.44 ) && (eleB_p4.Pt()>35.0 && abs(eleB_p4.Eta())<1.44) && (Zp4.M()>60.0 && Zp4.M()<120.0) )";
+	std::string seln_cms_eta                = "( (abs(eleA_p4.Eta())<1.442 || (abs(eleA_p4.Eta()>1.56) && abs(eleB_p4.Eta())<2.5)) && (abs(eleB_p4.Eta())<1.442 || (abs(eleB_p4.Eta()>1.56) && abs(eleB_p4.Eta())<2.5)) )";
+	std::string seln_ebeb                   = "( abs(eleA_p4.Eta())<1.442 && abs(eleB_p4.Eta())<1.442 )";
+	std::string seln_ebee                   = "( (abs(eleA_p4.Eta())<1.442 && abs(eleB_p4.Eta())<2.5 && abs(eleB_p4.Eta())>1.56) || (abs(eleB_p4.Eta())<1.442 && abs(eleA_p4.Eta())>1.56 && abs(eleA_p4.Eta())<2.5) )";
+	std::string seln_eeee                   = "( abs(eleA_p4.Eta())>1.56 && abs(eleA_p4.Eta())<2.5 && abs(eleB_p4.Eta())>1.56 && abs(eleB_p4.Eta())<2.5 )";
+	std::string seln_cms_eta_pt15           = "(eleA_p4.Pt()>15.0 && eleB_p4.Pt()>15.0) && "+seln_cms_eta;
+ 	std::string seln_accept                 = "( (eleA_p4.Pt()>35.0 && abs(eleA_p4.Eta())<1.44 ) && (eleB_p4.Pt()>35.0 && abs(eleB_p4.Eta())<1.44) && (Zp4.M()>75.0 && Zp4.M()<105.0) )";
 	std::string seln_reco                   = "bothRecod";
 	std::string seln_MPhiVeto               = "(abs(ZdEta)>0.07 || abs(ZdPhi)>0.3)";
 	std::string seln_acceptRecoAndPhiVeto  = tsw::AndOfCuts( tsw::AndOfCuts(seln_accept, seln_reco), seln_MPhiVeto);
@@ -42,12 +47,12 @@
 	tsw::EffiDefn relEffi_modHeepColThr(seln_acceptRecoPhiVetoAndId, seln_modHeepColThr, "ModIso (col thr)", tsw::LightBlue);
 	tsw::EffiDefn relEffi_genHadPtSumLeq5(seln_acceptRecoPhiVetoAndId, seln_genHadPtSumLeq5, "genHad ptSum < 5", tsw::Blue);
 
-	tsw::EffiDefn absEffi_accept("1", seln_accept, "Accept", tsw::LightGreen);
+	tsw::EffiDefn absEffi_accept("1", seln_accept, "Acceptance", tsw::LightGreen);
 	tsw::EffiDefn absEffi_reco("1", relEffi_reco.denomAndNumerCuts(), "reco", tsw::Black);
 	tsw::EffiDefn absEffi_MPhiVeto("1", relEffi_MPhiVeto.denomAndNumerCuts(), "#phi road", tsw::Pink);
 	tsw::EffiDefn absEffi_heepId("1", relEffi_heepId.denomAndNumerCuts(), "heepId", tsw::Blue);
 	tsw::EffiDefn absEffi_stdHeep("1", relEffi_stdHeepIso.denomAndNumerCuts(), "StdIso", tsw::Red);
-	tsw::EffiDefn absEffi_modHeepStdThr("1", relEffi_modHeepStdThr.denomAndNumerCuts(), "ModIso (std thr)", tsw::Green);
+	tsw::EffiDefn absEffi_modHeepStdThr("1", relEffi_modHeepStdThr.denomAndNumerCuts(), "ModIso", tsw::Green);
 	tsw::EffiDefn absEffi_modHeepColThr("1", relEffi_modHeepColThr.denomAndNumerCuts(), "ModIso (col thr)", tsw::LightBlue);
 
 	std::string seln_modCaloIso_normThr = tsw::AndOfCuts("((eleA_inrMVetoModEmH1-eleA_EmH1RhoCorrn)<(2.0+0.03*eleA_p4.Et()))",
@@ -64,25 +69,57 @@
 	// ---  'Acceptance'-style plots  --- //
 	//------------------------------------//
 
-//   tsw::CompositeMC dyJetsMC4Acc("DY[ee]+Jets, MG", tsw::Blue, "Diff cuts", "");
-//   dyJetsMC4Acc.add( tsw::MCSample("/opt/ppd/newscratch/williams/Datafiles/AnaTuples/bstdZeeAna_8TeV_20120723/DYJetsToEE-MG_*_zEffiTree.root",      "MADGRAPH", tsw::Blue, /*TWiki NNLO*/(3503.7e3)/3.0, "ZpT<160" ) , 0.0);
-//   dyJetsMC4Acc.add( tsw::MCSample("/opt/ppd/newscratch/williams/Datafiles/AnaTuples/bstdZeeAna_8TeV_20120723/DYJetsToEE-Pt100-MG_zEffiTree.root", "pT>160", tsw::Blue, /*TWiki NNLO*/(3503.7e3)*(34.1/2950.0)/3.0,  "ZpT>160" ) , 1.0);
-//   dyJetsMC4Acc.add( tsw::MCSample("/opt/ppd/newscratch/williams/Datafiles/AnaTuples/bstdZeeAna_8TeV_20120723/DYJetsToEE-Pt100-MG_zEffiTree.root", "pT>600", tsw::Blue, /*TWiki NNLO*/(3503.7e3)*(34.1/2950.0)/3.0,  "ZpT>600" ) , 2.0);
-//   dyJetsMC4Acc.add( tsw::MCSample("/opt/ppd/newscratch/williams/Datafiles/AnaTuples/bstdZeeAna_8TeV_20120723/DYJetsToEE-Pt100-MG_zEffiTree.root", "pT>600 && dR<0.3", tsw::Blue, /*TWiki NNLO*/(3503.7e3)*(34.1/2950.0)/3.0,  "ZpT>600 && ZdR<0.3" ) , 3.0);
-//
-//	tsw::AcceptancePlotter accPlotter("zBosonEffiTree", "1", 0.46);
-//	accPlotter.add( qStar_GI ).add( qStar_GI_42X );//.add( qStar_CI )
-//			//.add( dyEe_calchep ).add( dyEe_mg_merged );
-////	accPlotter.add( absEffi_accept )
-////			.add( absEffi_reco ).add( absEffi_MPhiVeto )
-////			.add( absEffi_heepId )
-////			.add( absEffi_stdHeep )
-////			.add( absEffi_modHeepColThr )
-////			.add( absEffi_modHeepStdThr )
-//	accPlotter//.add( relEffi_modHeepColThr ).add( relEffi_modHeepStdThr )
-//			.add( relEffi_genHadPtSumLeq5 )
-//			.outFilePrefix("results/20121213/signalMc_isolEffiVsMass").run();
+	//tsw::CompositeMC qStarGI = anaTuples.qStarGI();
+	std::string acc_plot_dir = "results/20120424/accPlots";
+	tsw::AcceptancePlotter acc_effi_simple("zBosonEffiTree", "1", 0.0);
+	tsw::AcceptancePlotter acc_ebee(acc_effi_simple);
+	tsw::AcceptancePlotter acc_pt_thr(acc_effi_simple);
+	tsw::AcceptancePlotter acc_effi_detail(acc_effi_simple);
 
+	acc_ebee
+	  .add( anaTuples.qStarGI() )
+	  .add( anaTuples.qStarCI() )
+	  .add( tsw::EffiDefn( seln_cms_eta_pt15, seln_ebeb, "Barrel-Barrel", tsw::Blue) )
+	  .add( tsw::EffiDefn( seln_cms_eta_pt15, seln_ebee, "Barrel-Endcap", tsw::Red) )
+	  .add( tsw::EffiDefn( seln_cms_eta_pt15, seln_eeee, "Endcap-Endcap", tsw::Black) )
+	  .outFilePrefix(acc_plot_dir + "/signalMc_barrelEndcapFracVsMass")
+	  .descriptiveText("Denominator: Electrons within barrel/endcaps #eta range and p_{T}>15GeV")
+	  .run();
+
+	acc_pt_thr
+	  .add( anaTuples.qStarGI() )
+	  .add( anaTuples.qStarCI() )
+	  .add( tsw::EffiDefn( tsw::AndOfCuts(seln_cms_eta_pt15, seln_ebeb), "eleA_p4.Pt()>35.0", "Leading p_{T}>35", tsw::Blue) )
+	  .add( tsw::EffiDefn( tsw::AndOfCuts(seln_cms_eta_pt15, seln_ebeb), "eleB_p4.Pt()>35.0", "SubLead p_{T}>35", tsw::Red) )
+	  //.add( tsw::EffiDefn( tsw::AndOfCuts(seln_cms_eta_pt20, seln_ebeb), "eleA_p4.Pt()>35.0 && eleB_p4.Pt()>35.0", "Both p_{T}>35", tsw::Black) )
+	  .outFilePrefix(acc_plot_dir + "/signalMc_ptThrEffiVsMass")
+	  .descriptiveText("Denominator: Electrons within barrel/endcaps #eta range and p_{T}>15GeV")
+	  .run();
+
+
+	acc_effi_simple
+	  .add( anaTuples.qStarGI() )
+	  .add( anaTuples.qStarCI() )
+	  //.add( tsw::EffiDefn( "1", seln_cms_eta, "CMS #eta", tsw::Pink) )
+	  .add( absEffi_accept )
+	  .add( tsw::EffiDefn( seln_accept, relEffi_modHeepStdThr.denomAndNumerCuts(), "Efficiency", tsw::Blue) )
+	  .add( tsw::EffiDefn( "1",         relEffi_modHeepStdThr.denomAndNumerCuts(), "Acc x Effi", tsw::Black) )
+	  .outFilePrefix(acc_plot_dir + "/signalMc_accEffiVsMass")
+	  .run();
+
+	acc_effi_detail
+	  .add( anaTuples.qStarGI() )
+	  .add( anaTuples.qStarCI() )
+	  .add( absEffi_accept )
+	  .add( absEffi_reco )
+	  .add( absEffi_MPhiVeto )
+	  .add( absEffi_heepId )
+	  .add( absEffi_modHeepStdThr )
+	  .outFilePrefix(acc_plot_dir + "/signalMc_accDetailEffiVsMass")
+	  .descriptiveText("Denominator: All events")
+	  .run();
+
+	std::cout << " + Bailing out before effi plots ... " << std::endl; throw std::exception();
 
 	//----------------------------//
 	// --- MOD ISO EFFI PLOTS --- //
