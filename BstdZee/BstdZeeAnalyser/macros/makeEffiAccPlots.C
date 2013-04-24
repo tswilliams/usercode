@@ -1,6 +1,6 @@
 {
 	tsw::Samples2012 anaTuples("zEffiTree");
-	std::string outFileDir = "results/20130212/ModIsoMcEffi/";
+	std::string outFileDir = "results/20130416/ModIsoMcEffi/";
 
 	//-> 0) Standard cuts applied to EffiCalcTree ...
  	std::string seln_accept                 = "( (eleA_p4.Pt()>35.0 && abs(eleA_p4.Eta())<1.44 ) && (eleB_p4.Pt()>35.0 && abs(eleB_p4.Eta())<1.44) && (Zp4.M()>60.0 && Zp4.M()<120.0) )";
@@ -88,8 +88,8 @@
 	// --- MOD ISO EFFI PLOTS --- //
 	//----------------------------//
 
-	tsw::AxisDefn zPt_calchep("Zp4.Pt()", "280,320,360,400,440,480,520,560,600,640,680,720,760,800,840,880,920,960,1000,1040,1080,1120,1160,1200,1300,1400,1500", "p_{T,ee} [GeV]");
-	tsw::AxisDefn zMom_calchep("Zp4.P()", "280,360,440,520,600,680,760,840,920,1000,1080,1160,1240,1320,1400,1500,1600,1700,1800,2000,2250,2500", "Z boson momentum, p_{ee} [GeV]");
+	tsw::AxisDefn zPt_calchep("Zp4.Pt()", "280,320,360,400,440,480,520,560,600,640,680,720,760,800,840,880,920,960,1000,1040,1080,1120,1160,1200,1300,1500", "p_{T,ee} [GeV]");
+	tsw::AxisDefn zMom_calchep("Zp4.P()", "280,360,440,520,600,680,760,840,920,1000,1080,1160,1240,1320,1400,1500,1600,1800,2100,2500", "Z boson momentum, p_{ee} [GeV]");
 	//tsw::AxisDefn zMom_calchep("Zp4.P()", 30, 280.0, 1480.0, "p_{ee} [GeV]");
 	tsw::AxisDefn dRee_calchep("ZdR", 15, 0.1, 0.7, "#Delta R_{ee}");
 
@@ -103,25 +103,35 @@
 	effiPlotter_recoAndId_b4PhiVeto//.add( dyEe_calchep ).add( zPt_calchep ).add( dRee_calchep )
 		.add( tsw::EffiDefn(seln_accept, seln_reco, "RECO", tsw::Black) )
 		.add( tsw::EffiDefn(seln_accept, tsw::AndOfCuts(seln_heepId, seln_reco), "RECO + HEEP ID", tsw::Blue) )
-		.gridLinesY().descriptiveText("Within acceptance").outFilePrefix(outFileDir+"/effiAfterAcc_RecoId");
+		.gridLinesY().legendTitle("Within acceptance").outFilePrefix(outFileDir+"/effiAfterAcc_RecoId");
 	effiPlotter_recoAndId_b4PhiVeto
 	.drawPlot( anaTuples.dyEE_calchep(), zPt_calchep ).drawPlot( anaTuples.dyEE_calchep(), zMom_calchep ).drawPlot( anaTuples.dyEE_calchep(), dRee_calchep );
 
-	tsw::EffiPlotter effiPlotter_recoAndId_b4PhiVetoSmallDr("zBosonEffiTree", 0.0);
-	effiPlotter_recoAndId_b4PhiVetoSmallDr
-			.add( tsw::EffiDefn(tsw::AndOfCuts(seln_accept, "ZdR<0.3"), seln_reco, "RECO", tsw::Black) )
-			.add( tsw::EffiDefn(tsw::AndOfCuts(seln_accept, "ZdR<0.3"), tsw::AndOfCuts(seln_heepId, seln_reco), "RECO + HEEP ID", tsw::Blue) )
+	tsw::EffiPlotter effiPlotter_recoAndId_b4PhiVetoSmallDPhi("zBosonEffiTree", 0.0);
+	effiPlotter_recoAndId_b4PhiVetoSmallDPhi
+			.add( tsw::EffiDefn(tsw::AndOfCuts(seln_accept, "abs(ZdPhi)<0.3"), seln_reco, "RECO", tsw::Black) )
+			.add( tsw::EffiDefn(tsw::AndOfCuts(seln_accept, "abs(ZdPhi)<0.3"), tsw::AndOfCuts(seln_heepId, seln_reco), "RECO + HEEP ID", tsw::Blue) )
 //			.add( tsw::EffiDefn(tsw::AndOfCuts(tsw::AndOfCuts(seln_accept, "ZdR<0.3"),seln_reco), seln_heepId, "HEEP ID wrt RECO", tsw::Pink) )
-			.gridLinesY().descriptiveText("Within acceptance, #Delta R < 0.3").outFilePrefix(outFileDir+"/effiAfterAccDrLeThan03_RecoId");
-	effiPlotter_recoAndId_b4PhiVetoSmallDr
-			.drawPlot( anaTuples.dyEE_calchep(), zPt_calchep ).drawPlot( anaTuples.dyEE_calchep(), zMom_calchep ).drawPlot( anaTuples.dyEE_calchep(), dRee_calchep )
-			.drawPlot( anaTuples.dyEE_calchep(), tsw::AxisDefn("abs(ZdEta)", 14, 0.0, 0.35, "#Delta#eta_{ee}") );
+			.gridLinesY().legendTitle("Within acc., |#Delta#phi| < 0.3").outFilePrefix(outFileDir+"/effiAfterAccDPhiLeThan03_RecoId");
+	effiPlotter_recoAndId_b4PhiVetoSmallDPhi
+	  .drawPlot( anaTuples.dyEE_calchep(), dRee_calchep )
+	  .drawPlot( anaTuples.dyEE_calchep(), tsw::AxisDefn("abs(ZdEta)", 12, 0.0, 0.3, "#Delta#eta_{ee}"));
+
+	tsw::EffiPlotter effiPlotter_recoAndId_b4PhiVetoSmallDEta("zBosonEffiTree", 0.0);
+	effiPlotter_recoAndId_b4PhiVetoSmallDEta
+			.add( tsw::EffiDefn(tsw::AndOfCuts(seln_accept, "abs(ZdEta)<0.07"), seln_reco, "RECO", tsw::Black) )
+			.add( tsw::EffiDefn(tsw::AndOfCuts(seln_accept, "abs(ZdEta)<0.07"), tsw::AndOfCuts(seln_heepId, seln_reco), "RECO + HEEP ID", tsw::Blue) )
+//			.add( tsw::EffiDefn(tsw::AndOfCuts(tsw::AndOfCuts(seln_accept, "ZdR<0.3"),seln_reco), seln_heepId, "HEEP ID wrt RECO", tsw::Pink) )
+			.gridLinesY().legendTitle("Within acc., |#Delta#eta| < 0.07").outFilePrefix(outFileDir+"/effiAfterAccDEtaLeThan007_RecoId");
+	effiPlotter_recoAndId_b4PhiVetoSmallDEta
+			.drawPlot( anaTuples.dyEE_calchep(), tsw::AxisDefn("ZdR", "0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.6,0.7", "#Delta R_{ee}" ) )
+			.drawPlot( anaTuples.dyEE_calchep(), tsw::AxisDefn("abs(ZdPhi)", "0.1, 0.125,0.15,0.175,0.2, 0.225,0.25,0.275,0.3, 0.325,0.35,0.4,0.45", "#Delta#phi_{ee}") );
 
 	tsw::EffiPlotter effiPlotter_recoAndPhiRdVeto("zBosonEffiTree", 0.0);
 	effiPlotter_recoAndPhiRdVeto
 			.add( tsw::EffiDefn(seln_accept, seln_reco, "RECO", tsw::Black) )
 			.add( tsw::EffiDefn(seln_accept, seln_acceptRecoAndPhiVeto, "RECO + #phi rd veto", tsw::Pink) )
-			.gridLinesY().descriptiveText("Within acceptance").outFilePrefix(outFileDir+"/effiAfterAcc_RecoPhiRoads");
+			.gridLinesY().legendTitle("Within acceptance").outFilePrefix(outFileDir+"/effiAfterAcc_RecoPhiRoads");
 	effiPlotter_recoAndPhiRdVeto.drawPlot( anaTuples.dyEE_calchep(), zPt_calchep ).drawPlot( anaTuples.dyEE_calchep(), zMom_calchep )
 			.drawPlot( anaTuples.dyEE_calchep(), dRee_calchep );
 

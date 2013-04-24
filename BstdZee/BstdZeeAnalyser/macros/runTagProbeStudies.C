@@ -1,35 +1,35 @@
 {
 	tsw::Samples2012 anaTuples("heepTpTree");
 
-	std::string OUT_DIR = "results/20130215/TagProbe/";
+	std::string OUT_DIR = "results/20130415/TagProbe/";
 
 	//-> 0) Setup objects
 	/*  ---  AXES  ---  */
-	tsw::AxisDefn axis_probePt("probe_p4.Pt()", "[35,36,37,38,39,40,41,43,45,47.5,50,  55,60,65,70,80,90,100,  150,200,300,500,1000]", "p_{T,probe} [GeV]", -1.0, true);
-	tsw::AxisDefn axis_mass("pair_p4.M()", 30, 60., 120., "M_{tag-probe} [GeV]");
+	tsw::AxisDefn axis_probePt("probe_p4.Pt()", "[35,36,37,38,39,40,41,43,45,47.5,50,  55,60,65,70,80,90,100,  150,200,300,500,1000]", "p_{T,probe} [GeV]", 1.0, true);
+	tsw::AxisDefn axis_mass("pair_p4.M()", 50, 65., 115., "M_{tag-probe} [GeV]");
 	tsw::AxisDefn axis_nVtx("nVtx", 30, 0.5, 30.5, "N_{vtx}");
-	tsw::AxisDefn axis_zPt("pair_p4.Pt()", "[0,5,10,15,20,25,30,35,40,50, 60,70,80,90,100, 120,140,160,180,200, 300,400,600,1000]", "p_{T,ee} [GeV]", -1.0, true);
-	tsw::AxisDefn axis_dRee("pair_dR", "[0.2,0.3,0.4,0.5,0.6,0.7,0.8,1, 1.25,1.5,1.75,2, 2.5,3,3.25]", "#Delta R_{ee}", -1.0, true);
+	tsw::AxisDefn axis_zPt("pair_p4.Pt()", "[0,5,10,15,20,25,30,35,40,50, 60,70,80,90,100, 120,140,160,180,200, 300,400,600,1000]", "p_{T,ee} [GeV]", 1.0, true);
+	tsw::AxisDefn axis_dRee("pair_dR", "[0.2,0.3,0.4,0.5,0.6,0.7,0.8,1, 1.25,1.5,1.75,2, 2.5,3,3.25]", "#Delta R_{ee}", 0.1, true);
 
 	/*  ---  TAGS  ---  */
 	tsw::TagProbeEffiCalc::TagDefn tag_heepStdIso("EB StdHeep, Z peak, probe EB");
 	tag_heepStdIso.mSelectionCuts_tag   = pass_elefull("tag_stdHeep");
-	tag_heepStdIso.mSelectionCuts_event = "pair_p4.M()<120 && pair_p4.M()>60 && abs(tag_scEta)<1.44 && abs(probe_scEta)<1.44";
+	tag_heepStdIso.mSelectionCuts_event = "pair_p4.M()<105 && pair_p4.M()>75 && abs(tag_scEta)<1.44 && abs(probe_scEta)<1.44";
 	tag_heepStdIso.mFakeRateFunc = "tsw::fr_heepV41_full";
 	//	tpEffiCalc.add_tagDefn("EB HEEPStdIso tag, Z peak", , "(tag_stdHeep & 0x0dff)==0 && abs(tag_scEta)<1.44", "tsw::FakeRate_heepStdIso");
 	tsw::TagProbeEffiCalc::TagDefn tag_heepStdIso_dRAbove05 = tag_heepStdIso;
-	tag_heepStdIso_dRAbove05.mName = "EB StdHeep, Z peak, probe EB, dR_{ee}>0.4"
-	tag_heepStdIso_dRAbove05.mSelectionCuts_event = "pair_p4.M()<120 && pair_p4.M()>60 && abs(tag_scEta)<1.44 && abs(probe_scEta)<1.44 && pair_dR>0.4";
+	tag_heepStdIso_dRAbove05.mName = "EB StdHeep, Z peak, probe EB, dR_{ee}>0.4";
+	tag_heepStdIso_dRAbove05.mSelectionCuts_event = "pair_p4.M()<105 && pair_p4.M()>75 && abs(tag_scEta)<1.44 && abs(probe_scEta)<1.44 && pair_dR>0.4";
 
 	tsw::TagProbeEffiCalc::TagDefn tag_zPeakZeroFake("Z peak");
 	tag_zPeakZeroFake.mSelectionCuts_tag = "";
-	tag_zPeakZeroFake.mSelectionCuts_event = "pair_p4.M()<120 && pair_p4.M()>60";
+	tag_zPeakZeroFake.mSelectionCuts_event = "pair_p4.M()<105 && pair_p4.M()>75";
 	tag_zPeakZeroFake.mFakeRateFunc = "zero";
-	//	tpEffiCalc.add_tagDefn("EB HEEPNoIso tag, Z peak", "pair_p4.M()<120 && pair_p4.M()>60", "(tag_stdHeep & 0x08ff)==0 && abs(tag_scEta)<1.44", "tsw::FakeRate_heepStdIso");
+	//	tpEffiCalc.add_tagDefn("EB HEEPNoIso tag, Z peak", "pair_p4.M()<105 && pair_p4.M()>75", "(tag_stdHeep & 0x08ff)==0 && abs(tag_scEta)<1.44", "tsw::FakeRate_heepStdIso");
 
 	tsw::TagProbeEffiCalc::TagDefn tag_zPeakZeroFakePhiRdVeto = tag_zPeakZeroFake;
 	tag_zPeakZeroFakePhiRdVeto.mName = "Z peak, #phi road veto";
-	tag_zPeakZeroFakePhiRdVeto.mSelectionCuts_event = "(pair_p4.M()<120 && pair_p4.M()>60) && (abs(pair_dEta)>=0.07 || abs(pair_dPhi)>=0.3)";
+	tag_zPeakZeroFakePhiRdVeto.mSelectionCuts_event = "(pair_p4.M()<105 && pair_p4.M()>75) && (abs(pair_dEta)>=0.07 || abs(pair_dPhi)>=0.3)";
 
 	/*tsw::TagProbeEffiCalc::TagDefn tag_zPeakNarrowZeroFakePhiRdVeto = tag_zPeakZeroFake;
 	tag_zPeakNarrowZeroFakePhiRdVeto.mName = "Nrrw Z peak, #phi road veto";
@@ -184,19 +184,19 @@
 
 	// A) Plots for full standard HEEP [cross-check with Z'(ee) note]
 	tpCalc.run(tag_heepStdIso, prb_stdHeep, axis_probePt )
-            .run(tag_heepStdIso, prb_stdHeep, axis_nVtx)
-            .run(tag_heepStdIso, prb_stdHeep, axis_mass);
+	  .run(tag_heepStdIso, prb_stdHeep, axis_nVtx)
+	  .run(tag_heepStdIso, prb_stdHeep, axis_mass);
 	tpCalc_powheg.run(tag_heepStdIso, prb_stdHeep, axis_probePt )
-					.run(tag_heepStdIso, prb_stdHeep, axis_nVtx)
-					.run(tag_heepStdIso, prb_stdHeep, axis_mass);
+	   			.run(tag_heepStdIso, prb_stdHeep, axis_nVtx)
+	   			.run(tag_heepStdIso, prb_stdHeep, axis_mass);
 	tpCalc_pythia.run(tag_heepStdIso, prb_stdHeep, axis_probePt )
-					.run(tag_heepStdIso, prb_stdHeep, axis_nVtx)
-					.run(tag_heepStdIso, prb_stdHeep, axis_mass);
+	  			.run(tag_heepStdIso, prb_stdHeep, axis_nVtx)
+	      			.run(tag_heepStdIso, prb_stdHeep, axis_mass);
 
 //	// B) HEEP ID plots
 	tpCalc.run(tag_heepStdIso, prb_heepNoIso, axis_probePt )
-					.run(tag_heepStdIso, prb_heepNoIso, axis_nVtx )
-					.run(tag_heepStdIso, prb_heepNoIso, axis_mass );
+	  			.run(tag_heepStdIso, prb_heepNoIso, axis_nVtx )
+	      			.run(tag_heepStdIso, prb_heepNoIso, axis_mass );
 
 	// C) Mod iso plots (probe-probe)
 	tpCalc.effiLegendPos(tsw::LOWER_LEFT)
@@ -228,6 +228,7 @@
 
 	
 	tpCalc.descriptiveText("Standard isolation vals w func"); tpCalc.run(tag_heepStdIso_dRAbove05, prb_stdHeepIsoWrtIdWFunc, axis_probePt);
+
 
 	// --- OLD --- //
 //	/*	tpEffiCalc.run(tag_zPeakNarrowZeroFakePhiRdVeto, prb_bothHeepModIsoStdThr, axis_zPt);
