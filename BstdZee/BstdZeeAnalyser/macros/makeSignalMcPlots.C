@@ -6,11 +6,12 @@
    plotter.setTree("zBosonEffiTree");
    plotter.setSelection(selnString);
    plotter.descriptiveText("MC truth after acceptance cuts; gauge interaction.");
-   plotter.outFilePrefix("results/20121121/qStarSignalMcAfterAcc_");
+   plotter.outFilePrefix("results/20130106/qStarSignalMcAfterAcc_");
    plotter.rescaleMC();
 
    tsw::MCSample qStarM1500( samples.qStarGI_M1500() );
-   qStarM1500.mName = "1.5TeV q*";
+   qStarM1500.mName  = "1.5TeV q*";
+   //qStarM1500.mColor = tsw::Black;
    tsw::MCSample qStarM2500( samples.qStarGI_M2500() );
    qStarM2500.mName = "2.5TeV q*";
 
@@ -19,6 +20,7 @@
    plotter.add( qStarM2500 );
    plotter.add( tsw::AxisDefn("ZpT", 40, 400.0, 1400, "Z boson p_{T} [GeV]") );
    plotter.add( tsw::AxisDefn("ZdR", 96, 0.0, 1.2, "#DeltaR_{ee}") );
+   //plotter.add( tsw::AxisDefn("Zp4.M()", 120, 60.0, 120.0, "M_{ee} [GeV]") );
    plotter.run();
 
 }
